@@ -193,3 +193,50 @@ main label, dialog label,
   text-transform: none !important;
   letter-spacing: normal !important;
 }
+
+/* ================= Estilo minimalista (misma paleta, menos adornos) ================= */
+/* Una sola tipografía en toda la app */
+body, body * { font-family: "Poppins", "Helvetica Neue", Arial, sans-serif !important; }
+/* Títulos: peso firme, sin mayúsculas forzadas, tracking ajustado */
+h1 { font-weight: 700 !important; letter-spacing: -.02em !important; line-height: 1.1 !important; }
+h2 { font-weight: 600 !important; letter-spacing: -.01em !important; }
+/* Botones con texto normal (sin MAYÚSCULAS) */
+button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-transform: none !important; letter-spacing: normal !important; }
+.enviar, .validar, .guardar { font-weight: 700 !important; }
+/* Pestañas de clase: más finas */
+.pestanas button { font-weight: 600 !important; padding: 8px 16px; }
+.pestanas button::before { width: 7px !important; height: 7px !important; }
+/* Números grandes: limpios */
+.estado-pos, .cartera-total, li .res, li .pos, .saldo b, .ir-cartera b, .sumados { font-weight: 700 !important; letter-spacing: -.02em; }
+/* Menos sombras y brillos */
+.estado, .estado.lider, .cartera, .ir-cartera, li.p1, .avisame { box-shadow: none !important; }
+.estado.lider::after { display: none !important; }
+.portada-logo { filter: none !important; }
+/* Bordes más suaves en tarjetas */
+.cuenta-barra, .acceso, .wod-desc, .descripcion, .panel { border-color: color-mix(in srgb, var(--borde) 75%, transparent); }
+
+/* Menú de abajo: más ligero */
+.menu {
+  background: rgba(32, 34, 38, .88) !important; box-shadow: 0 8px 24px rgba(0,0,0,.28) !important;
+  border: 1px solid rgba(255,255,255,.06) !important; border-radius: 20px !important; gap: 0 !important; padding: 5px !important;
+}
+.menu-item { min-width: 56px !important; padding: 7px 8px 6px !important; gap: 4px !important; border-radius: 14px !important; }
+.menu-texto { font-size: 10px !important; font-weight: 500 !important; letter-spacing: .01em !important; }
+.menu-icono svg { stroke-width: 1.6 !important; width: 21px !important; height: 21px !important; }
+.menu-logo::before { width: 20px !important; height: 20px !important; }
+.menu-item.activo {
+  background: color-mix(in srgb, var(--lila) 16%, transparent) !important; color: var(--lila) !important; box-shadow: none !important;
+}
+.menu-item.activo .menu-texto { font-weight: 700 !important; }
+.menu-item.activo .menu-icono svg { stroke-width: 1.9 !important; }
+.menu-tv .menu-item { padding: 6px 10px !important; }
+
+/* Insignias */
+.insignia { position: relative; display: inline-grid; place-items: center; width: var(--t); height: var(--t); flex: none; }
+.insignia svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.insignia-txt { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1; color: var(--lila); }
+.insignia-txt b { font-weight: 700; font-size: calc(var(--t) * .36); }
+.insignia-txt.medio b { font-size: calc(var(--t) * .28); }
+.insignia-txt.largo b { font-size: calc(var(--t) * .22); }
+.insignia-txt small { font-size: calc(var(--t) * .15); font-weight: 500; margin-top: 1px; color: var(--suave); }
+.insignia.bloqueada { opacity: .35; filter: grayscale(1); }

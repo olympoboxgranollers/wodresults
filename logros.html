@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
+<title>Logros Olympo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
+  main { width: 100%; max-width: 560px; }
+  header .marca { color: #fff; font-size: 13px; }
+  h1 { font-size: 34px; margin-top: 14px; color: var(--lila); }
+  .sub { color: var(--suave); margin-top: 6px; font-size: 15px; line-height: 1.5; }
+  .progreso { margin-top: 24px; display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px solid var(--borde); }
+  .progreso span { color: var(--suave); font-size: 13px; }
+  .progreso b { font-size: 30px; font-weight: 700; color: var(--lila); }
+  .progreso b small { font-size: 15px; color: var(--suave); font-weight: 500; }
+
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
+  .logro { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 20px 12px 16px; border-radius: 18px; background: var(--panel); border: 1px solid transparent; }
+  .logro.conseguido { border-color: color-mix(in srgb, var(--lila) 45%, transparent); }
+  .logro-nombre { font-weight: 600; font-size: 15px; }
+  .logro-desc { color: var(--suave); font-size: 12px; line-height: 1.4; }
+  .logro-pts { font-size: 12px; font-weight: 600; color: var(--lila); }
+  .logro:not(.conseguido) .logro-nombre { color: var(--suave); }
+  .logro:not(.conseguido) .logro-pts { color: var(--suave); }
+  .logro-fecha { font-size: 11px; color: var(--suave); }
+  .logro-acc { display: flex; gap: 6px; }
+  .logro-acc button { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+  .logro-acc .borrar { color: var(--error); }
+  .vacio { grid-column: 1 / -1; color: var(--suave); padding: 30px 0; text-align: center; font-size: 15px; }
+
+  /* Coach */
+  .coach { margin-top: 26px; display: grid; gap: 14px; }
+  .caja { border: 1px solid var(--borde); border-radius: 18px; padding: 18px; }
+  .caja h2 { font-size: 18px; margin-bottom: 4px; }
+  .caja p { color: var(--suave); font-size: 13px; line-height: 1.5; }
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .campos .ancho { grid-column: 1 / -1; }
+  .campos label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
+  .campos input, .campos select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); }
+  .fila { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .boton { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
+  .boton:disabled { opacity: .5; }
+  .boton.sec { background: none; color: var(--lila); border: 1px solid color-mix(in srgb, var(--lila) 50%, transparent); }
+  .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca">Olympo Box</div>
+    <h1>Logros</h1>
+    <p class="sub" id="sub">Medallas por tu constancia en el box. Cada logro suma puntos a tu cartera.</p>
+  </header>
+
+  <div class="progreso" id="progreso">
+    <span>Conseguidos</span>
+    <b><span id="nConseguidos">0</span> <small>de <span id="nTotal">0</span></small></b>
+  </div>
+
+  <!-- Solo el coach -->
+  <section class="coach" id="coach" hidden>
+    <div class="caja">
+      <h2>Dar un logro</h2>
+      <p>Elige el socio y el logro. Se le suman los puntos y le aparece la medalla.</p>
+      <div class="campos">
+        <label class="ancho">Socio<select id="dSocio"></select></label>
+        <label>Logro<select id="dLogro"></select></label>
+        <label>Puntos<input id="dPuntos" inputmode="numeric"></label>
+      </div>
+      <div class="fila" id="dVista"></div>
+      <div class="fila"><button type="button" class="boton" id="dDar">Dar logro</button><span class="msg" id="dMsg" role="status"></span></div>
+    </div>
+
+    <form class="caja" id="nuevo" autocomplete="off">
+      <h2 id="nTitulo">Nuevo logro</h2>
+      <p>Ve añadiendo logros poco a poco. El texto corto es lo que se lee dentro de la medalla (máx. 5 caracteres).</p>
+      <div class="campos">
+        <label class="ancho">Nombre<input id="nNombre" maxlength="40" placeholder="Ej. 100 clases" required></label>
+        <label>Texto de la medalla<input id="nCorto" maxlength="5" placeholder="100"></label>
+        <label>Debajo<input id="nUnidad" maxlength="10" placeholder="clases"></label>
+        <label class="ancho">Descripción<input id="nDesc" maxlength="100" placeholder="Has entrenado 100 clases con nosotros."></label>
+        <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
+        <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
+      </div>
+      <div class="fila">
+        <button type="submit" class="boton" id="nGuardar">Añadir logro</button>
+        <button type="button" class="boton sec" id="nIniciales" hidden>Crear los de 100 a 1000 clases</button>
+        <button type="button" class="boton sec" id="nCancelar" hidden>Cancelar</button>
+        <span class="msg" id="nMsg" role="status"></span>
+      </div>
+    </form>
+  </section>
+
+  <div class="rejilla" id="rejilla"><div class="vacio">Cargando…</div></div>
+</main>
+
+<script type="module">
+import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES } from "./comun.js";
+import { escucharCuenta } from "./cuenta.js";
+import { montarMenu, esCuentaCoach } from "./menu.js";
+
+const $ = (id) => document.getElementById(id);
+montarMenu({ actual: "logros", cuenta: false });
+
+let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null;
+
+escucharCuenta(({ user, ficha: f }) => {
+  coach = esCuentaCoach(user);
+  ficha = f || null;
+  $("coach").hidden = !coach;
+  $("progreso").hidden = coach;
+  $("sub").textContent = coach
+    ? "Crea logros y dáselos a los socios. Cada logro suma sus puntos a la cartera del socio."
+    : "Medallas por tu constancia en el box. Cada logro suma puntos a tu cartera.";
+  if (coach && !dejarSocios) {
+    dejarSocios = onSnapshot(query(collection(db, "usuarios"), orderBy("nombre", "asc")), (s) => {
+      socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre);
+      const sel = $("dSocio"), antes = sel.value;
+      sel.replaceChildren(new Option("Elige el socio…", ""), ...socios.map((x) => new Option(x.nombre, x.uid)));
+      sel.value = antes;
+      vista();
+    }, () => {});
+  }
+  pintar();
+});
+
+onSnapshot(query(collection(db, "logros"), orderBy("orden", "asc")), (s) => {
+  logros = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const sel = $("dLogro"), antes = sel.value;
+  sel.replaceChildren(...logros.map((l) => new Option(l.nombre, l.id)));
+  if (antes) sel.value = antes;
+  sugerirPuntos();
+  pintar();
+}, () => { $("rejilla").innerHTML = '<div class="vacio">No se ha podido cargar. Revisa las reglas de Firebase.</div>'; });
+
+function pintar() {
+  const r = $("rejilla"); r.replaceChildren();
+  const mias = ficha?.insignias || {};
+  $("nTotal").textContent = logros.length;
+  $("nConseguidos").textContent = logros.filter((l) => mias[l.id]).length;
+  $("nIniciales").hidden = !coach || logros.length > 0;
+  if (!logros.length) {
+    r.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: coach ? "Aún no hay logros. Crea los de 100 a 1000 clases con el botón de arriba o añade uno nuevo." : "Pronto habrá logros para conseguir." }));
+    return;
+  }
+  // Primero los conseguidos (para el socio), luego el resto por orden
+  const lista = coach ? logros : [...logros].sort((a, b) => (!!mias[b.id]) - (!!mias[a.id]) || a.orden - b.orden);
+  for (const l of lista) {
+    const mio = mias[l.id];
+    const c = document.createElement("div"); c.className = "logro" + (mio || coach ? " conseguido" : "");
+    const med = crearInsignia(l, 72);
+    if (!mio && !coach) med.classList.add("bloqueada");
+    c.append(med, Object.assign(document.createElement("div"), { className: "logro-nombre", textContent: l.nombre }));
+    if (l.descripcion) c.append(Object.assign(document.createElement("div"), { className: "logro-desc", textContent: l.descripcion }));
+    c.append(Object.assign(document.createElement("div"), { className: "logro-pts", textContent: `+${fmtPuntos(l.puntos)} pts` }));
+    if (mio) c.append(Object.assign(document.createElement("div"), { className: "logro-fecha", textContent: "Conseguido el " + new Date(mio.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) }));
+    if (coach) {
+      const acc = document.createElement("div"); acc.className = "logro-acc";
+      const ed = Object.assign(document.createElement("button"), { type: "button", textContent: "Editar" });
+      ed.addEventListener("click", () => editar(l));
+      const bo = Object.assign(document.createElement("button"), { type: "button", className: "borrar", textContent: "Borrar" });
+      let seguro = false;
+      bo.addEventListener("click", async () => {
+        if (!seguro) { seguro = true; bo.textContent = "¿Seguro?"; setTimeout(() => { seguro = false; bo.textContent = "Borrar"; }, 4000); return; }
+        try { await deleteDoc(doc(db, "logros", l.id)); } catch (e) { console.error(e); }
+      });
+      acc.append(ed, bo); c.append(acc);
+    }
+    r.append(c);
+  }
+}
+
+// ---------- Dar un logro a un socio ----------
+function sugerirPuntos() { const l = logros.find((x) => x.id === $("dLogro").value); if (l) $("dPuntos").value = l.puntos; vista(); }
+$("dLogro").addEventListener("change", sugerirPuntos);
+$("dSocio").addEventListener("change", vista);
+function vista() {
+  const l = logros.find((x) => x.id === $("dLogro").value);
+  const s = socios.find((x) => x.uid === $("dSocio").value);
+  const ya = s && s.insignias && l && s.insignias[l.id];
+  $("dVista").replaceChildren(...(l ? [crearInsignia(l, 52), document.createTextNode(ya ? `${s.nombre} ya tiene este logro.` : l.nombre)] : []));
+  $("dDar").disabled = !l || !s || !!ya;
+}
+$("dDar").addEventListener("click", async () => {
+  const l = logros.find((x) => x.id === $("dLogro").value);
+  const s = socios.find((x) => x.uid === $("dSocio").value);
+  const pts = parseInt($("dPuntos").value, 10);
+  const m = $("dMsg");
+  if (!l || !s) return;
+  if (!(pts >= 0) || pts > 100000) { m.className = "msg error"; m.textContent = "Revisa los puntos."; return; }
+  $("dDar").disabled = true;
+  try {
+    const lote = writeBatch(db);
+    lote.update(doc(db, "usuarios", s.uid), {
+      [`insignias.${l.id}`]: { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, puntos: pts, fecha: hoy() },
+      puntos: increment(pts)
+    });
+    lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: pts });
+    await lote.commit();
+    m.className = "msg ok"; m.textContent = `✓ ${s.nombre} ha conseguido "${l.nombre}" (+${fmtPuntos(pts)} pts).`;
+  } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido dar el logro."; }
+  vista();
+});
+
+// ---------- Crear y editar logros ----------
+function msgN(t, err = false) { $("nMsg").className = "msg " + (err ? "error" : "ok"); $("nMsg").textContent = t; }
+function editar(l) {
+  editando = l.id;
+  $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
+  $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
+  $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
+  window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
+}
+function limpiar() { editando = null; $("nuevo").reset(); $("nTitulo").textContent = "Nuevo logro"; $("nGuardar").textContent = "Añadir logro"; $("nCancelar").hidden = true; }
+$("nCancelar").addEventListener("click", () => { limpiar(); msgN(""); });
+$("nuevo").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nombre = $("nNombre").value.trim();
+  const corto = ($("nCorto").value.trim() || "★").slice(0, 5);
+  const puntos = parseInt($("nPuntos").value || "0", 10);
+  const orden = parseInt($("nOrden").value || "0", 10);
+  if (!nombre) return msgN("Escribe el nombre.", true);
+  if (!(puntos >= 0)) return msgN("Revisa los puntos.", true);
+  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden };
+  const id = editando || nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 30) || ("logro" + Date.now());
+  try {
+    if (editando) await updateDoc(doc(db, "logros", id), datos);
+    else await setDoc(doc(db, "logros", id), datos);
+    msgN(editando ? "✓ Guardado" : "✓ Logro añadido"); limpiar();
+  } catch (err) { console.error(err); msgN(err?.code === "permission-denied" ? "Solo la cuenta del coach puede crear logros." : "No se ha podido guardar.", true); }
+});
+$("nIniciales").addEventListener("click", async () => {
+  try {
+    const lote = writeBatch(db);
+    for (const { id, ...datos } of LOGROS_INICIALES) lote.set(doc(db, "logros", id), datos);
+    await lote.commit();
+    msgN("✓ Creados los logros de 100, 250, 500, 750 y 1000 clases.");
+  } catch (e) { console.error(e); msgN("No se han podido crear.", true); }
+});
+</script>
+</body>
+</html>

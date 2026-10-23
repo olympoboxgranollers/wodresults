@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#2f3237">
 <title>Puntos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
@@ -40,11 +40,30 @@
   li .pts small { font-family: "Inter", sans-serif; font-size: 12px; color: var(--suave); margin-left: 3px; }
   li.p1 { border-color: var(--lila); } li.p1 .pos { color: var(--oro); }
   li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
+  li.con-perfil { cursor: pointer; }
+  li.con-perfil .nom::after { content: "›"; color: var(--suave); margin-left: auto; padding-left: 6px; }
   li.yo { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 12%, var(--panel)); }
   .vacio { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 18px; text-align: center; font-size: 14px; }
   .como { margin-top: 28px; color: var(--suave); font-size: 14px; line-height: 1.6; }
   .como b { color: var(--texto); }
   #acceso { margin-top: 22px; }
+  .ver-perfil { display: inline-block; margin-top: 12px; color: var(--lila); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .ver-logros { float: right; font-size: 14px; font-weight: 500; color: var(--lila); text-decoration: none; margin-top: 4px; }
+  .insignias-lista { display: flex; flex-wrap: wrap; gap: 14px; }
+  .insignia-item { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 76px; text-align: center; font-size: 11px; color: var(--suave); line-height: 1.3; }
+  .panel-coach { margin-top: 24px; border: 1px solid var(--borde); border-radius: 18px; padding: 18px; }
+  .panel-coach h2 { margin: 0 0 4px; }
+  .pc-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .pc-campos label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
+  .pc-campos label:first-child, .pc-otra { grid-column: 1 / -1; }
+  .pc-campos select, .pc-campos input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); }
+  .pc-vista { display: flex; align-items: center; gap: 12px; margin-top: 14px; color: var(--suave); font-size: 14px; }
+  .pc-acciones { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .pc-dar { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
+  .pc-dar:disabled { opacity: .5; }
+  .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+  li .nom { display: flex; align-items: center; gap: 6px; }
+  li .nom .insignia { --t: 22px; }
 </style>
 </head>
 <body>
@@ -63,7 +82,9 @@
     <div class="cartera-nombre" id="carteraNombre"></div>
     <div class="cartera-total"><span id="carteraTotal">0</span><small>pts</small></div>
     <div class="cartera-puesto" id="carteraPuesto"></div>
+    <a class="ver-perfil" href="perfil.html">Ver mi perfil →</a>
   </section>
+
 
   <section id="zonaHistorial" hidden>
     <h2>Tus últimos puntos</h2>
@@ -77,10 +98,10 @@
 </main>
 
 <script type="module">
-import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, CLASES, PUNTOS, fmtPuntos } from "./comun.js";
+import { collection, query, orderBy, limit, onSnapshot, doc, writeBatch, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, CLASES, PUNTOS, fmtPuntos, insigniasDe, crearInsignia } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
-import { montarMenu } from "./menu.js";
+import { montarMenu, esCuentaCoach } from "./menu.js";
 montarMenu({ actual: "puntos", cuenta: false });
 import { NOMBRE_BOX } from "./config.js";
 
@@ -101,11 +122,14 @@ let yo = null;
 let ranking = [];
 let dejarHistorial = null;
 
+let soyCoach = false;
 escucharCuenta(({ user, ficha }) => {
   yo = user;
+  soyCoach = esCuentaCoach(user);
   $("acceso").hidden = !!user;
-  $("cartera").hidden = !user;
-  $("zonaHistorial").hidden = !user;
+  $("cartera").hidden = !user || soyCoach;
+  $("zonaHistorial").hidden = !user || soyCoach;
+
   if (dejarHistorial) { dejarHistorial(); dejarHistorial = null; }
   if (!user) { pintarRanking(); return; }
   $("carteraNombre").textContent = ficha?.nombre || user.displayName || user.email;
@@ -121,7 +145,10 @@ escucharCuenta(({ user, ficha }) => {
       const t = document.createElement("div"); t.className = "t";
       const dia = new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
       const dd = document.createElement("div"); dd.className = "d";
-      if (m.tipo === "canje") {
+      if (m.tipo === "insignia") {
+        t.textContent = `🏅 Logro · ${m.nombre || ""}`;
+        dd.textContent = dia;
+      } else if (m.tipo === "canje") {
         t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`;
         dd.textContent = dia;
       } else if (m.tipo === "registro") {
@@ -156,13 +183,20 @@ function pintarRanking() {
     if (yo && u.uid === yo.uid) li.classList.add("yo");
     const a = document.createElement("span"); a.className = "pos"; a.textContent = puesto;
     const b = document.createElement("span"); b.className = "nom"; b.textContent = u.nombre || "Socio";
+    const top = insigniasDe(u)[0];
+    if (top) b.append(crearInsignia(top, 22));
     const c = document.createElement("span"); c.className = "pts"; c.textContent = fmtPuntos(u.puntos);
     c.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
-    li.append(a, b, c); ol.append(li);
+    li.append(a, b, c);
+    // Tocar a un socio abre su perfil con sus logros
+    li.classList.add("con-perfil");
+    li.addEventListener("click", () => (location.href = "perfil.html?uid=" + encodeURIComponent(u.uid)));
+    ol.append(li);
     if (yo && u.uid === yo.uid) $("carteraPuesto").textContent = `Vas ${puesto}º de ${ranking.length} en el ranking de puntos.`;
   });
   if (yo && !ranking.some((u) => u.uid === yo.uid)) $("carteraPuesto").textContent = "Aún no estás en el ranking. ¡Registra tu resultado!";
 }
+
 </script>
 </body>
 </html>

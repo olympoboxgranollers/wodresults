@@ -15,6 +15,7 @@ const ICONOS = {
   publicar: '<path d="M4.5 19.5l1-4.5L15.8 4.7a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L9 18.5z"/><path d="M13.5 7l3.5 3.5"/>',
   entrar: '<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M9.5 16.5L14 12 9.5 7.5"/><path d="M14 12H3.5"/>',
   canjes: '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 12.5h17"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8 0-4.5-.6-4.5-2.6 0-1.3 1-2 2-2 2 0 2.5 2.6 2.5 4.6z"/><path d="M12 8.5c1.8 0 4.5-.6 4.5-2.6 0-1.3-1-2-2-2-2 0-2.5 2.6-2.5 4.6z"/>',
+  logros: '<circle cx="12" cy="9" r="5.5"/><path d="M8.6 13.4L7 21l5-2.6 5 2.6-1.6-7.6"/><path d="M12 6.6l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>',
   salir: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'
 };
 const icono = (n) => {
@@ -31,6 +32,7 @@ const PAGINAS = [
   { id: "ranking",   href: "ranking.html",  texto: "Ranking" },
   { id: "puntos",    href: "puntos.html",   texto: "Puntos" },
   { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
+  { id: "logros",    href: "logros.html",   texto: "Logros" },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },
   { id: "publicar",  href: "publicar.html", texto: "Publicar", coach: true }
 ];

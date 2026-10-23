@@ -111,6 +111,12 @@ service cloud.firestore {
       allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40)
+        // Sus marcas personales (RM de snatch y clean & jerk), que verán los demás en su perfil
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rm'])
+        && request.resource.data.rm.keys().hasOnly(['snatch', 'cleanJerk', 'fecha'])
+        && request.resource.data.rm.snatch is number && request.resource.data.rm.snatch >= 0 && request.resource.data.rm.snatch <= 400
+        && request.resource.data.rm.cleanJerk is number && request.resource.data.rm.cleanJerk >= 0 && request.resource.data.rm.cleanJerk <= 400)
         // +10 al momento por registrar: solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
         || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro'])
@@ -143,6 +149,17 @@ service cloud.firestore {
       allow read: if true;
       allow create: if esCoach();
       allow update: if false;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Catálogo de logros (insignias): lo ven los socios con cuenta, solo el coach lo cambia ----------
+    match /logros/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['nombre', 'corto', 'unidad', 'descripcion', 'puntos', 'orden'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && request.resource.data.corto is string && request.resource.data.corto.size() <= 5
+        && request.resource.data.puntos is number && request.resource.data.puntos >= 0;
       allow delete: if esCoach();
     }
 

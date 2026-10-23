@@ -265,3 +265,39 @@ export function escribirValor(valor, tipo) {
   if (tipo === "rondas") return `${Math.floor(valor / 1000)}+${valor % 1000}`;
   return String(valor);
 }
+
+// Títulos de cabecera: la palabra WOD va en minúscula ("Wod del día")
+export const titulo = (t) => String(t || "").replace(/\bWOD\b/g, (m, i) => (i === 0 ? "Wod" : "wod"));
+
+// ---------- Logros (insignias) ----------
+// El catálogo está en Firebase (colección "logros") y el coach lo va ampliando.
+// Estos son los primeros, que el coach puede crear de golpe con un botón.
+export const LOGROS_INICIALES = [
+  { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100 },
+  { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250 },
+  { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500 },
+  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750 },
+  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000 }
+];
+// Logros conseguidos por un socio, del más importante al menos
+export function insigniasDe(ficha) {
+  const m = ficha?.insignias || {};
+  return Object.entries(m).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.orden || 0) - (a.orden || 0) || String(b.fecha).localeCompare(String(a.fecha)));
+}
+// Medalla redonda: número grande + unidad; las personalizadas llevan una estrella
+export function crearInsignia(ins, tam = 56) {
+  const d = document.createElement("span");
+  d.className = "insignia";
+  d.style.setProperty("--t", tam + "px");
+  d.title = ins.nombre || "";
+  const corto = ins.corto || "★";
+  const unidad = ins.unidad || "";
+  d.innerHTML = `<svg viewBox="0 0 60 60" aria-hidden="true"><defs><linearGradient id="g${tam}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3c8ee"/><stop offset="1" stop-color="#9b6db0"/></linearGradient></defs>
+    <circle cx="30" cy="30" r="27" fill="none" stroke="url(#g${tam})" stroke-width="3"/>
+    <circle cx="30" cy="30" r="21.5" fill="rgba(195,155,211,.14)"/></svg>`;
+  const t = document.createElement("span"); t.className = "insignia-txt" + (corto.length >= 4 ? " largo" : corto.length === 3 ? " medio" : "");
+  t.append(Object.assign(document.createElement("b"), { textContent: corto }));
+  if (unidad && tam >= 40) t.append(Object.assign(document.createElement("small"), { textContent: unidad }));
+  d.append(t);
+  return d;
+}

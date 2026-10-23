@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#2f3237">
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -96,7 +96,7 @@
 <header>
   <div>
     <div class="marca" id="box"></div>
-    <h1 id="wodNombre">WOD del día</h1>
+    <h1 id="wodNombre">Wod del día</h1>
   </div>
   <div class="meta">
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
@@ -142,7 +142,7 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 import { escucharCuenta } from "./cuenta.js";
 import { cerrarDiasPendientes } from "./cierre.js";
@@ -294,7 +294,7 @@ function escucharWod() {
   wod = snap.exists() ? snap.data() : null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
-  $("wodNombre").textContent = wod?.nombre || `${CLASES[clase].nombre} del día`;
+  $("wodNombre").textContent = titulo(wod?.nombre || `${CLASES[clase].nombre} del día`);
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "Pulsa ⚙ para configurar el WOD";
   $("descripcionTexto").textContent = wod?.descripcion || "";
   $("descripcion").hidden = !wod?.descripcion;
@@ -321,7 +321,7 @@ function cambiarClase(nueva) {
   $("abrirAjustes").textContent = `⚙ WOD de hoy · ${CLASES[clase].nombre}`;
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   resultados = todos.filter((r) => claseDe(r) === clase);
-  $("wodNombre").textContent = "WOD del día"; $("descripcion").hidden = true;
+  $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("descripcion").hidden = true;
   pintar();
   escucharWod();
 }

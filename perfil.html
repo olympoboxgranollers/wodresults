@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
+<title>Perfil Olympo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
+  main { width: 100%; max-width: 560px; }
+  header .marca { color: #fff; font-size: 13px; }
+  .volver { display: inline-block; margin-top: 18px; color: var(--suave); text-decoration: none; font-size: 14px; background: none; border: 0; padding: 0; }
+  .cabeza { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; flex: none;
+    background: color-mix(in srgb, var(--lila) 18%, var(--panel)); border: 2px solid color-mix(in srgb, var(--lila) 60%, transparent);
+    color: var(--lila); font-size: 26px; font-weight: 700; }
+  h1 { font-size: 30px; color: var(--lila); overflow-wrap: anywhere; }
+  .yo { color: var(--suave); font-size: 13px; margin-top: 2px; }
+  .datos { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 24px; border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
+  .dato { padding: 16px 4px; text-align: center; }
+  .dato + .dato { border-left: 1px solid var(--borde); }
+  .dato b { display: block; font-size: 24px; font-weight: 700; color: var(--texto); font-variant-numeric: tabular-nums; }
+  .dato span { color: var(--suave); font-size: 12px; }
+  h2 { font-size: 20px; margin: 28px 0 14px; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+  .medalla { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 14px 6px 12px; border-radius: 16px; background: var(--panel); }
+  .medalla-nombre { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .medalla-fecha { font-size: 11px; color: var(--suave); }
+  .medalla.falta .medalla-nombre { color: var(--suave); font-weight: 500; }
+  .rm-titulo { display: flex; align-items: center; justify-content: space-between; }
+  .rm-editar { background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 500; }
+  .rm { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rm-caja { background: var(--panel); border-radius: 16px; padding: 16px; }
+  .rm-caja span { display: block; color: var(--suave); font-size: 13px; }
+  .rm-caja b { display: block; font-size: 30px; font-weight: 700; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
+  .rm-caja b small { font-size: 15px; font-weight: 500; color: var(--suave); margin-left: 3px; }
+  .rm-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .rm-form label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
+  .rm-form input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); }
+  .rm-form input:focus { border-color: var(--lila); outline: none; }
+  .rm-acc { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .rm-guardar { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 11px 22px; font-weight: 700; font-size: 15px; }
+  .rm-cancelar { background: none; border: 0; color: var(--suave); font-size: 14px; }
+  .rm-msg { font-size: 14px; color: var(--error); }
+  .rm-fecha { color: var(--suave); font-size: 12px; margin-top: 8px; }
+  .vacio { color: var(--suave); padding: 24px 0; text-align: center; font-size: 15px; grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca">Olympo Box</div>
+  </header>
+  <button type="button" class="volver" id="volver">← Volver</button>
+
+  <div class="cabeza">
+    <div class="avatar" id="avatar">·</div>
+    <div>
+      <h1 id="nombre">Cargando…</h1>
+      <div class="yo" id="yo" hidden>Este es tu perfil</div>
+    </div>
+  </div>
+
+  <div class="datos">
+    <div class="dato"><b id="dPuntos">–</b><span>puntos</span></div>
+    <div class="dato"><b id="dPuesto">–</b><span>en el ranking</span></div>
+    <div class="dato"><b id="dLogros">–</b><span>logros</span></div>
+  </div>
+
+  <h2 class="rm-titulo">Marcas personales <button type="button" class="rm-editar" id="rmEditar" hidden>Editar</button></h2>
+  <div class="rm">
+    <div class="rm-caja"><span>Snatch</span><b id="rmSnatch">–</b></div>
+    <div class="rm-caja"><span>Clean &amp; Jerk</span><b id="rmCj">–</b></div>
+  </div>
+  <form class="rm-form" id="rmForm" hidden autocomplete="off">
+    <label>Snatch (kg)<input id="fSnatch" inputmode="decimal" placeholder="Ej. 60"></label>
+    <label>Clean &amp; Jerk (kg)<input id="fCj" inputmode="decimal" placeholder="Ej. 80"></label>
+    <div class="rm-acc"><button type="submit" class="rm-guardar">Guardar</button><button type="button" class="rm-cancelar" id="rmCancelar">Cancelar</button><span class="rm-msg" id="rmMsg"></span></div>
+  </form>
+  <div class="rm-fecha" id="rmFecha"></div>
+
+  <h2>Logros conseguidos</h2>
+  <div class="rejilla" id="conseguidos"></div>
+
+  <h2 id="tituloFaltan" hidden>Le faltan</h2>
+  <div class="rejilla" id="faltan"></div>
+</main>
+
+<script type="module">
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy } from "./comun.js";
+import { escucharCuenta } from "./cuenta.js";
+import { montarMenu } from "./menu.js";
+
+const $ = (id) => document.getElementById(id);
+montarMenu({ actual: "", cuenta: false });
+$("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "puntos.html")));
+
+const uid = new URLSearchParams(location.search).get("uid");
+let ficha = null, catalogo = [], ranking = [], yo = null;
+
+escucharCuenta(({ user }) => {
+  yo = user;
+  const esYo = !!user && (!uid || uid === user.uid);
+  $("yo").hidden = !esYo;
+  $("tituloFaltan").textContent = esYo ? "Te faltan" : "Le faltan";
+  if (!uid && user) escucharFicha(user.uid);
+  pintar();
+});
+let dejar = null;
+if (uid) escucharFicha(uid);
+
+function escucharFicha(id) {
+  if (dejar) dejar();
+  dejar = onSnapshot(doc(db, "usuarios", id), (s) => {
+    if (s.exists()) ficha = { uid: s.id, ...s.data() };
+    // Mi perfil aunque aún no haya registrado nada: se crea la ficha al guardar
+    else if (yo && id === yo.uid) ficha = { uid: id, nombre: yo.displayName || yo.email.split("@")[0], puntos: 0, nueva: true };
+    else ficha = false;
+    pintar();
+  }, () => { ficha = false; pintar(); });
+}
+onSnapshot(query(collection(db, "logros"), orderBy("orden", "asc")), (s) => { catalogo = s.docs.map((d) => ({ id: d.id, ...d.data() })); pintar(); }, () => {});
+onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc")), (s) => { ranking = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0); pintar(); }, () => {});
+
+function pintar() {
+  if (ficha === false) { $("nombre").textContent = "Socio no encontrado"; return; }
+  if (!ficha) return;
+  const nombre = ficha.nombre || "Socio";
+  $("nombre").textContent = nombre;
+  document.title = `${nombre} · Olympo`;
+  $("avatar").textContent = nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  $("dPuntos").textContent = fmtPuntos(ficha.puntos || 0);
+  // Puesto en el ranking de puntos (empates comparten puesto)
+  let puesto = "–", p = 0, ant = null;
+  ranking.forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
+  $("dPuesto").textContent = puesto;
+  const mias = insigniasDe(ficha);
+  $("dLogros").textContent = mias.length;
+
+  // Marcas personales (RM)
+  const rm = ficha.rm || {};
+  const kg = (v) => (v ? `${String(v).replace(".", ",")}<small>kg</small>` : "–");
+  $("rmSnatch").innerHTML = kg(rm.snatch);
+  $("rmCj").innerHTML = kg(rm.cleanJerk);
+  $("rmFecha").textContent = rm.fecha ? "Actualizado el " + new Date(rm.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
+  const esYo = !!yo && yo.uid === ficha.uid;
+  $("rmEditar").hidden = !esYo || !$("rmForm").hidden;
+
+  const c = $("conseguidos"); c.replaceChildren();
+  if (!mias.length) c.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no tiene logros." }));
+  for (const m of mias) {
+    const d = document.createElement("div"); d.className = "medalla";
+    d.append(crearInsignia(m, 60), Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: m.nombre }));
+    if (m.fecha) d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" }) }));
+    c.append(d);
+  }
+  const tiene = ficha.insignias || {};
+  const faltan = catalogo.filter((l) => !tiene[l.id]);
+  $("tituloFaltan").hidden = !faltan.length;
+  const f = $("faltan"); f.replaceChildren();
+  for (const l of faltan) {
+    const d = document.createElement("div"); d.className = "medalla falta";
+    const med = crearInsignia(l, 60); med.classList.add("bloqueada");
+    d.append(med, Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: l.nombre }));
+    f.append(d);
+  }
+}
+
+// ---------- Editar mis RM (solo en mi propio perfil) ----------
+$("rmEditar").addEventListener("click", () => {
+  const rm = ficha?.rm || {};
+  $("fSnatch").value = rm.snatch ? String(rm.snatch).replace(".", ",") : "";
+  $("fCj").value = rm.cleanJerk ? String(rm.cleanJerk).replace(".", ",") : "";
+  $("rmMsg").textContent = "";
+  $("rmForm").hidden = false; $("rmEditar").hidden = true;
+  $("fSnatch").focus();
+});
+$("rmCancelar").addEventListener("click", () => { $("rmForm").hidden = true; pintar(); });
+$("rmForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const leer = (id) => { const t = $(id).value.trim().replace(",", "."); if (!t) return 0; const n = parseFloat(t); return n > 0 && n <= 400 ? Math.round(n * 10) / 10 : NaN; };
+  const snatch = leer("fSnatch"), cleanJerk = leer("fCj");
+  if (isNaN(snatch) || isNaN(cleanJerk)) { $("rmMsg").textContent = "Escribe los kilos (por ejemplo 62,5)."; return; }
+  try {
+    if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre: ficha.nombre.slice(0, 40), puntos: 0 });
+    await updateDoc(doc(db, "usuarios", yo.uid), { rm: { snatch, cleanJerk, fecha: hoy() } });
+    $("rmForm").hidden = true; pintar();
+  } catch (err) { console.error(err); $("rmMsg").textContent = "No se ha podido guardar."; }
+});
+</script>
+</body>
+</html>

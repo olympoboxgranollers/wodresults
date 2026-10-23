@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#2f3237">
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
@@ -52,6 +52,7 @@
   li .cat { display: block; font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: 3px; }
   /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
   li { border-color: color-mix(in srgb, var(--malva) 55%, transparent) !important; background: color-mix(in srgb, var(--malva) 7%, var(--panel)); }
+  li.con-perfil { cursor: pointer; }
   li.p1 { border-color: var(--malva) !important; box-shadow: 0 0 0 1px var(--malva), 0 0 18px color-mix(in srgb, var(--malva) 30%, transparent); } li.p1 .pos { color: var(--oro); }
   li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
   li.nuevo { animation: entra 1.6s ease-out; }
@@ -64,7 +65,7 @@
 <main>
   <header>
     <div class="marca" id="box">Resultados atletas</div>
-    <h1 id="wodNombre">WOD del día</h1>
+    <h1 id="wodNombre">Wod del día</h1>
     <div class="meta" id="tipo"></div>
     <button type="button" class="directo" id="directo">En directo</button>
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
@@ -91,7 +92,7 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js";
 import { montarMenu, abrirEditor } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -149,6 +150,8 @@ function pintar() {
     li.append(num, nom, res);
     // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
     if (esCoach && r.id && !r.id.startsWith("_")) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }
+    // Socios: tocar a alguien abre su perfil con sus logros
+    else if (r.uid) { li.classList.add("con-perfil"); li.addEventListener("click", () => (location.href = "perfil.html?uid=" + encodeURIComponent(r.uid))); }
     ol.append(li);
   });
   // Pique: avisa cuando cambia el líder o hay empate en cabeza
@@ -169,7 +172,7 @@ function escucharWod() {
   wod = snap.exists() ? snap.data() : null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
-  $("wodNombre").textContent = wod?.nombre || `${CLASES[clase].nombre} del día`;
+  $("wodNombre").textContent = titulo(wod?.nombre || `${CLASES[clase].nombre} del día`);
   $("tipo").textContent = wod ? TIPOS[wod.tipo]?.etiqueta || "" : "";
   $("descripcionTexto").textContent = wod?.descripcion || "";
   $("descripcion").hidden = !wod?.descripcion;
@@ -220,7 +223,7 @@ function cambiarClase(nueva) {
   menu.repintar();
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   todos = []; resultados = [];
-  $("wodNombre").textContent = `${CLASES[clase].nombre} del día`; $("tipo").textContent = ""; $("descripcion").hidden = true;
+  $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("tipo").textContent = ""; $("descripcion").hidden = true;
   pintar();
   escucharWod();
   conectar();

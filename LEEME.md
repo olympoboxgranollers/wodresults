@@ -8,6 +8,8 @@
 | `ranking.html` | Socios, desde casa | Clasificación en directo por clase (WOD / Hyrox / Funcional) y categoría |
 | `puntos.html` | Socios | Cartera de puntos, historial y ranking de puntos |
 | `canjes.html` | Socios y coach | Catálogo de objetos canjeables con puntos; el coach añade objetos (precio y puntos) y los entrega descontando puntos |
+| `logros.html` | Socios y coach | Medallas por clases (100, 250, 500, 750, 1000…); el coach crea logros nuevos y se los da a los socios con puntos |
+| `perfil.html` | Socios | Perfil de cada socio: puntos, puesto, logros y sus RM de snatch y clean & jerk (cada uno edita los suyos) |
 | `pantalla.html` | TV del box | Clasificación en directo con QR por clase; reparte los puntos a las 00:00 si la sesión del coach está abierta |
 | `publicar.html` | Coach | Publicar el WOD de cada clase y corregir, validar o borrar resultados |
 
