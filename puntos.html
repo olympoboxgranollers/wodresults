@@ -150,7 +150,7 @@ escucharCuenta(({ user, ficha }) => {
         dd.textContent = dia;
       } else if (m.tipo === "canje") {
         t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`;
-        dd.textContent = dia;
+        dd.textContent = m.estado === "pendiente" ? `${dia} · pendiente de recoger` : dia;
       } else if (m.tipo === "registro") {
         t.textContent = `${c.nombre} · ✅ Resultado registrado`;
         dd.textContent = dia;

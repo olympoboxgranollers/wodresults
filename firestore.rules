@@ -123,7 +123,15 @@ service cloud.firestore {
         && request.resource.data.puntos == resource.data.puntos + 10
         && request.resource.data.ultimoRegistro is string
         && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
-        && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)));
+        && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)))
+        // Canje hecho por el propio socio: se descuenta exactamente el coste del objeto (lo comprueba su movimiento) y nunca queda en negativo
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoCanje'])
+        && request.resource.data.ultimoCanje is string
+        && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje))
+        && getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje)).data.tipo == 'canje'
+        && request.resource.data.puntos == resource.data.puntos + getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje)).data.puntos
+        && request.resource.data.puntos >= 0);
       allow delete: if esCoach();
 
       // Historial de puntos de cada socio
@@ -138,7 +146,18 @@ service cloud.firestore {
           && mid == request.resource.data.fecha + '_' + request.resource.data.clase + '_reg'
           && esHoy(request.resource.data.fecha)
           && exists(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid))
-          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoRegistro == mid);
+          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoRegistro == mid)
+          // ...o su "canje": el coste tiene que ser el del catálogo y a la vez se crea el pedido para el coach
+          || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['fecha', 'tipo', 'objeto', 'objetoId', 'puntos', 'estado'])
+          && request.resource.data.tipo == 'canje'
+          && request.resource.data.estado == 'pendiente'
+          && request.resource.data.objetoId is string
+          && request.resource.data.puntos == -get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.puntos
+          && request.resource.data.objeto == get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.nombre
+          && esHoy(request.resource.data.fecha)
+          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoCanje == mid
+          && existsAfter(/databases/$(database)/documents/pedidos/$(uid + '_' + mid)));
         allow update, delete: if esCoach();
       }
     }
@@ -148,6 +167,23 @@ service cloud.firestore {
     match /cierres/{id} {
       allow read: if true;
       allow create: if esCoach();
+      allow update: if false;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Canjes pendientes de entregar (el socio canjea, el coach entrega) ----------
+    match /pedidos/{id} {
+      allow read: if esCoach() || (conCuenta() && resource.data.uid == request.auth.uid);
+      allow create: if conCuenta()
+        && request.resource.data.keys().hasOnly(['uid', 'nombre', 'objeto', 'objetoId', 'puntos', 'fecha', 'mov'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && request.resource.data.mov is string
+        && id == request.auth.uid + '_' + request.resource.data.mov
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)/movimientos/$(request.resource.data.mov)).data.puntos == -request.resource.data.puntos
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)/movimientos/$(request.resource.data.mov)).data.objetoId == request.resource.data.objetoId
+        && request.resource.data.objeto == get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.nombre
+        && esHoy(request.resource.data.fecha);
       allow update: if false;
       allow delete: if esCoach();
     }

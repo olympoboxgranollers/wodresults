@@ -65,6 +65,24 @@
   .entrega select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); }
   .entrega .guardar { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px; font-weight: 800; font-size: 15px; }
   .entrega .guardar:disabled { opacity: .5; }
+  .item-acciones .canjear { background: var(--lila); border-color: var(--lila); color: #1f2125; font-weight: 700; padding: 9px 20px; font-size: 14px; }
+  .confirmar { grid-column: 1 / -1; display: grid; gap: 10px; margin-top: 10px; padding: 14px; border-radius: 12px; background: var(--panel); font-size: 14px; line-height: 1.45; }
+  .confirmar .botones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .confirmar .guardar { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 11px 20px; font-weight: 800; font-size: 15px; }
+  .confirmar .guardar:disabled { opacity: .5; }
+  .confirmar .cancelar { background: none; border: 0; color: var(--suave); font-size: 14px; }
+  .pedidos { margin-top: 22px; border: 1px solid var(--lila); border-radius: 16px; padding: 6px 16px; }
+  .pedidos-titulo { font-size: 14px; font-weight: 600; color: var(--lila); padding: 12px 0 4px; }
+  .pedido { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--borde); }
+  .pedido:first-of-type { border-top: 0; }
+  .pedido b { font-weight: 600; }
+  .pedido .d { grid-column: 1 / -1; color: var(--suave); font-size: 13px; }
+  .pedido .pts { color: var(--lila); font-weight: 700; white-space: nowrap; }
+  .pedido .acc { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
+  .pedido .acc button { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .pedido .acc .ok { background: var(--lila); border-color: var(--lila); color: #1f2125; font-weight: 700; }
+  .pedido .acc .anular { color: var(--error); }
+  .aviso-ok { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(61,220,132,.12); color: #3ddc84; font-size: 14px; }
   .vacio { color: var(--suave); padding: 36px 0; text-align: center; font-size: 15px; }
   .nota { margin-top: 26px; color: var(--suave); font-size: 13px; line-height: 1.55; }
 
@@ -96,6 +114,12 @@
     <b><span id="misPuntos">0</span><small>pts</small></b>
   </div>
 
+  <div class="aviso-ok" id="avisoOk" role="status" hidden></div>
+  <section class="pedidos" id="pedidos" hidden>
+    <div class="pedidos-titulo" id="pedidosTitulo">Pendientes de entregar</div>
+    <div id="pedidosLista"></div>
+  </section>
+
   <!-- Solo el coach -->
   <form class="nuevo" id="nuevo" hidden autocomplete="off">
     <div class="nuevo-titulo" id="nuevoTitulo">Añadir objeto</div>
@@ -120,7 +144,7 @@
 
   <ul class="lista" id="lista"><li class="vacio">Cargando…</li></ul>
 
-  <p class="nota" id="nota">Para canjear un objeto, díselo al coach en el box. Él te lo entregará y descontará los puntos.</p>
+  <p class="nota" id="nota"></p>
 </main>
 
 <dialog class="zoom" id="zoom" aria-label="Foto del objeto">
@@ -133,7 +157,7 @@
 </dialog>
 
 <script type="module">
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, hoy } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach } from "./menu.js";
@@ -141,20 +165,23 @@ import { montarMenu, esCuentaCoach } from "./menu.js";
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
 
-let user = null, coach = false, puntos = 0, objetos = [], editando = null, abierto = null;
+let user = null, coach = false, puntos = 0, objetos = [], editando = null, abierto = null, confirmando = null;
+let pedidos = [], dejarPedidos = null, pedidosDe = null, miNombre = "";
 let imagen = null;  // foto del objeto (ya reducida), o null
 
 escucharCuenta(({ user: u, ficha }) => {
   user = u;
   coach = esCuentaCoach(u);
   puntos = ficha?.puntos || 0;
+  miNombre = ficha?.nombre || "";
   $("misPuntos").textContent = fmtPuntos(puntos);
   $("saldo").hidden = coach;
   $("nuevo").hidden = !coach;
   $("nota").textContent = coach
     ? "Los socios ven este catálogo y cuántos puntos les faltan. Cuando entregues un objeto, pulsa Entregar y elige al socio: se le descuentan los puntos y queda en su historial."
-    : "Para canjear un objeto, díselo al coach en el box. Él te lo entregará y descontará los puntos.";
+    : "Cuando tengas puntos suficientes, pulsa Canjear: se descuentan de tu cartera al momento y el coach te lo entrega en el box.";
   if (coach && !dejarSocios) escucharSocios();
+  escucharPedidos();
   pintar();
 });
 
@@ -165,6 +192,69 @@ function escucharSocios() {
     socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre);
     pintar();
   }, () => {});
+}
+
+// Canjes pendientes de entregar: el coach ve todos, el socio solo los suyos
+function escucharPedidos() {
+  const quien = coach ? "coach" : user?.uid || null;
+  if (quien === pedidosDe) return;
+  if (dejarPedidos) { dejarPedidos(); dejarPedidos = null; }
+  pedidosDe = quien; pedidos = [];
+  if (!quien) { pintarPedidos(); return; }
+  const q = coach ? collection(db, "pedidos") : query(collection(db, "pedidos"), where("uid", "==", user.uid));
+  dejarPedidos = onSnapshot(q, (s) => {
+    pedidos = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
+    pintarPedidos();
+  }, () => {});
+}
+
+function pintarPedidos() {
+  const caja = $("pedidosLista"); caja.replaceChildren();
+  $("pedidos").hidden = !pedidos.length;
+  $("pedidosTitulo").textContent = coach ? `Pendientes de entregar · ${pedidos.length}` : "Tus canjes pendientes de recoger";
+  for (const p of pedidos) {
+    const fila = document.createElement("div"); fila.className = "pedido";
+    fila.append(Object.assign(document.createElement("b"), { textContent: coach ? `${p.nombre} · ${p.objeto}` : p.objeto }));
+    fila.append(Object.assign(document.createElement("span"), { className: "pts", textContent: `−${fmtPuntos(p.puntos)} pts` }));
+    const dia = new Date(p.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+    fila.append(Object.assign(document.createElement("div"), { className: "d", textContent: coach ? `Canjeado el ${dia}` : `Canjeado el ${dia} · pídeselo al coach en el box` }));
+    if (coach) {
+      const acc = document.createElement("div"); acc.className = "acc";
+      const ok = Object.assign(document.createElement("button"), { type: "button", className: "ok", textContent: "Entregado" });
+      const an = Object.assign(document.createElement("button"), { type: "button", className: "anular", textContent: "Anular y devolver puntos" });
+      ok.addEventListener("click", async () => {
+        ok.disabled = true;
+        try {
+          const lote = writeBatch(db);
+          lote.update(doc(db, "usuarios", p.uid, "movimientos", p.mov), { estado: "entregado" });
+          lote.delete(doc(db, "pedidos", p.id));
+          await lote.commit();
+          avisoOk(`✓ ${p.objeto} entregado a ${p.nombre}`);
+        } catch (e) { console.error(e); ok.disabled = false; }
+      });
+      let seguro = false;
+      an.addEventListener("click", async () => {
+        if (!seguro) { seguro = true; an.textContent = "¿Seguro? Se le devuelven los puntos"; setTimeout(() => { seguro = false; an.textContent = "Anular y devolver puntos"; }, 4000); return; }
+        an.disabled = true;
+        try {
+          const lote = writeBatch(db);
+          lote.update(doc(db, "usuarios", p.uid), { puntos: increment(p.puntos) });
+          lote.delete(doc(db, "usuarios", p.uid, "movimientos", p.mov));
+          lote.delete(doc(db, "pedidos", p.id));
+          await lote.commit();
+          avisoOk(`Canje anulado: ${p.nombre} recupera ${fmtPuntos(p.puntos)} pts`);
+        } catch (e) { console.error(e); an.disabled = false; }
+      });
+      acc.append(ok, an); fila.append(acc);
+    }
+    caja.append(fila);
+  }
+}
+
+let tAviso = null;
+function avisoOk(t) {
+  const a = $("avisoOk"); a.textContent = t; a.hidden = false;
+  clearTimeout(tAviso); tAviso = setTimeout(() => { a.hidden = true; }, 6000);
 }
 
 onSnapshot(query(collection(db, "canjeables"), orderBy("puntos", "asc")), (s) => {
@@ -202,6 +292,15 @@ function pintar() {
       const i = document.createElement("i"); i.style.width = Math.min(100, (puntos / o.puntos) * 100) + "%";
       barra.append(i); li.append(barra);
       li.append(Object.assign(document.createElement("div"), { className: "item-estado", textContent: falta === 0 ? "Ya lo puedes canjear" : `Te faltan ${fmtPuntos(falta)} pts` }));
+      if (falta === 0 && user) {
+        if (confirmando === o.id) li.append(panelCanje(o));
+        else {
+          const acc = document.createElement("div"); acc.className = "item-acciones";
+          const cj = Object.assign(document.createElement("button"), { type: "button", className: "canjear", textContent: "Canjear" });
+          cj.addEventListener("click", () => { confirmando = o.id; pintar(); });
+          acc.append(cj); li.append(acc);
+        }
+      }
     } else {
       const acc = document.createElement("div"); acc.className = "item-acciones";
       const ed = Object.assign(document.createElement("button"), { type: "button", textContent: "Editar" });
@@ -219,6 +318,38 @@ function pintar() {
     }
     ul.append(li);
   }
+}
+
+// El socio canjea él mismo: se le descuentan los puntos y queda pendiente de entregar
+function panelCanje(o) {
+  const box = document.createElement("div"); box.className = "confirmar";
+  box.append(Object.assign(document.createElement("div"), { textContent: `¿Canjear ${o.nombre} por ${fmtPuntos(o.puntos)} pts? Te quedarán ${fmtPuntos(puntos - o.puntos)} pts.` }));
+  const bot = document.createElement("div"); bot.className = "botones";
+  const si = Object.assign(document.createElement("button"), { type: "button", className: "guardar", textContent: "Sí, canjear" });
+  const no = Object.assign(document.createElement("button"), { type: "button", className: "cancelar", textContent: "Cancelar" });
+  const m = Object.assign(document.createElement("span"), { className: "msg" });
+  no.addEventListener("click", () => { confirmando = null; pintar(); });
+  si.addEventListener("click", async () => {
+    if (puntos < o.puntos) { m.className = "msg error"; m.textContent = "No tienes puntos suficientes."; return; }
+    si.disabled = true; no.disabled = true;
+    try {
+      const mov = doc(collection(db, "usuarios", user.uid, "movimientos"));
+      const fecha = hoy();
+      const lote = writeBatch(db);
+      lote.set(mov, { fecha, tipo: "canje", objeto: o.nombre, objetoId: o.id, puntos: -o.puntos, estado: "pendiente" });
+      lote.update(doc(db, "usuarios", user.uid), { puntos: increment(-o.puntos), ultimoCanje: mov.id });
+      lote.set(doc(db, "pedidos", `${user.uid}_${mov.id}`), { uid: user.uid, nombre: (miNombre || user.displayName || "Socio").slice(0, 40), objeto: o.nombre, objetoId: o.id, puntos: o.puntos, fecha, mov: mov.id });
+      await lote.commit();
+      confirmando = null;
+      avisoOk(`🎁 ¡Canjeado! ${o.nombre} · −${fmtPuntos(o.puntos)} pts. Pídeselo al coach en el box.`);
+      pintar();
+    } catch (e) {
+      console.error(e); si.disabled = false; no.disabled = false;
+      m.className = "msg error"; m.textContent = e?.code === "permission-denied" ? "No se ha podido canjear (¿puntos suficientes?)." : "No se ha podido canjear. Inténtalo de nuevo.";
+    }
+  });
+  bot.append(si, no, m); box.append(bot);
+  return box;
 }
 
 // Entregar un objeto: elegir socio y descontarle los puntos
