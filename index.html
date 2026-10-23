@@ -82,6 +82,13 @@
   .sensaciones button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
   .sensaciones .icono { width: 38px; height: 38px; font-size: 30px; line-height: 38px; text-align: center; display: block; }
   .sensaciones button[aria-pressed="true"] { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 22%, var(--panel)); }
+  .portada { padding: 40px 0 28px; }
+  .portada-marca { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 800; text-transform: uppercase; color: #fff; font-size: clamp(46px, 15vw, 64px); line-height: .95; letter-spacing: .02em; text-wrap: balance; }
+  .portada-lema { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; font-size: 20px; line-height: 1.3; }
+  .portada-lema span:nth-child(1) { color: var(--texto); }
+  .portada-lema span:nth-child(2) { color: color-mix(in srgb, var(--malva) 70%, var(--texto)); }
+  .portada-lema span:nth-child(3) { color: var(--malva); }
+  body.sin-sesion #cabecera, body.sin-sesion .fecha-hoy { display: none; }
   .cuenta-barra { margin-bottom: 18px; }
   #acceso { margin-bottom: 18px; }
   .ya-registrado { margin-top: 18px; background: color-mix(in srgb, var(--malva) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.45; }
@@ -94,7 +101,13 @@
 </head>
 <body>
 <main>
-  <header>
+  <!-- Portada solo para entrar o crear la cuenta -->
+  <section class="portada" id="portada" hidden>
+    <div class="portada-marca" id="portadaMarca">Olympo Box</div>
+    <div class="portada-lema"><span>Tu progreso.</span><span>Tu evolución.</span><span>Tus metas.</span></div>
+  </section>
+
+  <header id="cabecera">
     <div class="marca" id="box"></div>
     <h1>Tu resultado</h1>
     <div class="wod" id="wodNombre">WOD de hoy</div>
@@ -233,12 +246,15 @@ $("sensaciones").addEventListener("click", (e) => {
 
 // ---------- Cuenta del socio ----------
 let user = null, ficha = undefined;
-montarAcceso($("acceso"), { titulo: "Entra para subir tu resultado", texto: `Con tu cuenta sumas puntos: ${PUNTOS.registrar} por registrar y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
+montarAcceso($("acceso"), { titulo: "Entra o crea tu cuenta", texto: `Registra tus resultados, sigue tu evolución y suma puntos: ${PUNTOS.registrar} por cada resultado y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
+$("portadaMarca").textContent = NOMBRE_BOX;
 $("salir").addEventListener("click", () => salir());
 escucharCuenta((c) => {
   const cambioUsuario = (c.user?.uid || null) !== (user?.uid || null);
   user = c.user; ficha = c.ficha;
   $("cargandoCuenta").hidden = true;
+  document.body.classList.toggle("sin-sesion", !user);
+  $("portada").hidden = !!user;
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
   $("formulario").hidden = !user || !$("hecho").hidden;
