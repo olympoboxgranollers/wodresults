@@ -20,7 +20,18 @@
   .columna { min-height: 0; display: flex; flex-direction: column; }
   .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .08em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
   .columna h2 small { font-size: 1.1vw; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
-  ol { list-style: none; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: .6vw 1.5vw; align-content: start; }
+  ol { list-style: none; overflow-y: auto; scrollbar-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: .6vw 1.5vw; align-content: start; min-height: 0; }
+  ol::-webkit-scrollbar { display: none; }
+  /* Cuando hay muchos atletas la lista se compacta para que quepan todos */
+  ol.compacta li { padding: .55vw 1vw; font-size: 1.4vw; }
+  ol.compacta li .pos, ol.compacta li .res { font-size: 1.6vw; }
+  ol.compacta li .cat { font-size: .75vw; }
+  ol.compacta li .emoji { width: 1.8vw; height: 1.8vw; }
+  ol.mini { gap: .4vw 1vw; }
+  ol.mini li { padding: .35vw .8vw; font-size: 1.1vw; grid-template-columns: 2.4vw 1fr auto; border-radius: .6vw; }
+  ol.mini li .pos, ol.mini li .res { font-size: 1.25vw; }
+  ol.mini li .cat { font-size: .65vw; margin-top: 0; }
+  ol.mini li .emoji { width: 1.4vw; height: 1.4vw; margin-left: .4vw; }
   .vacio { grid-column: 1 / -1; }
   li { display: grid; grid-template-columns: 3.2vw 1fr auto; align-items: center; gap: 1vw; background: var(--panel); border: 1px solid var(--borde); border-radius: .8vw; padding: .9vw 1.2vw; font-size: 1.7vw; }
   li .pos { font-family: "Oswald", sans-serif; font-size: 2vw; color: var(--suave); text-align: center; }
@@ -162,6 +173,42 @@ function ajustarDescripcion() {
 }
 window.addEventListener("resize", ajustarDescripcion);
 
+// Hace que quepan todos los atletas en la TV: primero compacta la lista y añade columnas;
+// si aun así no caben todos, la lista se desplaza sola de arriba abajo (y también se puede bajar con la rueda del ratón)
+const NIVELES = [
+  { cols: 2, clase: "" }, { cols: 2, clase: "compacta" }, { cols: 3, clase: "compacta" },
+  { cols: 3, clase: "mini" }, { cols: 4, clase: "mini" }
+];
+let autoScroll = null;
+function ajustarLista() {
+  const ol = $("lista");
+  const n = ol.querySelectorAll("li").length;
+  if (window.innerWidth <= 800) {
+    ol.className = ""; ol.style.gridTemplateColumns = ""; ol.style.gridTemplateRows = ""; ol.style.gridAutoFlow = "";
+    pararAutoScroll(); return;
+  }
+  for (const nivel of NIVELES) {
+    ol.className = nivel.clase;
+    ol.style.gridTemplateColumns = `repeat(${nivel.cols}, minmax(0, 1fr))`;
+    ol.style.gridAutoFlow = "column";
+    ol.style.gridTemplateRows = `repeat(${Math.max(1, Math.ceil(n / nivel.cols))}, auto)`;
+    if (ol.scrollHeight <= ol.clientHeight + 1) { pararAutoScroll(); return; }
+  }
+  empezarAutoScroll();
+}
+function pararAutoScroll() { clearInterval(autoScroll); autoScroll = null; $("lista").scrollTop = 0; }
+function empezarAutoScroll() {
+  if (autoScroll || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let pausa = 80;  // ~3 s quieto arriba y abajo
+  autoScroll = setInterval(() => {
+    const ol = $("lista");
+    if (pausa > 0) { pausa--; return; }
+    if (ol.scrollTop + ol.clientHeight >= ol.scrollHeight - 1) { pausa = 80; setTimeout(() => (ol.scrollTop = 0), 2500); return; }
+    ol.scrollTop += 1;
+  }, 40);
+}
+window.addEventListener("resize", ajustarLista);
+
 function pintar() {
   // Tipo del ranking: el del WOD configurado o, si no hay, el más usado por los socios
   let tipo = wod?.tipo;
@@ -183,8 +230,6 @@ function pintar() {
     ol.append(v);
   }
   // Orden en columnas: 1, 2, 3… hacia abajo en la izquierda y luego sigue en la derecha
-  ol.style.gridAutoFlow = "column";
-  ol.style.gridTemplateRows = `repeat(${Math.max(1, Math.ceil(lista.length / 2))}, auto)`;
   const pos = posiciones(lista);
   lista.forEach((r, i) => {
     const li = document.createElement("li");
@@ -202,6 +247,7 @@ function pintar() {
     li.append(num, nom, res);
     ol.append(li);
   });
+  ajustarLista();
   // Pique: avisa cuando cambia el líder o hay empate en cabeza
   // (solo cuando ya han llegado el WOD y los resultados, para no avisar al abrir la página)
   if (wod && cargado.wod && cargado.res) {
