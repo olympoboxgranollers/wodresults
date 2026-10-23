@@ -57,13 +57,13 @@
   .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
   .escanear .cta { font-size: 1.7vw; }
   .escanear .total { margin-top: .5vw; }
-  .descripcion { width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
+  .descripcion { text-transform: uppercase; width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
   #descripcionTexto { display: block; column-gap: 1.6vw; }
   .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
   aside { min-height: 0; }
   .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
-  dialog textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
+  dialog textarea { text-transform: uppercase;  width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
   .ajustes { position: fixed; left: 1vw; bottom: calc(1vw + 52px); background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
   .ajustes:hover { opacity: 1; }
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
@@ -331,7 +331,7 @@ $("abrirAjustes").addEventListener("click", () => {
 $("dialogo").addEventListener("close", async () => {
   if ($("dialogo").returnValue !== "guardar") return;
   const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
-  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().slice(0, 1000);
+  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 1000);
   try {
     await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });
   } catch (err) {

@@ -15,7 +15,7 @@
   header .marca { color: #fff; font-size: 14px; }
   h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
   .wod { color: var(--suave); margin-top: 8px; font-size: 15px; }
-  .wod-desc { margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+  .wod-desc { text-transform: uppercase; margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; white-space: pre-line; }
   label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
   .campo { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; font-size: 20px; outline: none; }
   .campo:focus { border-color: var(--acento); }
@@ -284,6 +284,9 @@ escucharCuenta((c) => {
   user = c.user; ficha = c.ficha;
   $("cargandoCuenta").hidden = true;
   document.body.classList.toggle("sin-sesion", !user);
+  // Sin sesión, la pantalla de entrar siempre en lila (no en el color de la última clase usada)
+  if (!user) document.documentElement.style.setProperty("--malva", CLASES.wod.color);
+  else ponerColorClase(clase);
   $("portada").hidden = !!user;
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
@@ -291,6 +294,9 @@ escucharCuenta((c) => {
   $("avisoCoach").hidden = !esCoach;
   $("formulario").hidden = !user || esCoach || !$("hecho").hidden;
   if (!user) { $("hecho").hidden = true; return; }
+  // Si venías de otra página (ranking, puntos…), vuelve a ella al entrar
+  const volver = new URLSearchParams(location.search).get("volver");
+  if (volver && /^[a-z]+\.html(\?[\w=&-]*)?$/.test(volver) && !volver.startsWith("index.html")) { location.replace(volver); return; }
   if (esCoach) { $("hecho").hidden = true; }
   $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
@@ -667,7 +673,7 @@ $("otro").addEventListener("click", () => {
 });
 
 // Arranque: menú, pestañas de clase y la clase con la que se abre (la del QR o la última usada)
-const menu = montarMenu({ actual: "resultado", cuenta: false });
+const menu = montarMenu({ actual: "resultado", cuenta: false, protegida: false });
 crearPestanas($("pestanas"), clase, cambiarClase);
 cambiarClase(clase);
 </script>

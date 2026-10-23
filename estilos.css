@@ -168,3 +168,6 @@ body.con-menu { padding-bottom: 104px !important; }
 /* Filas que el coach puede tocar para editar */
 li.editable { cursor: pointer; }
 li.editable .nom::after { content: " ✎"; color: var(--lila); font-weight: 400; }
+
+/* Mientras se comprueba la sesión en una página protegida, no se enseña nada */
+html.esperando-sesion body { visibility: hidden; }

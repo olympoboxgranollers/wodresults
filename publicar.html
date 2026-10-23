@@ -23,7 +23,7 @@
   label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 18px 0 7px; letter-spacing: .06em; }
   input, select, textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
   input:focus, select:focus, textarea:focus { border-color: var(--malva); }
-  textarea { resize: vertical; line-height: 1.45; min-height: 190px; font-family: inherit; }
+  textarea { text-transform: uppercase; resize: vertical; line-height: 1.45; min-height: 190px; font-family: inherit; }
   .acciones { display: flex; gap: 10px; margin-top: 20px; align-items: center; flex-wrap: wrap; }
   .guardar { flex: 1; min-width: 180px; background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 15px; font-family: "Oswald", sans-serif; font-size: 19px; text-transform: uppercase; letter-spacing: .06em; }
   .guardar:disabled { opacity: .5; }
@@ -327,7 +327,7 @@ function editor(r, tipo) {
 $("formWod").addEventListener("submit", async (e) => {
   e.preventDefault();
   const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
-  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().slice(0, 1000);
+  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 1000);
   $("guardar").disabled = true;
   try {
     await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });

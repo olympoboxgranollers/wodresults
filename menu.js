@@ -33,8 +33,12 @@ const PAGINAS = [
 
 // Pinta el menú. opciones: actual (id de la página), cuenta (mostrar botón Entrar/Salir), tv (versión pequeña para la TV),
 // alCambiar({ user, coach }) se llama cada vez que cambia quién ha entrado
-export function montarMenu({ actual, cuenta = true, tv = false, alCambiar } = {}) {
+export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, protegida = true } = {}) {
+  // Páginas protegidas: sin sesión no se ve nada y se va a la pantalla de entrar (index.html),
+  // que después devuelve a esta misma página
+  if (protegida) document.documentElement.classList.add("esperando-sesion");
   const nav = document.createElement("nav");
+  nav.hidden = true;  // el menú solo aparece con la sesión iniciada
   nav.className = "menu" + (tv ? " menu-tv" : "");
   nav.setAttribute("aria-label", "Páginas");
   document.body.append(nav);
@@ -79,6 +83,13 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar } = {}
   };
   pintar();
   escucharCuenta(({ user: u }) => {
+    if (!u && protegida) {
+      const volver = location.pathname.split("/").pop() + location.search;
+      location.replace("index.html?volver=" + encodeURIComponent(volver));
+      return;
+    }
+    document.documentElement.classList.remove("esperando-sesion");
+    nav.hidden = !u;
     const cambio = (u?.uid || null) !== (user?.uid || null);
     user = u;
     if (u && dialogo?.open) dialogo.close();

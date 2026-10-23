@@ -1,6 +1,6 @@
 // Cuentas de socio: entrar con Google o con email y contraseña.
 // Cada socio tiene su ficha en usuarios/{uid} con su nombre y sus puntos.
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, setPersistence, browserLocalPersistence, browserSessionPersistence,
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, setPersistence, browserLocalPersistence, browserSessionPersistence,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -8,6 +8,9 @@ import { app, db, hoy, idRegistro, PUNTOS } from "./comun.js";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
+// Si se volvió de Google por redirección, recoge el resultado (y el error, si lo hubo)
+let errorRedireccion = null;
+getRedirectResult(auth).catch((e) => { errorRedireccion = e; });
 
 const ERRORES = {
   "auth/invalid-credential": "Email o contraseña incorrectos.",
@@ -18,7 +21,11 @@ const ERRORES = {
   "auth/invalid-email": "Ese email no es válido.",
   "auth/missing-password": "Escribe la contraseña.",
   "auth/too-many-requests": "Demasiados intentos. Espera un minuto y vuelve a probar.",
-  "auth/popup-closed-by-user": "Has cerrado la ventana de Google antes de terminar.",
+  "auth/popup-closed-by-user": "Has cerrado la ventana de Google antes de terminar. Vuelve a pulsar \"Entrar con Google\".",
+  "auth/cancelled-popup-request": "Ya hay una ventana de Google abierta. Termina en ella o ciérrala y vuelve a probar.",
+  "auth/popup-blocked": "El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes para esta web, o ábrela en Safari o Chrome (no dentro de WhatsApp o Instagram).",
+  "auth/operation-not-allowed": "El acceso con este método no está activado en Firebase (Authentication → Método de acceso).",
+  "auth/web-storage-unsupported": "Este navegador no deja guardar la sesión (¿modo privado?). Prueba en una ventana normal.",
   "auth/network-request-failed": "Sin conexión. Revisa tu internet.",
   "auth/unauthorized-domain": "Esta web no está autorizada en Firebase (Authentication → Configuración → Dominios autorizados)."
 };
@@ -90,15 +97,21 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
   let crear = false;
 
   const recordar = q(".acceso-recordar input");
-  q(".acceso-google").addEventListener("click", async () => {
+  // La opción se guarda al marcarla (no al pulsar Google): la ventana de Google tiene que abrirse
+  // en el mismo instante del toque o el navegador la bloquea
+  recordar.addEventListener("change", () => aplicarRecordar(recordar.checked));
+  if (errorRedireccion) msg(textoError(errorRedireccion));
+  let abriendo = false;
+  q(".acceso-google").addEventListener("click", () => {
+    if (abriendo) return;
+    abriendo = true;
     msg("");
-    await aplicarRecordar(recordar.checked);
-    try { await signInWithPopup(auth, proveedorGoogle()); }
-    catch (e) {
-      if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") {
-        await signInWithRedirect(auth, proveedorGoogle());
-      } else msg(textoError(e));
-    }
+    signInWithPopup(auth, proveedorGoogle())
+      .catch((e) => {
+        if (e.code === "auth/operation-not-supported-in-this-environment") return signInWithRedirect(auth, proveedorGoogle());
+        msg(textoError(e));
+      })
+      .finally(() => { abriendo = false; });
   });
   q(".acceso-modo").addEventListener("click", () => {
     crear = !crear;
