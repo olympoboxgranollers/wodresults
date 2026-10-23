@@ -3,10 +3,11 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Resultados de los socios: todos pueden leer y añadir, nadie puede editarlos.
-    // Solo se pueden borrar los de días anteriores (la pantalla los borra sola cada día)
+    // Solo se pueden borrar a partir de medianoche del día siguiente (la pantalla los borra sola a las 00:00)
     match /resultados/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado'])
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'sensacion'])
+        && (!('sensacion' in request.resource.data) || request.resource.data.sensacion in ['duro', 'bien', 'sobrado', 'muerto', 'fuego', 'molestia'])
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
         && request.resource.data.tipo == get(/databases/$(database)/documents/wods/$(request.resource.data.fecha)).data.tipo
         && request.resource.data.nombre is string
@@ -19,13 +20,20 @@ service cloud.firestore {
         && request.resource.data.fecha is string
         && request.resource.data.fecha.size() == 10;
       allow update: if false;
-      allow delete: if request.time > resource.data.creado + duration.value(12, 'h');
+      allow delete: if request.time > timestamp.date(
+          int(resource.data.fecha.split('-')[0]),
+          int(resource.data.fecha.split('-')[1]),
+          int(resource.data.fecha.split('-')[2])) + duration.value(22, 'h');
     }
 
     // WOD del día (lo configura el coach desde la pantalla)
     match /wods/{fecha} {
       allow read: if true;
-      allow write: if request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
+      allow delete: if fecha.size() == 10 && request.time > timestamp.date(
+          int(fecha.split('-')[0]),
+          int(fecha.split('-')[1]),
+          int(fecha.split('-')[2])) + duration.value(22, 'h');
+      allow create, update: if request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
         && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 1000))
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() <= 60

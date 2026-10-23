@@ -39,3 +39,32 @@ export function ordenar(lista, tipo) {
   mismos.sort((a, b) => (menos ? a.valor - b.valor : b.valor - a.valor));
   return [...mismos, ...otros];
 }
+
+// Sensaciones que el socio puede elegir al enviar su resultado (opcional)
+// "codigo" es el nombre del dibujo 3D (emojis Fluent 3D de Microsoft, de uso libre)
+export const SENSACIONES = {
+  duro:     { emoji: "😫", codigo: "1f62b", texto: "Muy duro" },
+  bien:     { emoji: "🙂", codigo: "1f642", texto: "Bien" },
+  sobrado:  { emoji: "😎", codigo: "1f60e", texto: "Sobrado" },
+  muerto:   { emoji: "💀", codigo: "1f480", texto: "Me ha matado" },
+  fuego:    { emoji: "🔥", codigo: "1f525", texto: "A tope" },
+  molestia: { emoji: "🤕", codigo: "1f915", texto: "Con molestias" }
+};
+
+// Crea el emoji en 3D; si la imagen no carga, muestra el emoji normal del aparato
+export function crearEmoji(clave, clase = "emoji") {
+  const s = SENSACIONES[clave];
+  if (!s) return null;
+  const img = document.createElement("img");
+  img.className = clase;
+  img.alt = s.emoji;
+  img.title = s.texto;
+  img.src = `https://unpkg.com/@lobehub/fluent-emoji-3d@1.1.0/assets/${s.codigo}.webp`;
+  img.onerror = () => {
+    const t = document.createElement("span");
+    t.className = clase;
+    t.textContent = s.emoji;
+    img.replaceWith(t);
+  };
+  return img;
+}

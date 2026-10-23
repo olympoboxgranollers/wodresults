@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="estilos.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 29vw; grid-template-rows: auto 1fr; gap: 2vw; }
+  body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
   header .marca { color: #fff; font-size: 1.3vw; }
   .fecha-hoy { right: 2.5vw; bottom: 1.2vw; font-size: 1.4vw; }
@@ -25,9 +25,9 @@
   li { display: grid; grid-template-columns: 3.2vw 1fr auto; align-items: center; gap: 1vw; background: var(--panel); border: 1px solid var(--borde); border-radius: .8vw; padding: .9vw 1.2vw; font-size: 1.7vw; }
   li .pos { font-family: "Oswald", sans-serif; font-size: 2vw; color: var(--suave); text-align: center; }
   li .nom { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li .emoji { margin-left: .6vw; width: 2.2vw; height: 2.2vw; font-size: 1.8vw; vertical-align: middle; display: inline-block; line-height: 2.2vw; }
   li .res { font-family: "Oswald", sans-serif; font-size: 2vw; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
-  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); margin-top: .2vw; }
-  li .cat.rx { color: var(--malva); }
+  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
   li.p1 { border-color: var(--oro); } li.p1 .pos { color: var(--oro); }
   li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
   li.nuevo { animation: entra 1.6s ease-out; }
@@ -44,9 +44,10 @@
   .escanear .cta { font-size: 1.7vw; }
   .escanear .total { margin-top: .5vw; }
   .descripcion { width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
+  #descripcionTexto { display: block; column-gap: 1.6vw; }
   .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
   aside { min-height: 0; }
-  .descripcion { flex: 1 1 auto; font-size: 1.5vw; padding: 1.2vw 1.4vw; }
+  .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
   dialog textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
   .ajustes { position: fixed; left: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
@@ -64,6 +65,7 @@
     header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } header .meta strong { font-size: 18px; }
     .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
     li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
+    li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
     li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
     aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
   }
@@ -115,8 +117,8 @@
 </dialog>
 
 <script type="module">
-import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar } from "./comun.js";
+import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, crearEmoji } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -135,12 +137,23 @@ let primeraCarga = true;
 // Si el WOD es muy largo, reduce la letra hasta que quepa entero en su recuadro
 function ajustarDescripcion() {
   const caja = $("descripcion");
-  if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; return; }
-  let vw = 1.5;
-  caja.style.fontSize = vw + "vw";
-  while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
-    vw -= 0.05;
-    caja.style.fontSize = vw.toFixed(2) + "vw";
+  const texto = $("descripcionTexto");
+  if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; texto.style.columnCount = ""; return; }
+  const encaja = (columnas) => {
+    texto.style.columnCount = columnas > 1 ? columnas : "";
+    let vw = 2.6;
+    caja.style.fontSize = vw + "vw";
+    while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
+      vw -= 0.05;
+      caja.style.fontSize = vw.toFixed(2) + "vw";
+    }
+    return vw;
+  };
+  // Primero en una columna; si la letra queda pequeña, prueba en dos columnas y se queda con la más grande
+  const una = encaja(1);
+  if (una < 1.6) {
+    const dos = encaja(2);
+    if (dos < una) encaja(1);
   }
 }
 window.addEventListener("resize", ajustarDescripcion);
@@ -174,8 +187,10 @@ function pintar() {
     if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
     const pos = document.createElement("span"); pos.className = "pos"; pos.textContent = i + 1;
     const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
+    const em = crearEmoji(r.sensacion);
+    if (em) nom.append(em);
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
-    const cat = document.createElement("span"); cat.className = "cat" + (r.categoria === "RX" ? " rx" : ""); cat.textContent = r.categoria;
+    const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
     res.append(cat);
     li.append(pos, nom, res);
     ol.append(li);
@@ -219,11 +234,13 @@ $("dialogo").addEventListener("close", async () => {
   }
 });
 
-// Borrado automático: elimina los resultados de días anteriores (no queda historial)
+// Borrado automático a las 00:00: elimina los resultados y el WOD de días anteriores (no queda historial)
 async function borrarDiasAnteriores() {
   try {
     const viejos = await getDocs(query(collection(db, "resultados"), where("fecha", "<", hoy())));
     for (const d of viejos.docs) await deleteDoc(d.ref).catch(() => {});
+    const wodsViejos = await getDocs(query(collection(db, "wods"), where(documentId(), "<", hoy())));
+    for (const d of wodsViejos.docs) await deleteDoc(d.ref).catch(() => {});
   } catch (err) { console.warn("No se han podido borrar resultados antiguos", err); }
 }
 borrarDiasAnteriores();
