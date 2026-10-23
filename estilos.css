@@ -1,0 +1,33 @@
+:root {
+  --fondo: #2f3237;
+  --panel: #3a3e44;
+  --borde: #4b5058;
+  --malva: #c39bd3;
+  --texto: #f2f2f0;
+  --suave: #b3b7be;
+  --acento: #e8ff3a;
+  --acento-texto: #1f2125;
+  --oro: #f5c542;
+  --plata: #c9ced6;
+  --bronce: #d08a4e;
+  --error: #ff6b5a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--fondo); color: var(--texto); }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.marca {
+  font-family: "Oswald", "Inter", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+button { font: inherit; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+.fecha-hoy {
+  position: fixed; right: 16px; bottom: 12px;
+  color: var(--suave); font-size: 14px;
+  pointer-events: none;
+}
+.fecha-hoy::first-letter { text-transform: uppercase; }

@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Resultados de los socios: todos pueden leer y añadir, nadie puede editarlos.
+    // Solo se pueden borrar los de días anteriores (la pantalla los borra sola cada día)
+    match /resultados/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado'])
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.nombre.size() <= 40
+        && request.resource.data.categoria in ['RX', 'Scaled']
+        && request.resource.data.valor is number
+        && request.resource.data.valor > 0
+        && request.resource.data.valor < 100000
+        && request.resource.data.fecha is string
+        && request.resource.data.fecha.size() == 10;
+      allow update: if false;
+      allow delete: if request.time > resource.data.creado + duration.value(12, 'h');
+    }
+
+    // WOD del día (lo configura el coach desde la pantalla)
+    match /wods/{fecha} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(['nombre', 'tipo'])
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() <= 60
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
+    }
+  }
+}
