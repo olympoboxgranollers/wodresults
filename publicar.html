@@ -53,6 +53,8 @@
   .rev .n small { color: var(--suave); margin-left: 6px; }
   .rev .pt { font-weight: 800; color: var(--oro); white-space: nowrap; }
   .rev .rv { font-size: 11px; font-weight: 700; color: var(--malva); text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
+  .rev button.ed.ok { color: #3ddc84; border-color: rgba(61,220,132,.45); }
+  .validar-todos { margin-top: 12px; width: 100%; background: rgba(61,220,132,.12); color: #3ddc84; border: 1px solid rgba(61,220,132,.45); border-radius: 12px; padding: 12px; font-weight: 800; font-size: 15px; }
   .rev button.ed { background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-left: 8px; }
   .editor { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .editor input, .editor select { padding: 10px; font-size: 15px; }
@@ -229,6 +231,21 @@ function pintarRevision() {
     for (const f of deCat) bloque.append(filaRevision(f, w.tipo));
     cont.append(bloque);
   }
+  // Validar de una vez todos los que faltan
+  const pendientes = resHoy.filter((r) => !r.validado);
+  if (!cierre && pendientes.length) {
+    const b = Object.assign(document.createElement("button"), { type: "button", className: "validar-todos", textContent: `✓ Validar todos (${pendientes.length})` });
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try {
+        const lote = writeBatch(db);
+        pendientes.forEach((r) => lote.update(doc(db, "resultados", r.id), { validado: true }));
+        await lote.commit();
+        $("msgCierre").className = "msg ok"; $("msgCierre").textContent = `✓ ${pendientes.length} resultados validados.`;
+      } catch (e) { console.error(e); $("msgCierre").className = "msg error"; $("msgCierre").textContent = "No se han podido validar."; b.disabled = false; }
+    });
+    cont.append(b);
+  }
 }
 
 function filaRevision(f, tipo) {
@@ -241,6 +258,14 @@ function filaRevision(f, tipo) {
   else if (r.validado) nm.append(Object.assign(document.createElement("span"), { className: "rv", textContent: "validado" }));
   const der = document.createElement("span");
   der.append(Object.assign(document.createElement("span"), { className: "pt", textContent: "+" + fmtPuntos(f.puntos) }));
+  if (!cierre && !r.validado) {
+    const va = Object.assign(document.createElement("button"), { type: "button", className: "ed ok", textContent: "✓ Validar" });
+    va.addEventListener("click", async () => {
+      try { await updateDoc(doc(db, "resultados", r.id), { validado: true }); $("msgCierre").className = "msg ok"; $("msgCierre").textContent = `✓ Resultado de ${r.nombre} validado.`; }
+      catch (e) { console.error(e); $("msgCierre").className = "msg error"; $("msgCierre").textContent = "No se ha podido validar."; }
+    });
+    der.append(va);
+  }
   if (!cierre) {
     const ed = Object.assign(document.createElement("button"), { type: "button", className: "ed", textContent: "Editar" });
     ed.addEventListener("click", () => { abierto = abierto === r.id ? null : r.id; pintarRevision(); });
@@ -269,7 +294,7 @@ function editor(r, tipo) {
     const v = leerValor(val.value, tipo);
     if (isNaN(v)) { m.className = "msg error"; m.textContent = "Revisa el resultado: " + ayuda.textContent; return; }
     try {
-      await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true });
+      await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true });
       abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} corregido.`;
     } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido guardar (¿el día ya está cerrado?)."; }
   });

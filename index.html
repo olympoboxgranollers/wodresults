@@ -90,6 +90,9 @@
   .portada-lema span:nth-child(3) { color: var(--malva); }
   body.sin-sesion #cabecera, body.sin-sesion .fecha-hoy { display: none; }
   .cuenta-barra { margin-bottom: 18px; }
+  .aviso-coach { background: var(--panel); border: 1px solid rgba(245,197,66,.5); border-radius: 14px; padding: 16px; font-size: 15px; line-height: 1.5; color: var(--suave); }
+  .aviso-coach b { display: block; color: var(--oro); font-size: 16px; margin-bottom: 4px; }
+  .aviso-coach a { color: var(--texto); font-weight: 700; }
   #acceso { margin-bottom: 18px; }
   .ya-registrado { margin-top: 18px; background: color-mix(in srgb, var(--malva) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.45; }
   .ya-registrado b { display: block; font-size: 15px; margin-bottom: 2px; }
@@ -134,6 +137,10 @@
   </div>
   <div id="acceso" hidden></div>
   <div class="aviso-wod" id="cargandoCuenta">Cargando…</div>
+  <div class="aviso-coach" id="avisoCoach" hidden>
+    <b>Has entrado con la cuenta del coach</b>
+    Esta cuenta no registra resultados. Desde <a href="publicar.html">publicar.html</a> puedes publicar los WODs y corregir o validar los resultados de los socios.
+  </div>
 
   <form id="formulario" autocomplete="off" hidden>
     <label>Clase</label>
@@ -220,7 +227,7 @@
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js";
 import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js";
-import { NOMBRE_BOX } from "./config.js";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -279,8 +286,11 @@ escucharCuenta((c) => {
   $("portada").hidden = !!user;
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
-  $("formulario").hidden = !user || !$("hecho").hidden;
+  const esCoach = !!user && user.email?.toLowerCase() === COACH_EMAIL.toLowerCase();
+  $("avisoCoach").hidden = !esCoach;
+  $("formulario").hidden = !user || esCoach || !$("hecho").hidden;
   if (!user) { $("hecho").hidden = true; return; }
+  if (esCoach) { $("hecho").hidden = true; }
   $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
   $("carteraTotal").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
@@ -422,7 +432,7 @@ function cambiarClase(nueva) {
   $("sinWod").textContent = `El coach todavía no ha configurado el entrenamiento de ${CLASES[clase].nombre} de hoy. Espera un momento y vuelve a intentarlo.`;
   limpiarFormulario();
   $("hecho").hidden = true;
-  if (user) $("formulario").hidden = false;
+  if (user && user.email?.toLowerCase() !== COACH_EMAIL.toLowerCase()) $("formulario").hidden = false;
   escucharWod();
   escucharMiResultado();
 }

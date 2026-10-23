@@ -16,3 +16,6 @@ export const NOMBRE_BOX = "Olympo Box";
 
 // Zona horaria del box (para que cada día empiece un ranking nuevo)
 export const ZONA_HORARIA = "Europe/Madrid";
+
+// Cuenta del coach: no registra resultados, solo publica, corrige y valida
+export const COACH_EMAIL = "olympoboxgranollers@gmail.com";

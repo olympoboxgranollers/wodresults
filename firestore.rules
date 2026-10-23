@@ -52,7 +52,7 @@ service cloud.firestore {
     // Uno por socio, clase y día: el id es "fecha_clase_uid". El socio lo puede editar hasta que el coach cierra el día.
     match /resultados/{id} {
       allow read: if true;
-      allow create: if conCuenta()
+      allow create: if conCuenta() && !esCoach()
         && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.fecha + '_' + request.resource.data.clase + '_' + request.auth.uid
         && request.resource.data.creado == request.time
@@ -83,8 +83,12 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validado'])
         && request.resource.data.validado == true)
         // ...y el coach puede corregir la categoría y el resultado de cualquiera mientras el día siga abierto
+        // ...el coach puede validar cualquier resultado...
         || (esCoach()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'valor', 'revisado'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validado'])
+        && request.resource.data.validado == true)
+        || (esCoach()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'valor', 'revisado', 'validado'])
         && request.resource.data.categoria in ['RX', 'Scaled', 'Open']
         && request.resource.data.valor is number && request.resource.data.valor > 0 && request.resource.data.valor < 100000
         && request.resource.data.revisado == true
