@@ -65,3 +65,16 @@ input, select { font: inherit; color: inherit; }
 @keyframes avisoEntra { from { opacity: 0; transform: translate(-50%, -30px) scale(.96); } to { opacity: 1; transform: translateX(-50%); } }
 @media (max-width: 600px) { .aviso-flotante { border-radius: 18px; } }
 @media (prefers-reduced-motion: reduce) { .aviso-flotante { animation: none; transition: none; } }
+
+/* Pestañas de clase (WOD / Hyrox / Funcional), cada una con su color */
+.pestanas { display: flex; gap: 8px; flex-wrap: wrap; }
+.pestanas button {
+  --c: var(--malva);
+  background: transparent; color: var(--texto);
+  border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 15px;
+  font-family: "Oswald", "Inter", sans-serif; text-transform: uppercase; letter-spacing: .08em;
+}
+.pestanas button::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 8px; vertical-align: 1px; }
+.pestanas button[aria-pressed="true"] { background: var(--c); color: #1f2125; border-color: var(--c); }
+.pestanas button[aria-pressed="true"]::before { background: #1f2125; }

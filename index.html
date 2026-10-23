@@ -58,6 +58,9 @@
   .avisame-info { margin-top: 10px; color: var(--suave); font-size: 13px; line-height: 1.4; }
   .secundario { margin-top: 28px; background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px 20px; }
   [hidden] { display: none !important; }
+  .pestanas-form { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .pestanas-form button { padding: 12px 4px; font-size: 14px; letter-spacing: .04em; white-space: nowrap; border-radius: 12px; }
+  .pestanas-form button::before { width: 7px; height: 7px; margin-right: 6px; }
   main .fecha-hoy { position: static; text-align: right; margin-top: 36px; }
   .segmentado button.bloqueado { opacity: .35; }
   .bloque-open { margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 14px; }
@@ -92,6 +95,9 @@
   </header>
 
   <form id="formulario" autocomplete="off">
+    <label>Clase</label>
+    <nav class="pestanas pestanas-form" id="pestanas" aria-label="Clase"></nav>
+
     <label for="nombre">Nombre</label>
     <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
 
@@ -159,7 +165,7 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -167,6 +173,7 @@ $("box").textContent = NOMBRE_BOX;
 $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 let wod = null;
+let clase = claseInicial();
 let categoria = "RX";
 const elegido = {};  // material marcado en Open
 
@@ -217,9 +224,14 @@ function ponerTipo(t) {
 }
 
 // Si el coach ha configurado el WOD, se preselecciona su tipo de puntuación
-onSnapshot(doc(db, "wods", hoy()), (snap) => {
+let dejarWod = null;
+function escucharWod() {
+  if (dejarWod) dejarWod();
+  wod = null; $("enviar").disabled = true;
+  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
   wod = snap.exists() ? snap.data() : null;
-  $("wodNombre").textContent = wod ? `${wod.nombre} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : "WOD de hoy";
+  const nombreWod = wod && wod.nombre && !wod.nombre.endsWith(" del día") ? ` · ${wod.nombre}` : "";
+  $("wodNombre").textContent = wod ? `${CLASES[clase].nombre}${nombreWod} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : `${CLASES[clase].nombre} de hoy`;
   // El resultado solo se puede poner en la medida del WOD (tiempo, rondas o kg)
   const valido = wod && TIPOS[wod.tipo];
   if (valido) ponerTipo(wod.tipo);
@@ -229,7 +241,19 @@ onSnapshot(doc(db, "wods", hoy()), (snap) => {
   $("error").textContent = "";
   $("wodDesc").textContent = wod?.descripcion || "";
   $("wodDesc").hidden = !wod?.descripcion;
-}, () => { $("wodNombre").textContent = "WOD de hoy"; $("sinWod").hidden = false; $("enviar").disabled = true; });
+  }, () => { $("wodNombre").textContent = `${CLASES[clase].nombre} de hoy`; $("sinWod").hidden = false; $("enviar").disabled = true; });
+}
+
+// Elegir clase (WOD, Hyrox o Funcional); el QR de la pantalla ya trae la clase en el enlace
+function cambiarClase(nueva) {
+  clase = nueva;
+  recordarClase(clase);
+  ponerColorClase(clase);
+  $("sinWod").textContent = `El coach todavía no ha configurado el entrenamiento de ${CLASES[clase].nombre} de hoy. Espera un momento y vuelve a intentarlo.`;
+  escucharWod();
+}
+crearPestanas($("pestanas"), clase, cambiarClase);
+cambiarClase(clase);
 
 const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)" };
 
@@ -292,15 +316,15 @@ $("formulario").addEventListener("submit", async (e) => {
   $("enviar").disabled = true;
   try {
     const ref = await addDoc(collection(db, "resultados"), {
-      nombre, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp(),
+      nombre, clase, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp(),
       ...(sensacion ? { sensacion } : {}),
       ...(pesos ? { pesos } : {})
     });
     try { localStorage.setItem("wod-nombre", nombre); } catch {}
-    $("resumen").textContent = `${nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
-    seguirMiPosicion({ id: ref.id, nombre, categoria, tipo, valor });
+    seguirMiPosicion({ id: ref.id, nombre, clase, categoria, tipo, valor });
   } catch (err) {
     console.error(err);
     $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
@@ -336,7 +360,7 @@ function seguirMiPosicion(r) {
 
 function pintarEstado(todos) {
   const r = miResultado;
-  const { lista, pos } = clasificacionDe(todos, r.tipo, r.categoria);
+  const { lista, pos } = clasificacionDe(todos.filter((x) => claseDe(x) === r.clase), r.tipo, r.categoria);
   const i = lista.findIndex((x) => x.id === r.id);
   if (i < 0) return;
   const p = pos[i];

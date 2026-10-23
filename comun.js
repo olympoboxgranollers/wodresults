@@ -10,6 +10,51 @@ export function hoy() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: ZONA_HORARIA });
 }
 
+// ---------- Clases del box ----------
+// Cada clase tiene su propio WOD del día, su ranking y su color
+export const CLASES = {
+  wod:       { nombre: "WOD",       color: "#c39bd3" },  // lila malva
+  hyrox:     { nombre: "Hyrox",     color: "#f2d03b" },  // amarillo
+  funcional: { nombre: "Funcional", color: "#33d1e0" }   // azul cian
+};
+
+// Id del WOD de hoy para una clase, p. ej. "2026-10-23_hyrox"
+export const idWod = (clase) => `${hoy()}_${clase}`;
+
+// Clase de un resultado (los antiguos sin clase cuentan como WOD)
+export const claseDe = (r) => r.clase || "wod";
+
+// Clase con la que se abre la página: la del enlace (?clase=hyrox), la última usada o WOD
+export function claseInicial() {
+  const p = new URLSearchParams(location.search).get("clase");
+  if (CLASES[p]) return p;
+  try { const g = localStorage.getItem("wod-clase"); if (CLASES[g]) return g; } catch {}
+  return "wod";
+}
+export function recordarClase(clase) { try { localStorage.setItem("wod-clase", clase); } catch {} }
+
+// Pinta la página con el color de la clase (todo lo que era lila usa este color)
+export function ponerColorClase(clase) {
+  document.documentElement.style.setProperty("--malva", CLASES[clase].color);
+  document.documentElement.dataset.clase = clase;
+}
+
+// Crea los botones de pestañas de clase dentro de un contenedor
+export function crearPestanas(contenedor, actual, alCambiar) {
+  contenedor.replaceChildren();
+  for (const [clave, c] of Object.entries(CLASES)) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.v = clave; b.textContent = c.nombre;
+    b.style.setProperty("--c", c.color);
+    b.setAttribute("aria-pressed", clave === actual);
+    b.addEventListener("click", () => {
+      contenedor.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      alCambiar(clave);
+    });
+    contenedor.append(b);
+  }
+}
+
 // Tipos de puntuación: "tiempo" (menos es mejor), "rondas" y "kg" (más es mejor)
 // En "rondas" el valor se guarda como rondas * 1000 + reps sueltas (para poder ordenar)
 export const TIPOS = {

@@ -15,10 +15,11 @@ service cloud.firestore {
     // Solo se pueden borrar a partir de medianoche del día siguiente (la pantalla los borra sola a las 00:00)
     match /resultados/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'sensacion', 'pesos'])
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'clase', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'sensacion', 'pesos'])
+        && request.resource.data.clase in ['wod', 'hyrox', 'funcional']
         && (!('sensacion' in request.resource.data) || request.resource.data.sensacion in ['duro', 'bien', 'sobrado', 'muerto', 'fuego', 'molestia'])
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
-        && request.resource.data.tipo == get(/databases/$(database)/documents/wods/$(request.resource.data.fecha)).data.tipo
+        && request.resource.data.tipo == get(/databases/$(database)/documents/wods/$(request.resource.data.fecha + '_' + request.resource.data.clase)).data.tipo
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
         && request.resource.data.nombre.size() <= 40
@@ -36,14 +37,15 @@ service cloud.firestore {
           int(resource.data.fecha.split('-')[2])) + duration.value(22, 'h');
     }
 
-    // WOD del día (lo configura el coach desde la pantalla)
-    match /wods/{fecha} {
+    // WOD del día de cada clase (lo configura el coach desde la pantalla). Id: "2026-10-23_hyrox"
+    match /wods/{id} {
       allow read: if true;
-      allow delete: if fecha.size() == 10 && request.time > timestamp.date(
-          int(fecha.split('-')[0]),
-          int(fecha.split('-')[1]),
-          int(fecha.split('-')[2])) + duration.value(22, 'h');
-      allow create, update: if request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
+      allow delete: if request.time > timestamp.date(
+          int(id.split('_')[0].split('-')[0]),
+          int(id.split('_')[0].split('-')[1]),
+          int(id.split('_')[0].split('-')[2])) + duration.value(22, 'h');
+      allow create, update: if id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional)$')
+        && request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
         && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 1000))
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() <= 60

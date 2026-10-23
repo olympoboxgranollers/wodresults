@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Publicar WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
+  main { width: 100%; max-width: 640px; }
+  header .marca { color: #fff; font-size: 14px; }
+  h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
+  .sub { color: var(--suave); margin-top: 8px; font-size: 15px; }
+  .pestanas { margin: 22px 0 18px; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .pestanas button { padding: 12px 4px; letter-spacing: .04em; white-space: nowrap; border-radius: 12px; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-top: 4px solid var(--malva); border-radius: 16px; padding: 20px 18px; }
+  .estado-wod { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--suave); }
+  .estado-wod::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--borde); }
+  .estado-wod.publicado { color: var(--texto); }
+  .estado-wod.publicado::before { background: #3ddc84; }
+  label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 18px 0 7px; letter-spacing: .06em; }
+  input, select, textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--malva); }
+  textarea { resize: vertical; line-height: 1.45; min-height: 190px; font-family: inherit; }
+  .acciones { display: flex; gap: 10px; margin-top: 20px; align-items: center; flex-wrap: wrap; }
+  .guardar { flex: 1; min-width: 180px; background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 15px; font-family: "Oswald", sans-serif; font-size: 19px; text-transform: uppercase; letter-spacing: .06em; }
+  .guardar:disabled { opacity: .5; }
+  .msg { font-size: 14px; min-height: 1.2em; }
+  .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+  .enlaces { margin-top: 26px; display: grid; gap: 8px; }
+  .enlaces a { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; color: var(--texto); text-decoration: none; font-weight: 600; font-size: 15px; }
+  .enlaces a span { color: var(--suave); font-weight: 400; font-size: 13px; }
+  .resumen { margin-top: 22px; display: grid; gap: 8px; }
+  .fila-resumen { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; font-size: 14px; }
+  .fila-resumen b { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+  .fila-resumen span { color: var(--suave); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca" id="box">Olympo Box</div>
+    <h1>Publicar WOD</h1>
+    <div class="sub" id="fecha"></div>
+  </header>
+
+  <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+
+  <form class="panel" id="formWod" autocomplete="off">
+    <div class="estado-wod" id="estadoWod">Sin publicar</div>
+    <label for="wNombre">Nombre del entrenamiento <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <input id="wNombre" maxlength="60" placeholder="Ej. Fran, Cindy, 21-15-9…">
+    <label for="wTipo">Cómo se puntúa</label>
+    <select id="wTipo">
+      <option value="tiempo">Por tiempo (menos es mejor)</option>
+      <option value="rondas">AMRAP: rondas + reps (más es mejor)</option>
+      <option value="kg">Carga en kg (más es mejor)</option>
+    </select>
+    <label for="wDesc">El entrenamiento (lo que se ve en pantalla)</label>
+    <textarea id="wDesc" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
+    <div class="acciones">
+      <button class="guardar" id="guardar" type="submit">Publicar</button>
+      <div class="msg" id="msg" role="status"></div>
+    </div>
+  </form>
+
+  <div class="resumen" id="resumen"></div>
+
+  <div class="enlaces">
+    <a id="linkPantalla" href="pantalla.html">Ver en la pantalla <span>pantalla.html</span></a>
+    <a id="linkRanking" href="ranking.html">Ver el ranking <span>ranking.html</span></a>
+  </div>
+</main>
+
+<script type="module">
+import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
+import { NOMBRE_BOX } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+$("fecha").textContent = "Entrenamientos de hoy · " + new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+
+let clase = claseInicial();
+const publicados = {};   // WOD guardado de cada clase
+let editado = false;     // si hay cambios sin publicar en la clase actual
+
+// Resumen de las tres clases, siempre al día
+for (const clave of Object.keys(CLASES)) {
+  onSnapshot(doc(db, "wods", idWod(clave)), (snap) => {
+    publicados[clave] = snap.exists() ? snap.data() : null;
+    pintarResumen();
+    if (clave === clase && !editado) rellenar();
+  }, (err) => console.warn(err));
+}
+
+function pintarResumen() {
+  const cont = $("resumen");
+  cont.replaceChildren();
+  for (const [clave, c] of Object.entries(CLASES)) {
+    const w = publicados[clave];
+    const fila = document.createElement("div"); fila.className = "fila-resumen";
+    const b = document.createElement("b"); b.textContent = c.nombre; b.style.color = c.color;
+    const s = document.createElement("span");
+    s.textContent = w ? `✓ Publicado · ${TIPOS[w.tipo]?.etiqueta || ""}${w.nombre && !w.nombre.endsWith(" del día") ? " · " + w.nombre : ""}` : "Sin publicar";
+    fila.append(b, s);
+    cont.append(fila);
+  }
+}
+
+function rellenar() {
+  const w = publicados[clase];
+  $("wNombre").value = w?.nombre && !w.nombre.endsWith(" del día") ? w.nombre : "";
+  $("wTipo").value = w?.tipo || "tiempo";
+  $("wDesc").value = w?.descripcion || "";
+  $("estadoWod").textContent = w ? `${CLASES[clase].nombre}: publicado` : `${CLASES[clase].nombre}: sin publicar`;
+  $("estadoWod").classList.toggle("publicado", !!w);
+  $("guardar").textContent = w ? `Actualizar ${CLASES[clase].nombre}` : `Publicar ${CLASES[clase].nombre}`;
+  editado = false;
+}
+
+for (const id of ["wNombre", "wTipo", "wDesc"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
+
+function cambiarClase(nueva) {
+  if (editado && !confirmarCambio()) {
+    crearPestanas($("pestanas"), clase, cambiarClase);  // vuelve a marcar la pestaña actual
+    return;
+  }
+  clase = nueva;
+  recordarClase(clase);
+  ponerColorClase(clase);
+  $("linkPantalla").href = "pantalla.html?clase=" + clase;
+  $("linkRanking").href = "ranking.html?clase=" + clase;
+  $("msg").textContent = "";
+  editado = false;
+  rellenar();
+}
+
+// Aviso si se cambia de clase con cambios sin publicar (el aviso va dentro de la página)
+function confirmarCambio() {
+  const m = $("msg");
+  if (m.dataset.avisado === clase) { delete m.dataset.avisado; return true; }
+  m.className = "msg error";
+  m.textContent = "Tienes cambios sin publicar. Pulsa Publicar, o vuelve a pulsar la otra pestaña para descartarlos.";
+  m.dataset.avisado = clase;
+  return false;
+}
+
+$("formWod").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
+  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().slice(0, 1000);
+  $("guardar").disabled = true;
+  try {
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });
+    editado = false;
+    $("msg").className = "msg ok";
+    $("msg").textContent = `✓ ${CLASES[clase].nombre} publicado. Ya sale en la pantalla.`;
+  } catch (err) {
+    console.error(err);
+    $("msg").className = "msg error";
+    $("msg").textContent = "No se ha podido publicar. Revisa la conexión y las reglas de Firebase.";
+  } finally {
+    $("guardar").disabled = false;
+  }
+});
+
+crearPestanas($("pestanas"), clase, cambiarClase);
+cambiarClase(clase);
+
+// A medianoche recarga para empezar el día nuevo
+const ahora = new Date();
+const manana = new Date(ahora); manana.setHours(24, 1, 0, 0);
+setTimeout(() => location.reload(), manana - ahora);
+</script>
+</body>
+</html>

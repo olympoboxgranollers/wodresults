@@ -24,6 +24,7 @@
   header .marca { color: #fff; font-size: 14px; }
   h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
   .meta { color: var(--suave); margin-top: 8px; font-size: 15px; }
+  header .pestanas { margin-top: 16px; }
   .directo { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin-top: 10px; }
   .directo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; }
   .descripcion { margin-top: 14px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 12px; padding: 14px 16px; font-size: 16px; line-height: 1.5; white-space: pre-line; }
@@ -56,6 +57,7 @@
     <h1 id="wodNombre">WOD del día</h1>
     <div class="meta" id="tipo"></div>
     <div class="directo">En directo</div>
+    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
   </header>
 
   <div class="cuerpo">
@@ -79,14 +81,16 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
 $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+let clase = claseInicial();
 let wod = null;
-let resultados = [];
+let todos = [];        // resultados de hoy de todas las clases
+let resultados = [];   // solo los de la clase elegida
 let filtro = "todos";
 const vistos = new Set();
 let primeraCarga = true;
@@ -112,7 +116,7 @@ function pintar() {
   if (!lista.length) {
     const v = document.createElement("div");
     v.className = "vacio";
-    v.textContent = wod ? "Todavía no hay resultados" : "El WOD de hoy aún no está publicado";
+    v.textContent = wod ? "Todavía no hay resultados" : `El entrenamiento de ${CLASES[clase].nombre} de hoy aún no está publicado`;
     ol.append(v);
   }
   const pos = posiciones(lista);
@@ -143,22 +147,40 @@ function pintar() {
   primeraCarga = false;
 }
 
-onSnapshot(doc(db, "wods", hoy()), (snap) => {
+let dejarWod = null;
+function escucharWod() {
+  if (dejarWod) dejarWod();
+  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
   wod = snap.exists() ? snap.data() : null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
-  $("wodNombre").textContent = wod?.nombre || "WOD del día";
+  $("wodNombre").textContent = wod?.nombre || `${CLASES[clase].nombre} del día`;
   $("tipo").textContent = wod ? TIPOS[wod.tipo]?.etiqueta || "" : "";
   $("descripcionTexto").textContent = wod?.descripcion || "";
   $("descripcion").hidden = !wod?.descripcion;
   pintar();
-});
+  });
+}
 
 onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  resultados = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  resultados = todos.filter((r) => claseDe(r) === clase);
   cargado.res = true;
   pintar();
 });
+
+function cambiarClase(nueva) {
+  clase = nueva;
+  recordarClase(clase);
+  ponerColorClase(clase);
+  wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
+  resultados = todos.filter((r) => claseDe(r) === clase);
+  $("wodNombre").textContent = `${CLASES[clase].nombre} del día`; $("tipo").textContent = ""; $("descripcion").hidden = true;
+  pintar();
+  escucharWod();
+}
+crearPestanas($("pestanas"), clase, cambiarClase);
+cambiarClase(clase);
 
 // A medianoche recarga para mostrar el día nuevo
 const ahora = new Date();

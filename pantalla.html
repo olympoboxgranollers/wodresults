@@ -16,6 +16,8 @@
   header h1 { color: var(--malva); }
   header h1 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 4.2vw; line-height: 1; margin-top: .4vw; }
   header .meta { text-align: right; color: var(--suave); font-size: 1.3vw; }
+  header .meta { display: flex; flex-direction: column; align-items: flex-end; gap: .8vw; }
+  header .pestanas button { font-size: 1.1vw; padding: .45vw 1.1vw; }
   header .meta strong { display: block; color: var(--texto); font-size: 2vw; font-family: "Oswald", sans-serif; }
   .columna { min-height: 0; display: flex; flex-direction: column; }
   .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .08em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
@@ -89,7 +91,10 @@
     <div class="marca" id="box"></div>
     <h1 id="wodNombre">WOD del día</h1>
   </div>
-  <div class="meta"><strong id="tipo"></strong></div>
+  <div class="meta">
+    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+    <strong id="tipo"></strong>
+  </div>
 </header>
 
 <section class="columna">
@@ -110,7 +115,7 @@
 
 <dialog id="dialogo">
   <form method="dialog" id="formWod">
-    <h3>WOD de hoy</h3>
+    <h3 id="tituloDialogo">WOD de hoy</h3>
     <label for="wNombre">Nombre del WOD</label>
     <input id="wNombre" maxlength="60" placeholder="Ej. Fran, Cindy, 21-15-9… (opcional)">
     <label for="wTipo">Cómo se puntúa</label>
@@ -130,19 +135,27 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
 $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-// QR que apunta al formulario de esta misma web
-const urlFormulario = new URL("index.html", location.href).href;
-new QRCode($("qr"), { text: urlFormulario, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+// Clase que se está mostrando (WOD, Hyrox o Funcional)
+let clase = claseInicial();
+
+// QR que apunta al formulario de la clase que se está mostrando
+function ponerQR() {
+  const url = new URL("index.html", location.href);
+  url.searchParams.set("clase", clase);
+  $("qr").replaceChildren();
+  new QRCode($("qr"), { text: url.href, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+}
 
 let wod = null;
-let resultados = [];
+let todos = [];        // resultados de hoy de todas las clases
+let resultados = [];   // solo los de la clase que se está mostrando
 const vistos = new Set();
 let primeraCarga = true;
 let lideresAntes = null;
@@ -260,23 +273,45 @@ function pintar() {
   $("total").textContent = lista.length ? `${lista.length} resultados hoy` : "";
 }
 
-onSnapshot(doc(db, "wods", hoy()), (snap) => {
+let dejarWod = null;
+function escucharWod() {
+  if (dejarWod) dejarWod();
+  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
   wod = snap.exists() ? snap.data() : null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
-  $("wodNombre").textContent = wod?.nombre || "WOD del día";
+  $("wodNombre").textContent = wod?.nombre || `${CLASES[clase].nombre} del día`;
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "Pulsa ⚙ para configurar el WOD";
   $("descripcionTexto").textContent = wod?.descripcion || "";
   $("descripcion").hidden = !wod?.descripcion;
   ajustarDescripcion();
   pintar();
-});
+  });
+}
 
 onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  resultados = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  resultados = todos.filter((r) => claseDe(r) === clase);
   cargado.res = true;
   pintar();
 });
+
+// Cambiar de clase con las pestañas
+function cambiarClase(nueva) {
+  clase = nueva;
+  recordarClase(clase);
+  ponerColorClase(clase);
+  ponerQR();
+  $("tituloDialogo").textContent = `WOD de hoy · ${CLASES[clase].nombre}`;
+  $("abrirAjustes").textContent = `⚙ WOD de hoy · ${CLASES[clase].nombre}`;
+  wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
+  resultados = todos.filter((r) => claseDe(r) === clase);
+  $("wodNombre").textContent = "WOD del día"; $("descripcion").hidden = true;
+  pintar();
+  escucharWod();
+}
+crearPestanas($("pestanas"), clase, cambiarClase);
+cambiarClase(clase);
 
 // Configurar el WOD del día
 $("abrirAjustes").addEventListener("click", () => {
@@ -287,10 +322,10 @@ $("abrirAjustes").addEventListener("click", () => {
 });
 $("dialogo").addEventListener("close", async () => {
   if ($("dialogo").returnValue !== "guardar") return;
-  const nombre = $("wNombre").value.trim() || "WOD del día";
+  const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
   const descripcion = $("wDesc").value.replace(/\r/g, "").trim().slice(0, 1000);
   try {
-    await setDoc(doc(db, "wods", hoy()), { nombre, tipo: $("wTipo").value, descripcion });
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });
   } catch (err) {
     console.error(err);
     alert("No se ha podido guardar el WOD. Revisa la configuración de Firebase.");
