@@ -85,12 +85,15 @@
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
+import { montarMenu, abrirEditor } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
 $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 let clase = claseInicial();
+let esCoach = false;
+const menu = montarMenu({ actual: "ranking", alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
 let wod = null;
 let todos = [];        // resultados de hoy de todas las clases
 let resultados = [];   // solo los de la clase elegida
@@ -137,6 +140,8 @@ function pintar() {
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
+    // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
+    if (esCoach && r.id && !r.id.startsWith("_")) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }
     ol.append(li);
   });
   // Pique: avisa cuando cambia el líder o hay empate en cabeza
@@ -205,6 +210,7 @@ function cambiarClase(nueva) {
   clase = nueva;
   recordarClase(clase);
   ponerColorClase(clase);
+  menu.repintar();
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   todos = []; resultados = [];
   $("wodNombre").textContent = `${CLASES[clase].nombre} del día`; $("tipo").textContent = ""; $("descripcion").hidden = true;

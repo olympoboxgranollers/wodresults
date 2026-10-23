@@ -75,6 +75,8 @@
 import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, CLASES, PUNTOS, fmtPuntos } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
+import { montarMenu } from "./menu.js";
+montarMenu({ actual: "puntos", cuenta: false });
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);

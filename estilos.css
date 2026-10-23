@@ -103,3 +103,65 @@ input, select { font: inherit; color: inherit; }
 .cuenta-barra .quien b { color: var(--texto); }
 .cuenta-barra .pts { background: rgba(245,197,66,.14); color: var(--oro); border: 1px solid rgba(245,197,66,.45); border-radius: 999px; padding: 6px 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
 .cuenta-barra .salir { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+
+/* Menú común (abajo en el móvil) */
+.menu {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 40;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex; gap: 4px; padding: 6px;
+  background: linear-gradient(180deg, rgba(48, 51, 57, .94), rgba(28, 30, 34, .94));
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 22px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  max-width: calc(100vw - 20px);
+}
+.menu-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-width: 60px; padding: 8px 10px 7px; border-radius: 16px; border: 0; background: none; cursor: pointer;
+  color: var(--suave); text-decoration: none; font-family: inherit;
+  transition: color .2s, background .2s, transform .15s;
+}
+.menu-item:active { transform: scale(.94); }
+.menu-icono { width: 24px; height: 24px; display: grid; place-items: center; }
+.menu-icono svg { width: 22px; height: 22px; display: block; }
+.menu-texto { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; }
+.menu-item:hover { color: var(--texto); }
+/* Página actual: pastilla del color de la clase con brillo suave */
+.menu-item.activo {
+  color: #1f2125;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--malva) 100%, #fff 18%), var(--malva));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--malva) 45%, transparent), inset 0 1px 0 rgba(255,255,255,.35);
+}
+.menu-item.activo .menu-icono svg { stroke-width: 2.2; }
+.menu-cuenta { color: var(--oro); }
+.menu-item:focus-visible { outline: 2px solid var(--malva); outline-offset: 2px; }
+body.con-menu { padding-bottom: 104px !important; }
+/* Versión para la TV: abajo a la izquierda, discreta */
+.menu-tv { left: 1vw; transform: none; bottom: 1vw; opacity: .5; transition: opacity .2s; border-radius: 16px; }
+.menu-tv:hover, .menu-tv:focus-within { opacity: 1; }
+.menu-tv .menu-item { flex-direction: row; gap: 7px; min-width: 0; padding: 7px 12px; border-radius: 11px; }
+.menu-tv .menu-icono { width: 18px; height: 18px; }
+.menu-tv .menu-icono svg { width: 17px; height: 17px; }
+.menu-tv .menu-texto { font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .menu-item { transition: none; } }
+
+/* Ventanas de acceso y de edición */
+.dialogo-acceso, .dialogo-editor { margin: auto; background: transparent; border: 0; padding: 0; width: min(420px, 92vw); color: var(--texto); }
+.dialogo-acceso::backdrop, .dialogo-editor::backdrop { background: rgba(0,0,0,.7); }
+.dialogo-acceso { position: relative; }
+.dialogo-cerrar { position: absolute; top: 12px; right: 12px; z-index: 1; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; width: 32px; height: 32px; }
+.dialogo-editor { background: var(--panel); border: 1px solid var(--borde); border-top: 4px solid var(--oro); border-radius: 16px; padding: 22px 18px; }
+.dialogo-editor h3 { font-family: "Oswald", "Inter", sans-serif; text-transform: uppercase; font-size: 24px; }
+.dialogo-editor .editor-sub { color: var(--suave); font-size: 14px; margin-top: 2px; }
+.dialogo-editor label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 16px 0 6px; letter-spacing: .06em; }
+.dialogo-editor select, .dialogo-editor input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 17px; color: var(--texto); }
+.editor-msg { min-height: 1em; margin-top: 10px; font-size: 14px; }
+.editor-msg.error { color: var(--error); }
+.editor-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.editor-btns button { border-radius: 10px; padding: 12px; font-weight: 800; border: 1px solid var(--borde); background: none; color: var(--texto); font-size: 15px; }
+.editor-btns .si { background: var(--oro); color: #1f2125; border-color: var(--oro); grid-column: 1 / -1; }
+.editor-btns .validar { color: #3ddc84; border-color: rgba(61,220,132,.45); }
+.editor-btns .borrar { color: var(--error); border-color: color-mix(in srgb, var(--error) 50%, transparent); }
+/* Filas que el coach puede tocar para editar */
+li.editable { cursor: pointer; }
+li.editable .nom::after { content: " ✎"; color: var(--oro); font-weight: 400; }

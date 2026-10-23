@@ -64,7 +64,7 @@
   .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
   dialog textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
-  .ajustes { position: fixed; left: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
+  .ajustes { position: fixed; left: 1vw; bottom: calc(1vw + 52px); background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
   .ajustes:hover { opacity: 1; }
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
@@ -139,6 +139,7 @@ import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lidere
 import { NOMBRE_BOX } from "./config.js";
 import { escucharCuenta } from "./cuenta.js";
 import { cerrarDiasPendientes } from "./cierre.js";
+import { montarMenu, abrirEditor } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -146,6 +147,8 @@ $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long
 
 // Clase que se está mostrando (WOD, Hyrox o Funcional)
 let clase = claseInicial();
+let esCoach = false;
+const menu = montarMenu({ actual: "pantalla", tv: true, alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
 
 // QR que apunta al formulario de la clase que se está mostrando
 function ponerQR() {
@@ -260,6 +263,8 @@ function pintar() {
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
+    // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
+    if (esCoach && r.id) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }
     ol.append(li);
   });
   ajustarLista();
@@ -303,6 +308,7 @@ function cambiarClase(nueva) {
   clase = nueva;
   recordarClase(clase);
   ponerColorClase(clase);
+  menu.repintar();
   ponerQR();
   $("tituloDialogo").textContent = `WOD de hoy · ${CLASES[clase].nombre}`;
   $("abrirAjustes").textContent = `⚙ WOD de hoy · ${CLASES[clase].nombre}`;

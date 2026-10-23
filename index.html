@@ -227,6 +227,7 @@
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js";
 import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js";
+import { montarMenu } from "./menu.js";
 import { NOMBRE_BOX, COACH_EMAIL } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -429,6 +430,7 @@ function cambiarClase(nueva) {
   clase = nueva;
   recordarClase(clase);
   ponerColorClase(clase);
+  if (typeof menu !== "undefined") menu.repintar();
   $("sinWod").textContent = `El coach todavía no ha configurado el entrenamiento de ${CLASES[clase].nombre} de hoy. Espera un momento y vuelve a intentarlo.`;
   limpiarFormulario();
   $("hecho").hidden = true;
@@ -664,7 +666,8 @@ $("otro").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
-// Arranque: pestañas de clase y la clase con la que se abre (la del QR o la última usada)
+// Arranque: menú, pestañas de clase y la clase con la que se abre (la del QR o la última usada)
+const menu = montarMenu({ actual: "resultado", cuenta: false });
 crearPestanas($("pestanas"), clase, cambiarClase);
 cambiarClase(clase);
 </script>
