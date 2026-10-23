@@ -96,6 +96,19 @@
   .ya-registrado.cerrado { background: var(--panel); border-color: var(--borde); color: var(--suave); }
   .puntos-hoy { margin-top: 16px; color: var(--suave); font-size: 14px; line-height: 1.45; }
   .puntos-hoy b { color: var(--oro); }
+  .validar-caja { margin-top: 22px; }
+  .validar { width: 100%; background: #3ddc84; color: #10301d; border: 0; border-radius: 14px; padding: 16px; font-family: "Oswald", sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: .06em; }
+  .validar.confirmar { background: var(--oro); color: #1f2125; }
+  .validar:disabled { opacity: .6; }
+  .validar-nota { margin-top: 8px; color: var(--suave); font-size: 13px; }
+  .validado { margin-top: 22px; display: inline-flex; align-items: center; gap: 8px; color: #3ddc84; font-weight: 800; font-size: 16px; border: 1px solid rgba(61,220,132,.45); background: rgba(61,220,132,.1); border-radius: 999px; padding: 10px 18px; }
+  .sumados { display: inline-block; margin-top: 18px; font-family: "Oswald", sans-serif; font-size: 28px; color: var(--oro); }
+  .ir-cartera { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; color: var(--texto);
+    border: 1px solid rgba(245,197,66,.5); border-radius: 16px; padding: 14px 16px; text-align: left;
+    background: linear-gradient(160deg, #46402c, #2a2d32 75%); box-shadow: 0 0 0 4px rgba(245,197,66,.07); }
+  .ir-cartera small { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--oro); }
+  .ir-cartera b { font-family: "Oswald", sans-serif; font-size: 30px; color: var(--oro); line-height: 1.1; }
+  .ir-cartera-flecha { font-weight: 800; font-size: 15px; white-space: nowrap; }
   .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
 </style>
 </head>
@@ -189,15 +202,24 @@
       <div class="avisame-info" id="avisameInfo" hidden></div>
     </div>
     <div class="puntos-hoy" id="puntosHoy"></div>
+    <a class="ir-cartera" id="irCartera" href="puntos.html">
+      <span class="ir-cartera-txt"><small>Tu cartera</small><b id="carteraTotal">0 pts</b></span>
+      <span class="ir-cartera-flecha">Ver mis puntos →</span>
+    </a>
+    <div class="validar-caja" id="validarCaja">
+      <button type="button" class="validar" id="validar">✓ Validar resultado</button>
+      <div class="validar-nota" id="validarNota">Revisa que esté bien. Una vez validado ya no lo podrás editar.</div>
+    </div>
+    <div class="validado" id="validado" hidden>✓ Resultado validado</div>
     <button class="secundario" id="otro">Editar mi resultado</button>
   </div>
   <div class="fecha-hoy" id="fechaHoy"></div>
 </main>
 
 <script type="module">
-import { doc, onSnapshot, collection, setDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js";
-import { escucharCuenta, montarAcceso, guardarNombre, salir } from "./cuenta.js";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -261,6 +283,7 @@ escucharCuenta((c) => {
   if (!user) { $("hecho").hidden = true; return; }
   $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
+  $("carteraTotal").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
   if (!$("nombre").value || cambioUsuario) $("nombre").value = ficha?.nombre || user.displayName || "";
   if (cambioUsuario) escucharMiResultado();
 });
@@ -290,6 +313,11 @@ function pintarAvisoRegistro() {
     a.hidden = false;
     a.innerHTML = "<b>El día está cerrado</b>";
     a.append(document.createTextNode(`Ya se han repartido los puntos de ${CLASES[clase].nombre} de hoy. Ya no se pueden subir ni cambiar resultados.`));
+  } else if (miDoc?.validado) {
+    a.hidden = false;
+    a.classList.add("cerrado");
+    a.innerHTML = "<b>Has validado tu resultado</b>";
+    a.append(document.createTextNode("Ya no se puede cambiar. Si hay un error, habla con el coach."));
   } else if (miDoc?.revisado) {
     a.hidden = false;
     a.classList.add("cerrado");
@@ -301,8 +329,39 @@ function pintarAvisoRegistro() {
     a.append(document.createTextNode(`Solo se puede subir uno por clase. Si te has equivocado, cámbialo aquí y pulsa "Guardar cambios".`));
   } else a.hidden = true;
   $("enviar").textContent = miDoc ? "Guardar cambios" : "Enviar";
-  $("enviar").disabled = !wod || diaCerrado || !!miDoc?.revisado;
+  $("enviar").disabled = !wod || diaCerrado || !!miDoc?.revisado || !!miDoc?.validado;
+  pintarValidar();
 }
+
+// Botón Validar de la pantalla de "¡Registrado!"
+function pintarValidar() {
+  const bloqueado = !!(miDoc?.validado || miDoc?.revisado || diaCerrado);
+  $("validarCaja").hidden = !miDoc || bloqueado;
+  $("validado").hidden = !miDoc?.validado;
+  $("otro").hidden = bloqueado;
+}
+let confirmarValidar = false;
+$("validar").addEventListener("click", async () => {
+  if (!miDoc) return;
+  if (!confirmarValidar) {
+    confirmarValidar = true;
+    $("validar").textContent = "¿Seguro? Pulsa otra vez para validar";
+    $("validar").classList.add("confirmar");
+    setTimeout(() => { confirmarValidar = false; $("validar").textContent = "✓ Validar resultado"; $("validar").classList.remove("confirmar"); }, 5000);
+    return;
+  }
+  $("validar").disabled = true;
+  try {
+    await updateDoc(doc(db, "resultados", miDoc.id), { validado: true });
+    $("validarNota").textContent = "";
+  } catch (e) {
+    console.error(e);
+    $("validarNota").textContent = "No se ha podido validar. Inténtalo de nuevo.";
+  } finally {
+    $("validar").disabled = false; confirmarValidar = false;
+    $("validar").textContent = "✓ Validar resultado"; $("validar").classList.remove("confirmar");
+  }
+});
 
 // Pone en el formulario lo que ya había enviado
 function rellenarConMiResultado() {
@@ -440,10 +499,17 @@ $("formulario").addEventListener("submit", async (e) => {
       ...(pesos ? { pesos } : {})
     });
     const ref = { id };
-    $("hecho").querySelector("h2").textContent = miDoc ? "¡Cambios guardados!" : "¡Registrado!";
-    $("puntosHoy").innerHTML = "";
+    const eraNuevo = !miDoc;
+    // Los puntos por registrar se suman al momento (una vez por clase y día)
+    let sumadosAhora = false;
+    try { sumadosAhora = await sumarRegistro(user, clase); } catch (e) { console.warn("No se han podido sumar los puntos de registro", e); }
+    $("hecho").querySelector("h2").textContent = eraNuevo ? "¡Registrado!" : "¡Cambios guardados!";
+    $("puntosHoy").replaceChildren();
     const pc = PUNTOS.podio[categoria];
-    $("puntosHoy").append("Hoy sumas ", Object.assign(document.createElement("b"), { textContent: `${PUNTOS.registrar} puntos` }), ` por registrarte. Si acabas en el podio de ${categoria} sumarás +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º). Los puntos se suman a las 00:00.`);
+    if (sumadosAhora) $("puntosHoy").append(Object.assign(document.createElement("div"), { className: "sumados", textContent: `+${PUNTOS.registrar} puntos` }), document.createElement("br"));
+    $("puntosHoy").append(
+      sumadosAhora ? "Ya están en tu cartera. " : `Los ${PUNTOS.registrar} puntos de registrar de hoy ya están en tu cartera. `,
+      `Si acabas en el podio de ${categoria} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
     $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
@@ -581,6 +647,7 @@ function limpiarFormulario() {
 
 // Volver al formulario para corregir el resultado
 $("otro").addEventListener("click", () => {
+  if (miDoc?.validado) return;
   rellenarConMiResultado();
   $("hecho").hidden = true;
   $("formulario").hidden = false;

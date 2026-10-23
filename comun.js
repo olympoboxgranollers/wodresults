@@ -230,6 +230,7 @@ export const fmtPuntos = (n) => (Math.round(n * 10) / 10).toLocaleString("es-ES"
 // Id del resultado de un socio: uno por socio, clase y día
 export const idResultado = (clase, uid) => `${hoy()}_${clase}_${uid}`;
 export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
+export const idRegistro = (clase, fecha = hoy()) => `${fecha}_${clase}_reg`;
 
 // Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
 export function calcularPuntos(resultados, tipo) {

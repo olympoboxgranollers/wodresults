@@ -33,7 +33,7 @@ service cloud.firestore {
         && kgOk(d.pesos, 'kettlebell') && kgOk(d.pesos, 'barbell'));
     }
     function resultadoValido(d) {
-      return d.keys().hasOnly(['uid', 'nombre', 'clase', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'editado', 'sensacion', 'pesos', 'revisado'])
+      return d.keys().hasOnly(['uid', 'nombre', 'clase', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'editado', 'sensacion', 'pesos', 'revisado', 'validado'])
         && d.clase in ['wod', 'hyrox', 'funcional']
         && d.categoria in ['RX', 'Scaled', 'Open']
         && d.tipo in ['tiempo', 'rondas', 'kg']
@@ -58,6 +58,7 @@ service cloud.firestore {
         && request.resource.data.creado == request.time
         && !('editado' in request.resource.data)
         && !('revisado' in request.resource.data)
+        && !('validado' in request.resource.data)
         && esHoy(request.resource.data.fecha)
         && resultadoValido(request.resource.data)
         && !cerrado(request.resource.data.fecha, request.resource.data.clase);
@@ -65,7 +66,9 @@ service cloud.firestore {
       allow update: if (conCuenta()
         && resource.data.uid == request.auth.uid
         && !resource.data.get('revisado', false)
+        && !resource.data.get('validado', false)
         && !('revisado' in request.resource.data)
+        && !('validado' in request.resource.data)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.fecha == resource.data.fecha
         && request.resource.data.clase == resource.data.clase
@@ -74,6 +77,11 @@ service cloud.firestore {
         && esHoy(request.resource.data.fecha)
         && resultadoValido(request.resource.data)
         && !cerrado(resource.data.fecha, resource.data.clase))
+        // ...validarlo él mismo (después ya no lo puede cambiar)...
+        || (conCuenta()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validado'])
+        && request.resource.data.validado == true)
         // ...y el coach puede corregir la categoría y el resultado de cualquiera mientras el día siga abierto
         || (esCoach()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'valor', 'revisado'])
@@ -98,13 +106,30 @@ service cloud.firestore {
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40);
       allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
-        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40);
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40)
+        // +10 al momento por registrar: solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro'])
+        && request.resource.data.puntos == resource.data.puntos + 10
+        && request.resource.data.ultimoRegistro is string
+        && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
+        && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)));
       allow delete: if esCoach();
 
       // Historial de puntos de cada socio
       match /movimientos/{mid} {
         allow read: if true;
-        allow write: if esCoach();
+        // El socio crea su "registro" (+10) una sola vez por clase y día, y solo si tiene su resultado de hoy
+        allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['fecha', 'clase', 'tipo', 'puntos'])
+          && request.resource.data.tipo == 'registro'
+          && request.resource.data.puntos == 10
+          && request.resource.data.clase in ['wod', 'hyrox', 'funcional']
+          && mid == request.resource.data.fecha + '_' + request.resource.data.clase + '_reg'
+          && esHoy(request.resource.data.fecha)
+          && exists(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid))
+          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoRegistro == mid);
+        allow update, delete: if esCoach();
       }
     }
 

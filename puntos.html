@@ -84,7 +84,7 @@ $("como").append(
   Object.assign(document.createElement("b"), { textContent: "Cómo se ganan: " }),
   `${PUNTOS.registrar} puntos por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
   ["RX", "Scaled", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
-  ` (1º / 2º / 3º). Los puntos se suman solos a las 00:00.`
+  ` (1º / 2º / 3º). Los de registrar se suman al momento y los del podio a las 00:00.`
 );
 
 montarAcceso($("acceso"), { titulo: "Entra para ver tu cartera", texto: "Usa la misma cuenta con la que subes tus resultados." });
@@ -112,9 +112,15 @@ escucharCuenta(({ user, ficha }) => {
       const fila = document.createElement("div"); fila.className = "mov"; fila.style.setProperty("--c", c.color);
       const izq = document.createElement("div");
       const t = document.createElement("div"); t.className = "t";
-      t.textContent = `${c.nombre} · ${m.posicion <= 3 ? ["", "🥇", "🥈", "🥉"][m.posicion] + " " : ""}${m.posicion}º en ${m.categoria}`;
+      const dia = new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
       const dd = document.createElement("div"); dd.className = "d";
-      dd.textContent = `${new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })} · ${m.resultado}`;
+      if (m.tipo === "registro") {
+        t.textContent = `${c.nombre} · ✅ Resultado registrado`;
+        dd.textContent = dia;
+      } else {
+        t.textContent = `${c.nombre} · ${m.posicion <= 3 ? ["", "🥇", "🥈", "🥉"][m.posicion] + " " : ""}${m.posicion}º en ${m.categoria}`;
+        dd.textContent = `${dia} · podio${m.resultado ? " · " + m.resultado : ""}`;
+      }
       izq.append(t, dd);
       const p = document.createElement("div"); p.className = "p"; p.textContent = "+" + fmtPuntos(m.puntos);
       fila.append(izq, p); cont.append(fila);

@@ -117,8 +117,8 @@
 </main>
 
 <script type="module">
-import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor } from "./comun.js";
+import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro } from "./comun.js";
 import { cerrarDiasPendientes } from "./cierre.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { NOMBRE_BOX } from "./config.js";
@@ -216,7 +216,7 @@ function pintarRevision() {
   const p = PUNTOS.podio;
   $("cierreTexto").textContent = cierre
     ? `${n} de hoy ya está cerrado: se han repartido ${fmtPuntos(cierre.puntosTotales)} puntos entre ${cierre.socios} socios.`
-    : `Los puntos se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
+    : `Los ${PUNTOS.registrar} puntos de registrar se suman al momento; los del podio se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
   const cont = $("revision"); cont.replaceChildren();
   if (!w) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Publica el entrenamiento de esta clase para que los socios puedan subir su resultado." })); return; }
   const filas = calcularPuntos(resHoy, w.tipo);
@@ -238,6 +238,7 @@ function filaRevision(f, tipo) {
   const nm = document.createElement("span"); nm.className = "n";
   nm.append(r.nombre, Object.assign(document.createElement("small"), { textContent: formatearValor(r.valor, r.tipo) }));
   if (r.revisado) nm.append(Object.assign(document.createElement("span"), { className: "rv", textContent: "corregido" }));
+  else if (r.validado) nm.append(Object.assign(document.createElement("span"), { className: "rv", textContent: "validado" }));
   const der = document.createElement("span");
   der.append(Object.assign(document.createElement("span"), { className: "pt", textContent: "+" + fmtPuntos(f.puntos) }));
   if (!cierre) {
@@ -275,7 +276,18 @@ function editor(r, tipo) {
   let confirmar = false;
   borrar.addEventListener("click", async () => {
     if (!confirmar) { confirmar = true; borrar.textContent = "¿Seguro? Pulsa otra vez"; return; }
-    try { await deleteDoc(doc(db, "resultados", r.id)); abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado.`; }
+    try {
+      // Borra el resultado y le quita los puntos de registrar que se le sumaron al subirlo
+      const lote = writeBatch(db);
+      lote.delete(doc(db, "resultados", r.id));
+      const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(clase));
+      if ((await getDoc(regRef)).exists()) {
+        lote.delete(regRef);
+        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar) });
+      }
+      await lote.commit();
+      abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado y sus ${PUNTOS.registrar} puntos de registrar descontados.`;
+    }
     catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido borrar."; }
   });
   cancelar.addEventListener("click", () => { abierto = null; pintarRevision(); });

@@ -3,8 +3,8 @@
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db } from "./comun.js";
+import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { app, db, hoy, idRegistro, PUNTOS } from "./comun.js";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -115,4 +115,17 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
       }
     } catch (err) { msg(textoError(err)); }
   });
+}
+
+// Suma al momento los puntos por registrar (una sola vez por clase y día).
+// Devuelve true si los ha sumado ahora y false si ya estaban sumados.
+export async function sumarRegistro(user, clase) {
+  const mid = idRegistro(clase);
+  const ref = doc(db, "usuarios", user.uid, "movimientos", mid);
+  if ((await getDoc(ref)).exists()) return false;
+  const lote = writeBatch(db);
+  lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid });
+  await lote.commit();
+  return true;
 }
