@@ -45,7 +45,7 @@
   <header>
     <div class="marca" id="box"></div>
     <h1>Tu resultado</h1>
-    <div class="wod" id="wodNombre">WOD de hoy</div>
+    <div class="wod" id="wodNombre">Cargando WOD…</div>
   </header>
 
   <form id="formulario" autocomplete="off">
@@ -107,26 +107,27 @@ $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "l
 
 let wod = null;
 let categoria = "RX";
-let tipo = "tiempo";
-let tipoElegidoAMano = false;
 
 // Recordar el nombre en este móvil para la próxima vez
 try { $("nombre").value = localStorage.getItem("wod-nombre") || ""; } catch {}
 
-function ponerTipo(t) {
-  tipo = t;
-  $("tipo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === t));
-  $("entradaTiempo").hidden = t !== "tiempo";
-  $("entradaRondas").hidden = t !== "rondas";
-  $("entradaKg").hidden = t !== "kg";
-}
-
-// Si el coach ha configurado el WOD, se preselecciona su tipo de puntuación
 onSnapshot(doc(db, "wods", hoy()), (snap) => {
   wod = snap.exists() ? snap.data() : null;
-  $("wodNombre").textContent = wod ? `${wod.nombre} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : "WOD de hoy";
-  if (wod && TIPOS[wod.tipo] && !tipoElegidoAMano) ponerTipo(wod.tipo);
-}, () => { $("wodNombre").textContent = "WOD de hoy"; });
+  if (!wod) {
+    $("wodNombre").textContent = "";
+    $("sinWod").hidden = false;
+    $("formulario").hidden = true;
+    return;
+  }
+  $("sinWod").hidden = true;
+  if ($("hecho").hidden) $("formulario").hidden = false;
+  $("wodNombre").textContent = `${wod.nombre} · ${TIPOS[wod.tipo].etiqueta}`;
+  const esTiempo = wod.tipo === "tiempo";
+  $("entradaTiempo").hidden = !esTiempo;
+  $("numero").hidden = esTiempo;
+  $("etiquetaResultado").textContent = esTiempo ? "Tiempo final" : (wod.tipo === "kg" ? "Kilos" : "Repeticiones totales");
+  $("numero").placeholder = wod.tipo === "kg" ? "Ej. 85" : "Ej. 142";
+});
 
 $("categoria").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -135,15 +136,6 @@ $("categoria").addEventListener("click", (e) => {
   $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
 });
 
-$("tipo").addEventListener("click", (e) => {
-  const b = e.target.closest("button");
-  if (!b) return;
-  tipoElegidoAMano = true;
-  ponerTipo(b.dataset.v);
-});
-
-const entero = (id) => { const v = $(id).value.trim(); return v === "" ? 0 : (/^\d+$/.test(v) ? parseInt(v, 10) : NaN); };
-
 $("formulario").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("error").textContent = "";
@@ -151,26 +143,23 @@ $("formulario").addEventListener("submit", async (e) => {
   if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
 
   let valor;
-  if (tipo === "tiempo") {
-    const m = entero("min"), s = entero("seg");
-    if (isNaN(m) || isNaN(s) || s > 59 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
+  if (wod.tipo === "tiempo") {
+    const m = parseInt($("min").value || "0", 10);
+    const s = parseInt($("seg").value || "0", 10);
+    if (isNaN(m) || isNaN(s) || s > 59 || m < 0 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
     valor = m * 60 + s;
-  } else if (tipo === "rondas") {
-    const r = entero("rondas"), x = entero("repsExtra");
-    if (isNaN(r) || isNaN(x) || x > 999 || (r === 0 && x === 0)) return ($("error").textContent = "Revisa las rondas y las reps.");
-    valor = r * 1000 + x;
   } else {
-    valor = parseFloat($("kg").value.replace(",", "."));
-    if (isNaN(valor) || valor <= 0 || valor > 1000) return ($("error").textContent = "Escribe los kilos.");
+    valor = parseFloat($("numero").value.replace(",", "."));
+    if (isNaN(valor) || valor <= 0) return ($("error").textContent = "Escribe un número válido.");
   }
 
   $("enviar").disabled = true;
   try {
     await addDoc(collection(db, "resultados"), {
-      nombre, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp()
+      nombre, categoria, valor, fecha: hoy(), creado: serverTimestamp()
     });
     try { localStorage.setItem("wod-nombre", nombre); } catch {}
-    $("resumen").textContent = `${nombre} · ${categoria} · ${formatearValor(valor, tipo)}`;
+    $("resumen").textContent = `${nombre} · ${categoria} · ${formatearValor(valor, wod.tipo)}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
   } catch (err) {
@@ -182,7 +171,7 @@ $("formulario").addEventListener("submit", async (e) => {
 });
 
 $("otro").addEventListener("click", () => {
-  ["nombre", "min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
+  $("nombre").value = ""; $("min").value = ""; $("seg").value = ""; $("numero").value = "";
   $("hecho").hidden = true;
   $("formulario").hidden = false;
   $("nombre").focus();
