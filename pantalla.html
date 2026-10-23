@@ -17,7 +17,10 @@
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
   header .marca { color: #fff; font-size: 1.3vw; }
-  .fecha-hoy { right: 2.5vw; bottom: 1.2vw; font-size: 1.4vw; }
+  .pie-derecha { position: fixed; right: 2.5vw; bottom: 1.2vw; display: flex; align-items: center; gap: .6vw; z-index: 5; }
+  .pie-derecha .fecha-hoy { position: static; font-size: 1.4vw; margin-left: .4vw; }
+  .discreto { background: none; border: 0; color: var(--suave); opacity: .25; font-size: 1.3vw; line-height: 1; padding: .3vw .4vw; border-radius: 6px; cursor: pointer; }
+  .discreto:hover, .discreto:focus-visible { opacity: 1; }
   header h1 { color: var(--malva); }
   header h1 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 4.2vw; line-height: 1; margin-top: .4vw; }
   header .meta { text-align: right; color: var(--suave); font-size: 1.3vw; }
@@ -71,8 +74,9 @@
   .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
   dialog textarea { text-transform: uppercase;  width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
-  .ajustes { position: fixed; left: 1vw; bottom: calc(1vw + 52px); background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
-  .ajustes:hover { opacity: 1; }
+  .controles { position: fixed; left: 1vw; bottom: calc(1vw + 52px); display: flex; gap: 8px; z-index: 5; }
+  .controles button, .ajustes { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; cursor: pointer; }
+  .controles button:hover, .controles button:focus-visible { opacity: 1; }
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
   dialog h3 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 24px; margin-bottom: 16px; }
@@ -117,8 +121,14 @@
   </div>
 </aside>
 
-<button class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
-<div class="fecha-hoy" id="fecha"></div>
+<div class="controles">
+  <button type="button" class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
+</div>
+<div class="pie-derecha">
+  <button type="button" class="discreto" id="volver" title="Volver">←</button>
+  <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
+  <div class="fecha-hoy" id="fecha"></div>
+</div>
 
 <dialog id="dialogo">
   <form method="dialog" id="formWod">
@@ -155,6 +165,22 @@ $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long
 // Clase que se está mostrando (WOD, Hyrox o Funcional)
 let clase = claseInicial();
 let esCoach = false;
+// Pantalla completa (quita la barra del navegador en la TV) y volver atrás
+const enCompleta = () => document.fullscreenElement || document.webkitFullscreenElement;
+function pintarCompleta() { const b = $("completa"); b.textContent = enCompleta() ? "✕" : "⛶"; b.title = enCompleta() ? "Salir de pantalla completa" : "Pantalla completa"; }
+$("completa").addEventListener("click", () => {
+  const el = document.documentElement;
+  if (enCompleta()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+});
+document.addEventListener("fullscreenchange", pintarCompleta);
+document.addEventListener("webkitfullscreenchange", pintarCompleta);
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) $("completa").hidden = true;
+$("volver").addEventListener("click", async () => {
+  if (enCompleta()) { try { await (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {} }
+  if (history.length > 1) history.back(); else location.href = "ranking.html";
+});
+
 const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
 
 // QR que apunta al formulario de la clase que se está mostrando
