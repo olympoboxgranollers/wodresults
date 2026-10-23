@@ -6,7 +6,8 @@ service cloud.firestore {
     // (los resultados erróneos se borran desde la consola de Firebase)
     match /resultados/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'valor', 'fecha', 'creado'])
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado'])
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
         && request.resource.data.nombre.size() <= 40
@@ -25,7 +26,7 @@ service cloud.firestore {
       allow write: if request.resource.data.keys().hasOnly(['nombre', 'tipo'])
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() <= 60
-        && request.resource.data.tipo in ['tiempo', 'reps', 'kg'];
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
     }
   }
 }

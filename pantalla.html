@@ -11,7 +11,9 @@
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw; display: grid; grid-template-columns: 1fr 1fr 22vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
-  header .marca { color: var(--acento); font-size: 1.3vw; }
+  header .marca { color: #fff; font-size: 1.3vw; }
+  .fecha-hoy { right: 2.5vw; bottom: 1.2vw; font-size: 1.4vw; }
+  header h1 { color: var(--malva); }
   header h1 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 4.2vw; line-height: 1; margin-top: .4vw; }
   header .meta { text-align: right; color: var(--suave); font-size: 1.3vw; }
   header .meta strong { display: block; color: var(--texto); font-size: 2vw; font-family: "Oswald", sans-serif; }
@@ -34,7 +36,7 @@
   aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
   aside .cta span { color: var(--acento); }
   aside .total { color: var(--suave); font-size: 1.2vw; }
-  .ajustes { position: fixed; right: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
+  .ajustes { position: fixed; left: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
   .ajustes:hover { opacity: 1; }
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
@@ -60,7 +62,7 @@
     <div class="marca" id="box"></div>
     <h1 id="wodNombre">WOD del día</h1>
   </div>
-  <div class="meta"><strong id="tipo"></strong><span id="fecha"></span></div>
+  <div class="meta"><strong id="tipo"></strong></div>
 </header>
 
 <section class="columna">
@@ -79,6 +81,7 @@
 </aside>
 
 <button class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
+<div class="fecha-hoy" id="fecha"></div>
 
 <dialog id="dialogo">
   <form method="dialog" id="formWod">
@@ -88,7 +91,7 @@
     <label for="wTipo">Cómo se puntúa</label>
     <select id="wTipo">
       <option value="tiempo">Por tiempo (menos es mejor)</option>
-      <option value="reps">Repeticiones / AMRAP (más es mejor)</option>
+      <option value="rondas">AMRAP: rondas + reps (más es mejor)</option>
       <option value="kg">Carga en kg (más es mejor)</option>
     </select>
     <div class="botones">
@@ -105,7 +108,7 @@ import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
-$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 // QR que apunta al formulario de esta misma web
 const urlFormulario = new URL("index.html", location.href).href;
@@ -117,7 +120,13 @@ const vistos = new Set();
 let primeraCarga = true;
 
 function pintar() {
-  const tipo = wod?.tipo || "tiempo";
+  // Tipo del ranking: el del WOD configurado o, si no hay, el más usado por los socios
+  let tipo = wod?.tipo;
+  if (!tipo) {
+    const cuenta = {};
+    resultados.forEach((r) => (cuenta[r.tipo] = (cuenta[r.tipo] || 0) + 1));
+    tipo = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])[0] || "tiempo";
+  }
   for (const cat of ["RX", "Scaled"]) {
     const lista = ordenar(resultados.filter((r) => r.categoria === cat), tipo);
     const ol = $("lista" + cat);
@@ -134,7 +143,7 @@ function pintar() {
       if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
       const pos = document.createElement("span"); pos.className = "pos"; pos.textContent = i + 1;
       const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
-      const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, tipo);
+      const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
       li.append(pos, nom, res);
       ol.append(li);
     });

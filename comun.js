@@ -10,11 +10,12 @@ export function hoy() {
   return new Date().toLocaleDateString("sv-SE", { timeZone: ZONA_HORARIA });
 }
 
-// Tipos de puntuación: "tiempo" (menos es mejor), "reps" y "kg" (más es mejor)
+// Tipos de puntuación: "tiempo" (menos es mejor), "rondas" y "kg" (más es mejor)
+// En "rondas" el valor se guarda como rondas * 1000 + reps sueltas (para poder ordenar)
 export const TIPOS = {
-  tiempo: { etiqueta: "Por tiempo", menosEsMejor: true },
-  reps:   { etiqueta: "Repeticiones / AMRAP", menosEsMejor: false },
-  kg:     { etiqueta: "Carga (kg)", menosEsMejor: false }
+  tiempo: { etiqueta: "Por tiempo", corto: "Tiempo", menosEsMejor: true },
+  rondas: { etiqueta: "AMRAP (rondas + reps)", corto: "Rondas", menosEsMejor: false },
+  kg:     { etiqueta: "Carga (kg)", corto: "Kg", menosEsMejor: false }
 };
 
 export function formatearValor(valor, tipo) {
@@ -24,10 +25,17 @@ export function formatearValor(valor, tipo) {
     return `${m}:${String(s).padStart(2, "0")}`;
   }
   if (tipo === "kg") return `${valor} kg`;
-  return `${valor} reps`;
+  const rondas = Math.floor(valor / 1000);
+  const reps = valor % 1000;
+  const txt = `${rondas} ronda${rondas === 1 ? "" : "s"}`;
+  return reps ? `${txt} + ${reps}` : txt;
 }
 
+// Ordena según el tipo del WOD; los resultados con otro tipo van al final
 export function ordenar(lista, tipo) {
   const menos = TIPOS[tipo]?.menosEsMejor ?? false;
-  return [...lista].sort((a, b) => (menos ? a.valor - b.valor : b.valor - a.valor));
+  const mismos = lista.filter((r) => (r.tipo || tipo) === tipo);
+  const otros = lista.filter((r) => (r.tipo || tipo) !== tipo);
+  mismos.sort((a, b) => (menos ? a.valor - b.valor : b.valor - a.valor));
+  return [...mismos, ...otros];
 }
