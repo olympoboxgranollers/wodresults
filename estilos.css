@@ -1,0 +1,26 @@
+:root {
+  --fondo: #0e0f11;
+  --panel: #17191c;
+  --borde: #2a2d32;
+  --texto: #f2f2f0;
+  --suave: #9a9ea6;
+  --acento: #e8ff3a;
+  --acento-texto: #0e0f11;
+  --oro: #f5c542;
+  --plata: #c9ced6;
+  --bronce: #d08a4e;
+  --error: #ff6b5a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--fondo); color: var(--texto); }
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.marca {
+  font-family: "Oswald", "Inter", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+button { font: inherit; cursor: pointer; }
+input, select { font: inherit; color: inherit; }

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Resultado del WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
+  main { width: 100%; max-width: 440px; }
+  header { margin-bottom: 28px; }
+  header .marca { color: var(--acento); font-size: 14px; }
+  h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; }
+  .wod { color: var(--suave); margin-top: 8px; font-size: 15px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
+  .campo { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; font-size: 20px; outline: none; }
+  .campo:focus { border-color: var(--acento); }
+  .tiempo { display: flex; align-items: center; gap: 10px; }
+  .tiempo .campo { text-align: center; }
+  .tiempo span { font-size: 28px; font-weight: 800; }
+  .segmentado { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .segmentado button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px; font-weight: 800; font-size: 17px; }
+  .segmentado button[aria-pressed="true"] { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
+  .enviar { width: 100%; margin-top: 32px; background: var(--acento); color: var(--acento-texto); border: 0; border-radius: 14px; padding: 18px; font-family: "Oswald", sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: .06em; }
+  .enviar:disabled { opacity: .5; }
+  .error { color: var(--error); margin-top: 14px; font-size: 15px; min-height: 1em; }
+  .aviso { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 24px; text-align: center; color: var(--suave); }
+  .ok { text-align: center; padding-top: 40px; }
+  .ok .check { width: 72px; height: 72px; border-radius: 50%; background: var(--acento); color: var(--acento-texto); display: grid; place-items: center; font-size: 38px; font-weight: 800; margin: 0 auto 20px; }
+  .ok h2 { font-family: "Oswald", sans-serif; font-size: 32px; text-transform: uppercase; }
+  .ok p { color: var(--suave); margin-top: 8px; }
+  .secundario { margin-top: 28px; background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px 20px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca" id="box"></div>
+    <h1>Tu resultado</h1>
+    <div class="wod" id="wodNombre">Cargando WOD…</div>
+  </header>
+
+  <div class="aviso" id="sinWod" hidden>El coach todavía no ha publicado el WOD de hoy. Vuelve a escanear en un momento.</div>
+
+  <form id="formulario" hidden autocomplete="off">
+    <label for="nombre">Nombre</label>
+    <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
+
+    <label>Categoría</label>
+    <div class="segmentado" id="categoria">
+      <button type="button" data-v="RX" aria-pressed="true">RX</button>
+      <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
+    </div>
+
+    <label id="etiquetaResultado">Resultado</label>
+    <div class="tiempo" id="entradaTiempo" hidden>
+      <input class="campo" id="min" inputmode="numeric" placeholder="min" maxlength="3">
+      <span>:</span>
+      <input class="campo" id="seg" inputmode="numeric" placeholder="seg" maxlength="2">
+    </div>
+    <input class="campo" id="numero" inputmode="decimal" hidden>
+
+    <button class="enviar" id="enviar" type="submit">Enviar</button>
+    <div class="error" id="error"></div>
+  </form>
+
+  <div class="ok" id="hecho" hidden>
+    <div class="check">✓</div>
+    <h2>¡Registrado!</h2>
+    <p id="resumen"></p>
+    <button class="secundario" id="otro">Enviar otro resultado</button>
+  </div>
+</main>
+
+<script type="module">
+import { doc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor } from "./comun.js";
+import { NOMBRE_BOX } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+
+let wod = null;
+let categoria = "RX";
+
+// Recordar el nombre en este móvil para la próxima vez
+try { $("nombre").value = localStorage.getItem("wod-nombre") || ""; } catch {}
+
+onSnapshot(doc(db, "wods", hoy()), (snap) => {
+  wod = snap.exists() ? snap.data() : null;
+  if (!wod) {
+    $("wodNombre").textContent = "";
+    $("sinWod").hidden = false;
+    $("formulario").hidden = true;
+    return;
+  }
+  $("sinWod").hidden = true;
+  if ($("hecho").hidden) $("formulario").hidden = false;
+  $("wodNombre").textContent = `${wod.nombre} · ${TIPOS[wod.tipo].etiqueta}`;
+  const esTiempo = wod.tipo === "tiempo";
+  $("entradaTiempo").hidden = !esTiempo;
+  $("numero").hidden = esTiempo;
+  $("etiquetaResultado").textContent = esTiempo ? "Tiempo final" : (wod.tipo === "kg" ? "Kilos" : "Repeticiones totales");
+  $("numero").placeholder = wod.tipo === "kg" ? "Ej. 85" : "Ej. 142";
+});
+
+$("categoria").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  categoria = b.dataset.v;
+  $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+});
+
+$("formulario").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("error").textContent = "";
+  const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
+  if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
+
+  let valor;
+  if (wod.tipo === "tiempo") {
+    const m = parseInt($("min").value || "0", 10);
+    const s = parseInt($("seg").value || "0", 10);
+    if (isNaN(m) || isNaN(s) || s > 59 || m < 0 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
+    valor = m * 60 + s;
+  } else {
+    valor = parseFloat($("numero").value.replace(",", "."));
+    if (isNaN(valor) || valor <= 0) return ($("error").textContent = "Escribe un número válido.");
+  }
+
+  $("enviar").disabled = true;
+  try {
+    await addDoc(collection(db, "resultados"), {
+      nombre, categoria, valor, fecha: hoy(), creado: serverTimestamp()
+    });
+    try { localStorage.setItem("wod-nombre", nombre); } catch {}
+    $("resumen").textContent = `${nombre} · ${categoria} · ${formatearValor(valor, wod.tipo)}`;
+    $("formulario").hidden = true;
+    $("hecho").hidden = false;
+  } catch (err) {
+    console.error(err);
+    $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
+  } finally {
+    $("enviar").disabled = false;
+  }
+});
+
+$("otro").addEventListener("click", () => {
+  $("nombre").value = ""; $("min").value = ""; $("seg").value = ""; $("numero").value = "";
+  $("hecho").hidden = true;
+  $("formulario").hidden = false;
+  $("nombre").focus();
+});
+</script>
+</body>
+</html>
