@@ -31,13 +31,46 @@ export function formatearValor(valor, tipo) {
   return reps ? `${txt} + ${reps}` : txt;
 }
 
-// Ordena según el tipo del WOD; los resultados con otro tipo van al final
+// Categorías de más a menos nivel: RX > Scaled > Open
+export const CATEGORIAS = ["RX", "Scaled", "Open"];
+const ORDEN_CATEGORIA = { RX: 0, Scaled: 1, Open: 2 };
+
+// Material que se puede indicar en Open (con el peso usado en kg)
+export const MATERIAL = {
+  wallball:   { nombre: "Wall ball",  corto: "WB" },
+  dumbbell:   { nombre: "Dumbbell",   corto: "DB" },
+  kettlebell: { nombre: "Kettlebell", corto: "KB" },
+  barbell:    { nombre: "Barbell",    corto: "BB" }
+};
+
+// Texto corto con los pesos de Open, p. ej. "WB 6 · DB 15 kg"
+export function textoPesos(pesos) {
+  if (!pesos) return "";
+  const partes = Object.keys(MATERIAL).filter((k) => pesos[k]).map((k) => `${MATERIAL[k].corto} ${pesos[k]}`);
+  return partes.length ? partes.join(" · ") + " kg" : "";
+}
+
+// Ordena según el tipo del WOD: primero RX, luego Scaled y luego Open,
+// y dentro de cada categoría por resultado. Los de otro tipo van al final.
 export function ordenar(lista, tipo) {
   const menos = TIPOS[tipo]?.menosEsMejor ?? false;
+  const orden = (r) => ORDEN_CATEGORIA[r.categoria] ?? 9;
   const mismos = lista.filter((r) => (r.tipo || tipo) === tipo);
   const otros = lista.filter((r) => (r.tipo || tipo) !== tipo);
-  mismos.sort((a, b) => (menos ? a.valor - b.valor : b.valor - a.valor));
+  mismos.sort((a, b) => orden(a) - orden(b) || (menos ? a.valor - b.valor : b.valor - a.valor));
   return [...mismos, ...otros];
+}
+
+// Posición de cada atleta en una lista ya ordenada.
+// Si dos tienen el mismo resultado en la misma categoría, comparten posición (1, 2, 2, 4…)
+export function posiciones(lista) {
+  const pos = [];
+  lista.forEach((r, i) => {
+    const ant = lista[i - 1];
+    const empate = ant && ant.categoria === r.categoria && ant.valor === r.valor && ant.tipo === r.tipo;
+    pos.push(empate ? pos[i - 1] : i + 1);
+  });
+  return pos;
 }
 
 // Sensaciones que el socio puede elegir al enviar su resultado (opcional)
@@ -67,4 +100,70 @@ export function crearEmoji(clave, clase = "emoji") {
     img.replaceWith(t);
   };
   return img;
+}
+
+// ---------- Pique: líderes, empates y mensajes ----------
+
+// Clasificación de una categoría (RX o Scaled) con sus posiciones
+export function clasificacionDe(resultados, tipo, categoria) {
+  const lista = ordenar(resultados.filter((r) => (r.tipo || tipo) === tipo && r.categoria === categoria), tipo);
+  return { lista, pos: posiciones(lista) };
+}
+
+// Ids de quienes van primeros en cada categoría
+export function lideres(resultados, tipo) {
+  const mapa = {};
+  for (const cat of CATEGORIAS) {
+    const { lista, pos } = clasificacionDe(resultados, tipo, cat);
+    mapa[cat] = lista.filter((_, i) => pos[i] === 1);
+  }
+  return mapa;
+}
+
+const nombres = (l) => l.map((r) => r.nombre).join(" y ");
+
+// Compara los líderes de antes y de ahora y devuelve los avisos para la pantalla
+// Cada aviso: { icono, etiqueta, destacado, texto }
+export function mensajesDeLider(antes, ahora) {
+  const msgs = [];
+  for (const cat of CATEGORIAS) {
+    const a = (antes?.[cat] || []).map((r) => r.id).sort().join();
+    const b = (ahora[cat] || []).map((r) => r.id).sort().join();
+    if (!b || a === b) continue;
+    const nuevos = ahora[cat];
+    if (nuevos.length > 1) {
+      msgs.push({ icono: "⚔️", etiqueta: `Empate en cabeza · ${cat}`, destacado: nombres(nuevos), texto: "comparten el primer puesto" });
+    } else if (antes?.[cat]?.length) {
+      msgs.push({ icono: "👑", etiqueta: `Nuevo líder · ${cat}`, destacado: nuevos[0].nombre, texto: `le quita el primer puesto a ${nombres(antes[cat])}` });
+    } else {
+      msgs.push({ icono: "👑", etiqueta: `Primer líder · ${cat}`, destacado: nuevos[0].nombre, texto: "se pone en cabeza" });
+    }
+  }
+  return msgs;
+}
+
+// Aviso flotante en la parte de arriba de la página
+const colaAvisos = [];
+let mostrandoAviso = false;
+export function aviso(texto) {
+  colaAvisos.push(texto);
+  if (!mostrandoAviso) siguienteAviso();
+}
+function siguienteAviso() {
+  const m = colaAvisos.shift();
+  if (!m) { mostrandoAviso = false; return; }
+  mostrandoAviso = true;
+  const el = document.createElement("div");
+  el.className = "aviso-flotante";
+  const ico = document.createElement("div"); ico.className = "aviso-icono"; ico.textContent = m.icono || "👑";
+  const cuerpo = document.createElement("div"); cuerpo.className = "aviso-cuerpo";
+  const et = document.createElement("div"); et.className = "aviso-etiqueta"; et.textContent = m.etiqueta || "";
+  const linea = document.createElement("div"); linea.className = "aviso-linea";
+  const dest = document.createElement("strong"); dest.textContent = m.destacado || "";
+  linea.append(dest, document.createTextNode(m.texto ? " " + m.texto : ""));
+  cuerpo.append(et, linea);
+  el.append(ico, cuerpo);
+  document.body.append(el);
+  setTimeout(() => el.classList.add("fuera"), 6500);
+  setTimeout(() => { el.remove(); siguienteAviso(); }, 7100);
 }

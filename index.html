@@ -37,9 +37,43 @@
   .ok .check { width: 72px; height: 72px; border-radius: 50%; background: var(--acento); color: var(--acento-texto); display: grid; place-items: center; font-size: 38px; font-weight: 800; margin: 0 auto 20px; }
   .ok h2 { font-family: "Oswald", sans-serif; font-size: 32px; text-transform: uppercase; }
   .ok p { color: var(--suave); margin-top: 8px; }
+  .estado { position: relative; overflow: hidden; margin-top: 24px; background: linear-gradient(160deg, #3a3e44, #2a2d32); border: 1px solid var(--borde); border-radius: 20px; padding: 22px 18px 20px; text-align: center; }
+  .estado-icono { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: radial-gradient(circle at 35% 30%, rgba(195,155,211,.35), rgba(195,155,211,.08)); box-shadow: inset 0 0 0 1px rgba(195,155,211,.45); }
+  .estado-etiqueta { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 600; color: var(--malva); }
+  .estado-pos { font-family: "Oswald", sans-serif; font-size: 56px; line-height: 1; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
+  .estado-pos small { font-size: 20px; color: var(--suave); margin-left: 4px; }
+  .estado-msg { margin: 12px auto 0; max-width: 30ch; font-size: 16px; line-height: 1.45; color: var(--suave); }
+  .estado-msg strong { color: var(--texto); }
+  /* Líder: tarjeta dorada con brillo */
+  .estado.lider { border-color: rgba(245,197,66,.55); background: linear-gradient(160deg, #46402c, #2a2d32 70%); box-shadow: 0 0 0 4px rgba(245,197,66,.08), 0 18px 50px rgba(0,0,0,.35), 0 0 40px rgba(245,197,66,.15); }
+  .estado.lider .estado-icono { background: radial-gradient(circle at 35% 30%, rgba(245,197,66,.45), rgba(245,197,66,.1)); box-shadow: inset 0 0 0 1px rgba(245,197,66,.55), 0 0 24px rgba(245,197,66,.3); }
+  .estado.lider .estado-etiqueta, .estado.lider .estado-pos { color: var(--oro); }
+  .estado.lider::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.12) 50%, transparent 65%); transform: translateX(-100%); animation: brillo 3.5s ease-in-out infinite; pointer-events: none; }
+  @keyframes brillo { 0%, 60% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  .estado.empate { border-color: rgba(195,155,211,.55); }
+  .estado.destronado { border-color: rgba(255,107,90,.5); }
+  .estado.destronado .estado-etiqueta { color: var(--error); }
+  @media (prefers-reduced-motion: reduce) { .estado.lider::after { animation: none; display: none; } }
+  .avisame { margin-top: 16px; width: 100%; background: rgba(245,197,66,.12); color: var(--oro); border: 1px solid rgba(245,197,66,.5); border-radius: 12px; padding: 14px; font-weight: 800; font-size: 15px; }
+  .avisame-info { margin-top: 10px; color: var(--suave); font-size: 13px; line-height: 1.4; }
   .secundario { margin-top: 28px; background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px 20px; }
   [hidden] { display: none !important; }
+  main .fecha-hoy { position: static; text-align: right; margin-top: 36px; }
   .segmentado button.bloqueado { opacity: .35; }
+  .bloque-open { margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 14px; }
+  .open-titulo { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+  .open-titulo .opcional { display: block; color: var(--suave); font-weight: 400; font-size: 13px; margin-top: 2px; }
+  .material { display: flex; flex-direction: column; gap: 8px; }
+  .fila-material { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center; }
+  .fila-material button { text-align: left; background: var(--fondo); border: 1px solid var(--borde); color: var(--texto); border-radius: 10px; padding: 12px 14px; font-weight: 600; font-size: 15px; }
+  .fila-material button::before { content: "＋ "; color: var(--suave); }
+  .fila-material button[aria-pressed="true"] { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 18%, var(--fondo)); }
+  .fila-material button[aria-pressed="true"]::before { content: "✓ "; color: var(--malva); }
+  .fila-material .kg { position: relative; display: block; margin: 0; }
+  .fila-material input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px 34px 12px 12px; font-size: 17px; font-weight: 700; text-align: right; outline: none; }
+  .fila-material input:focus { border-color: var(--malva); }
+  .fila-material input:disabled { opacity: .35; }
+  .fila-material .kg span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--suave); font-size: 13px; pointer-events: none; text-transform: none; letter-spacing: 0; }
   .opcional { text-transform: none; letter-spacing: 0; font-weight: 400; }
   .sensaciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .sensaciones button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
@@ -62,9 +96,15 @@
     <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
 
     <label>Categoría</label>
-    <div class="segmentado" id="categoria">
+    <div class="segmentado tres" id="categoria">
       <button type="button" data-v="RX" aria-pressed="true">RX</button>
       <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
+      <button type="button" data-v="Open" aria-pressed="false">Open</button>
+    </div>
+
+    <div class="bloque-open" id="bloqueOpen" hidden>
+      <div class="open-titulo">¿Qué peso has usado? <span class="opcional">Marca el material y escribe los kg</span></div>
+      <div class="material" id="material"></div>
     </div>
 
     <label>Tu resultado</label>
@@ -104,14 +144,22 @@
     <div class="check">✓</div>
     <h2>¡Registrado!</h2>
     <p id="resumen"></p>
+    <div class="estado" id="estado" hidden>
+      <div class="estado-icono" id="estadoIcono">🏅</div>
+      <div class="estado-etiqueta" id="estadoEtiqueta"></div>
+      <div class="estado-pos" id="estadoPos"></div>
+      <div class="estado-msg" id="estadoMsg"></div>
+      <button class="avisame" id="avisame" type="button" hidden>🔔 Avísame si me quitan el primer puesto</button>
+      <div class="avisame-info" id="avisameInfo" hidden></div>
+    </div>
     <button class="secundario" id="otro">Enviar otro resultado</button>
   </div>
+  <div class="fecha-hoy" id="fechaHoy"></div>
 </main>
-<div class="fecha-hoy" id="fechaHoy"></div>
 
 <script type="module">
-import { doc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji } from "./comun.js";
+import { doc, onSnapshot, collection, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -120,6 +168,26 @@ $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "l
 
 let wod = null;
 let categoria = "RX";
+const elegido = {};  // material marcado en Open
+
+// Filas de material para Open: se pueden marcar varias y escribir el peso de cada una
+for (const [clave, m] of Object.entries(MATERIAL)) {
+  const fila = document.createElement("div"); fila.className = "fila-material";
+  const b = document.createElement("button"); b.type = "button"; b.textContent = m.nombre; b.setAttribute("aria-pressed", "false");
+  const kg = document.createElement("div"); kg.className = "kg";
+  const input = document.createElement("input"); input.id = "peso-" + clave; input.inputMode = "decimal"; input.placeholder = "0"; input.disabled = true;
+  input.setAttribute("aria-label", "Kilos de " + m.nombre);
+  const u = document.createElement("span"); u.textContent = "kg";
+  kg.append(input, u);
+  fila.append(b, kg);
+  b.addEventListener("click", () => {
+    elegido[clave] = !elegido[clave];
+    b.setAttribute("aria-pressed", elegido[clave]);
+    input.disabled = !elegido[clave];
+    if (elegido[clave]) input.focus(); else input.value = "";
+  });
+  $("material").append(fila);
+}
 let tipo = "tiempo";
 let sensacion = null;
 
@@ -170,6 +238,7 @@ $("categoria").addEventListener("click", (e) => {
   if (!b) return;
   categoria = b.dataset.v;
   $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  $("bloqueOpen").hidden = categoria !== "Open";
 });
 
 $("tipo").addEventListener("click", (e) => {
@@ -207,16 +276,31 @@ $("formulario").addEventListener("submit", async (e) => {
     if (isNaN(valor) || valor <= 0 || valor > 1000) return ($("error").textContent = "Escribe los kilos.");
   }
 
+  // En Open hay que indicar el material y el peso usado
+  let pesos = null;
+  if (categoria === "Open") {
+    pesos = {};
+    for (const clave of Object.keys(MATERIAL)) {
+      if (!elegido[clave]) continue;
+      const kg = parseFloat($("peso-" + clave).value.replace(",", "."));
+      if (isNaN(kg) || kg <= 0 || kg > 500) return ($("error").textContent = `Escribe los kg de ${MATERIAL[clave].nombre}.`);
+      pesos[clave] = kg;
+    }
+    if (!Object.keys(pesos).length) return ($("error").textContent = "En Open marca el material que has usado y escribe su peso.");
+  }
+
   $("enviar").disabled = true;
   try {
-    await addDoc(collection(db, "resultados"), {
+    const ref = await addDoc(collection(db, "resultados"), {
       nombre, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp(),
-      ...(sensacion ? { sensacion } : {})
+      ...(sensacion ? { sensacion } : {}),
+      ...(pesos ? { pesos } : {})
     });
     try { localStorage.setItem("wod-nombre", nombre); } catch {}
-    $("resumen").textContent = `${nombre} · ${categoria} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+    $("resumen").textContent = `${nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
+    seguirMiPosicion({ id: ref.id, nombre, categoria, tipo, valor });
   } catch (err) {
     console.error(err);
     $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
@@ -225,9 +309,120 @@ $("formulario").addEventListener("submit", async (e) => {
   }
 });
 
+// ---------- Pique: mi posición en directo, mensajes y aviso si me quitan el 1º ----------
+let miResultado = null;
+let dejarDeSeguir = null;
+let estadoAntes = null;   // "lider", "empate" u "otro"
+let quiereAviso = false;
+
+const FRASES_LIDER = [
+  "¡Eres el líder! Ahora toca defender el trono.",
+  "¡Primer puesto! Que vengan a por ti.",
+  "¡Vas primero! Los demás ya están sudando."
+];
+const azar = (l) => l[Math.floor(Math.random() * l.length)];
+
+function seguirMiPosicion(r) {
+  miResultado = r;
+  estadoAntes = null;
+  delete $("estado").dataset.destronado;
+  if (dejarDeSeguir) dejarDeSeguir();
+  dejarDeSeguir = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+    const todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (!todos.some((x) => x.id === r.id)) todos.push(r);  // por si aún no ha llegado el mío
+    pintarEstado(todos);
+  });
+}
+
+function pintarEstado(todos) {
+  const r = miResultado;
+  const { lista, pos } = clasificacionDe(todos, r.tipo, r.categoria);
+  const i = lista.findIndex((x) => x.id === r.id);
+  if (i < 0) return;
+  const p = pos[i];
+  const empatados = lista.filter((x, j) => pos[j] === p && x.id !== r.id);
+  const estado = p === 1 ? (empatados.length ? "empate" : "lider") : "otro";
+
+  $("estado").hidden = false;
+  const caja = $("estado");
+  caja.classList.remove("lider", "empate", "destronado");
+  $("estadoPos").replaceChildren(document.createTextNode(p + "º"), Object.assign(document.createElement("small"), { textContent: "de " + lista.length }));
+  const ponerCabecera = (icono, etiqueta, clase) => {
+    $("estadoIcono").textContent = icono;
+    $("estadoEtiqueta").textContent = etiqueta;
+    if (clase) caja.classList.add(clase);
+  };
+  // Mensaje con el nombre resaltado
+  const frase = (destacado, resto) => {
+    const s = document.createElement("strong"); s.textContent = destacado;
+    $("estadoMsg").replaceChildren(s, document.createTextNode(resto));
+  };
+
+  const conQuien = empatados.map((x) => x.nombre).join(" y ");
+  if (estado === "lider") {
+    ponerCabecera("👑", `Líder · ${r.categoria}`, "lider");
+    delete caja.dataset.destronado;
+    if (estadoAntes !== "lider") $("estadoMsg").textContent = azar(FRASES_LIDER);
+  } else if (estado === "empate") {
+    ponerCabecera("⚔️", `Empate en cabeza · ${r.categoria}`, "empate");
+    frase(conQuien, " está igualado contigo. Nadie cede el trono.");
+  } else {
+    const delante = lista[pos.indexOf(p) - 1];  // el que va justo por delante
+    const lider = lista[0];
+    if (estadoAntes === "lider" || estadoAntes === "empate") {
+      ponerCabecera("😤", `Te han quitado el 1º · ${r.categoria}`, "destronado");
+      frase(lider.nombre, " te ha quitado el primer puesto. ¡La próxima es tuya!");
+      notificar(`😤 ${lider.nombre} te ha quitado el primer puesto`, `Ahora vas ${p}º en ${r.categoria} con ${formatearValor(r.valor, r.tipo)}.`);
+    } else if (caja.dataset.destronado === "1") {
+      ponerCabecera("😤", `Te han quitado el 1º · ${r.categoria}`, "destronado");
+    } else if (empatados.length) {
+      ponerCabecera("🤝", `Empate · ${r.categoria}`, "empate");
+      frase(conQuien, " va igualado contigo. ¡Toca desempatar!");
+    } else {
+      ponerCabecera(p <= 3 ? ["", "🥇", "🥈", "🥉"][p] : "💪", `Tu posición · ${r.categoria}`);
+      frase(delante.nombre, ` va justo delante con ${formatearValor(delante.valor, r.tipo)}. ¡A por él!`);
+    }
+    if (estadoAntes === "lider" || estadoAntes === "empate") caja.dataset.destronado = "1";
+  }
+  $("avisame").hidden = !(p === 1) || quiereAviso;
+  estadoAntes = estado;
+}
+
+// Notificaciones: funcionan mientras la web siga abierta (aunque sea en segundo plano)
+async function notificar(titulo, cuerpo) {
+  try { navigator.vibrate?.([200, 100, 200]); } catch {}
+  if (!quiereAviso || !("Notification" in window) || Notification.permission !== "granted") return;
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    if (reg) await reg.showNotification(titulo, { body: cuerpo, tag: "lider" });
+    else new Notification(titulo, { body: cuerpo });
+  } catch (err) { console.warn(err); }
+}
+
+$("avisame").addEventListener("click", async () => {
+  const info = $("avisameInfo");
+  info.hidden = false;
+  if (!("Notification" in window)) {
+    info.textContent = "Este móvil no permite avisos desde la web. En iPhone, añade la página a la pantalla de inicio (Compartir → Añadir a pantalla de inicio) y ábrela desde ahí. Mientras tanto, si dejas esta página abierta verás el aviso aquí.";
+    quiereAviso = true; $("avisame").hidden = true;
+    return;
+  }
+  try { await navigator.serviceWorker?.register("sw.js"); } catch {}
+  const permiso = await Notification.requestPermission();
+  quiereAviso = true;
+  $("avisame").hidden = true;
+  info.textContent = permiso === "granted"
+    ? "✅ Te avisaremos si alguien te quita el primer puesto. Deja esta página abierta (puede estar en segundo plano)."
+    : "No has dado permiso para los avisos. Si dejas esta página abierta, verás el aviso aquí.";
+});
+
 $("otro").addEventListener("click", () => {
   ["nombre", "min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
   sensacion = null;
+  for (const clave of Object.keys(MATERIAL)) { elegido[clave] = false; const i = $("peso-" + clave); i.value = ""; i.disabled = true; i.parentElement.previousElementSibling.setAttribute("aria-pressed", "false"); }
+  if (dejarDeSeguir) { dejarDeSeguir(); dejarDeSeguir = null; }
+  miResultado = null; quiereAviso = false;
+  $("estado").hidden = true; $("avisameInfo").hidden = true;
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
   $("hecho").hidden = true;
   $("formulario").hidden = false;

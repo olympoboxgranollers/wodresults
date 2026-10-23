@@ -2,18 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Pesos de Open: solo material conocido y kg razonables
+    function kgOk(p, k) { return !(k in p) || (p[k] is number && p[k] > 0 && p[k] <= 500); }
+    function pesosValidos(d) {
+      return !('pesos' in d) || (d.pesos is map
+        && d.pesos.keys().hasOnly(['wallball', 'dumbbell', 'kettlebell', 'barbell'])
+        && kgOk(d.pesos, 'wallball') && kgOk(d.pesos, 'dumbbell')
+        && kgOk(d.pesos, 'kettlebell') && kgOk(d.pesos, 'barbell'));
+    }
+
     // Resultados de los socios: todos pueden leer y añadir, nadie puede editarlos.
     // Solo se pueden borrar a partir de medianoche del día siguiente (la pantalla los borra sola a las 00:00)
     match /resultados/{id} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'sensacion'])
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'sensacion', 'pesos'])
         && (!('sensacion' in request.resource.data) || request.resource.data.sensacion in ['duro', 'bien', 'sobrado', 'muerto', 'fuego', 'molestia'])
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
         && request.resource.data.tipo == get(/databases/$(database)/documents/wods/$(request.resource.data.fecha)).data.tipo
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
         && request.resource.data.nombre.size() <= 40
-        && request.resource.data.categoria in ['RX', 'Scaled']
+        && request.resource.data.categoria in ['RX', 'Scaled', 'Open']
+        && pesosValidos(request.resource.data)
         && request.resource.data.valor is number
         && request.resource.data.valor > 0
         && request.resource.data.valor < 100000

@@ -27,6 +27,7 @@
   li .nom { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   li .emoji { margin-left: .6vw; width: 2.2vw; height: 2.2vw; font-size: 1.8vw; vertical-align: middle; display: inline-block; line-height: 2.2vw; }
   li .res { font-family: "Oswald", sans-serif; font-size: 2vw; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
+  li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
   li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
   li.p1 { border-color: var(--oro); } li.p1 .pos { color: var(--oro); }
   li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
@@ -118,7 +119,7 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, crearEmoji } from "./comun.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -133,6 +134,9 @@ let wod = null;
 let resultados = [];
 const vistos = new Set();
 let primeraCarga = true;
+let lideresAntes = null;
+const cargado = { wod: false, res: false };
+let lideresAntesTipo = null;
 
 // Si el WOD es muy largo, reduce la letra hasta que quepa entero en su recuadro
 function ajustarDescripcion() {
@@ -181,20 +185,30 @@ function pintar() {
   // Orden en columnas: 1, 2, 3… hacia abajo en la izquierda y luego sigue en la derecha
   ol.style.gridAutoFlow = "column";
   ol.style.gridTemplateRows = `repeat(${Math.max(1, Math.ceil(lista.length / 2))}, auto)`;
+  const pos = posiciones(lista);
   lista.forEach((r, i) => {
     const li = document.createElement("li");
-    if (i < 3) li.classList.add("p" + (i + 1));
+    if (pos[i] <= 3) li.classList.add("p" + pos[i]);
     if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
-    const pos = document.createElement("span"); pos.className = "pos"; pos.textContent = i + 1;
+    const num = document.createElement("span"); num.className = "pos"; num.textContent = pos[i];
     const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
     const em = crearEmoji(r.sensacion);
     if (em) nom.append(em);
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
     const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
+    const tp = r.categoria === "Open" ? textoPesos(r.pesos) : "";
+    if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
-    li.append(pos, nom, res);
+    li.append(num, nom, res);
     ol.append(li);
   });
+  // Pique: avisa cuando cambia el líder o hay empate en cabeza
+  // (solo cuando ya han llegado el WOD y los resultados, para no avisar al abrir la página)
+  if (wod && cargado.wod && cargado.res) {
+    const ahora = lideres(resultados, tipo);
+    if (lideresAntes) mensajesDeLider(lideresAntes, ahora).forEach(aviso);
+    lideresAntes = ahora;
+  }
   resultados.forEach((r) => vistos.add(r.id));
   primeraCarga = false;
   $("total").textContent = lista.length ? `${lista.length} resultados hoy` : "";
@@ -202,6 +216,8 @@ function pintar() {
 
 onSnapshot(doc(db, "wods", hoy()), (snap) => {
   wod = snap.exists() ? snap.data() : null;
+  if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
+  cargado.wod = true;
   $("wodNombre").textContent = wod?.nombre || "WOD del día";
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "Pulsa ⚙ para configurar el WOD";
   $("descripcionTexto").textContent = wod?.descripcion || "";
@@ -212,6 +228,7 @@ onSnapshot(doc(db, "wods", hoy()), (snap) => {
 
 onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
   resultados = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  cargado.res = true;
   pintar();
 });
 
