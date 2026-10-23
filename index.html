@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Resultado del WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
+  main { width: 100%; max-width: 440px; }
+  header { margin-bottom: 28px; }
+  body { padding-bottom: 56px; }
+  header .marca { color: #fff; font-size: 14px; }
+  h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
+  .wod { color: var(--suave); margin-top: 8px; font-size: 15px; }
+  .wod-desc { margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
+  .campo { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; font-size: 20px; outline: none; }
+  .campo:focus { border-color: var(--acento); }
+  .bloque { margin-top: 12px; }
+  .doble { display: flex; align-items: flex-start; gap: 10px; }
+  .doble > div { flex: 1; }
+  .doble > span { font-size: 28px; font-weight: 800; padding-top: 14px; }
+  .bloque .campo { text-align: center; font-size: 26px; font-weight: 800; }
+  .bloque small { display: block; text-align: center; color: var(--suave); font-size: 13px; margin-top: 6px; }
+  .segmentado.tres { grid-template-columns: 1fr 1fr 1fr; }
+  .segmentado { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .segmentado button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px; font-weight: 800; font-size: 17px; }
+  .segmentado button[aria-pressed="true"] { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
+  .enviar { width: 100%; margin-top: 32px; background: var(--acento); color: var(--acento-texto); border: 0; border-radius: 14px; padding: 18px; font-family: "Oswald", sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: .06em; }
+  .enviar:disabled { opacity: .5; }
+  .error { color: var(--error); margin-top: 14px; font-size: 15px; min-height: 1em; }
+  .aviso { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 24px; text-align: center; color: var(--suave); }
+  .ok { text-align: center; padding-top: 40px; }
+  .ok .check { width: 72px; height: 72px; border-radius: 50%; background: var(--acento); color: var(--acento-texto); display: grid; place-items: center; font-size: 38px; font-weight: 800; margin: 0 auto 20px; }
+  .ok h2 { font-family: "Oswald", sans-serif; font-size: 32px; text-transform: uppercase; }
+  .ok p { color: var(--suave); margin-top: 8px; }
+  .secundario { margin-top: 28px; background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px 20px; }
+  [hidden] { display: none !important; }
+  .segmentado button.bloqueado { opacity: .35; }
+  .opcional { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .sensaciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sensaciones button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
+  .sensaciones .icono { width: 38px; height: 38px; font-size: 30px; line-height: 38px; text-align: center; display: block; }
+  .sensaciones button[aria-pressed="true"] { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 22%, var(--panel)); }
+  .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca" id="box"></div>
+    <h1>Tu resultado</h1>
+    <div class="wod" id="wodNombre">WOD de hoy</div>
+    <div class="wod-desc" id="wodDesc" hidden></div>
+  </header>
+
+  <form id="formulario" autocomplete="off">
+    <label for="nombre">Nombre</label>
+    <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
+
+    <label>Categoría</label>
+    <div class="segmentado" id="categoria">
+      <button type="button" data-v="RX" aria-pressed="true">RX</button>
+      <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
+    </div>
+
+    <label>Tu resultado</label>
+    <div class="segmentado tres" id="tipo">
+      <button type="button" data-v="tiempo" aria-pressed="true">Tiempo</button>
+      <button type="button" data-v="rondas" aria-pressed="false">Rondas</button>
+      <button type="button" data-v="kg" aria-pressed="false">Kg</button>
+    </div>
+
+    <div class="bloque" id="entradaTiempo">
+      <div class="doble">
+        <div><input class="campo" id="min" inputmode="numeric" placeholder="0" maxlength="3"><small>minutos</small></div>
+        <span>:</span>
+        <div><input class="campo" id="seg" inputmode="numeric" placeholder="00" maxlength="2"><small>segundos</small></div>
+      </div>
+    </div>
+    <div class="bloque" id="entradaRondas" hidden>
+      <div class="doble">
+        <div><input class="campo" id="rondas" inputmode="numeric" placeholder="0" maxlength="3"><small>rondas</small></div>
+        <span>+</span>
+        <div><input class="campo" id="repsExtra" inputmode="numeric" placeholder="0" maxlength="3"><small>reps sueltas</small></div>
+      </div>
+    </div>
+    <div class="bloque" id="entradaKg" hidden>
+      <input class="campo" id="kg" inputmode="decimal" placeholder="Ej. 85"><small>kilos</small>
+    </div>
+
+    <label>¿Cómo te has sentido? <span class="opcional">(opcional)</span></label>
+    <div class="sensaciones" id="sensaciones"></div>
+
+    <div class="aviso-wod" id="sinWod" hidden>El coach todavía no ha configurado el WOD de hoy. Espera un momento y vuelve a intentarlo.</div>
+    <button class="enviar" id="enviar" type="submit" disabled>Enviar</button>
+    <div class="error" id="error"></div>
+  </form>
+
+  <div class="ok" id="hecho" hidden>
+    <div class="check">✓</div>
+    <h2>¡Registrado!</h2>
+    <p id="resumen"></p>
+    <button class="secundario" id="otro">Enviar otro resultado</button>
+  </div>
+</main>
+<div class="fecha-hoy" id="fechaHoy"></div>
+
+<script type="module">
+import { doc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji } from "./comun.js";
+import { NOMBRE_BOX } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+$("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+let wod = null;
+let categoria = "RX";
+let tipo = "tiempo";
+let sensacion = null;
+
+// Botones de sensaciones
+for (const [clave, s] of Object.entries(SENSACIONES)) {
+  const b = document.createElement("button");
+  b.type = "button"; b.dataset.v = clave; b.setAttribute("aria-pressed", "false");
+  b.append(crearEmoji(clave, "icono"), document.createTextNode(s.texto));
+  $("sensaciones").append(b);
+}
+$("sensaciones").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  sensacion = sensacion === b.dataset.v ? null : b.dataset.v;  // pulsar otra vez la quita
+  $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === sensacion));
+});
+
+// Recordar el nombre en este móvil para la próxima vez
+try { $("nombre").value = localStorage.getItem("wod-nombre") || ""; } catch {}
+
+function ponerTipo(t) {
+  tipo = t;
+  $("tipo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === t));
+  $("entradaTiempo").hidden = t !== "tiempo";
+  $("entradaRondas").hidden = t !== "rondas";
+  $("entradaKg").hidden = t !== "kg";
+}
+
+// Si el coach ha configurado el WOD, se preselecciona su tipo de puntuación
+onSnapshot(doc(db, "wods", hoy()), (snap) => {
+  wod = snap.exists() ? snap.data() : null;
+  $("wodNombre").textContent = wod ? `${wod.nombre} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : "WOD de hoy";
+  // El resultado solo se puede poner en la medida del WOD (tiempo, rondas o kg)
+  const valido = wod && TIPOS[wod.tipo];
+  if (valido) ponerTipo(wod.tipo);
+  $("tipo").querySelectorAll("button").forEach((x) => x.classList.toggle("bloqueado", valido && x.dataset.v !== wod.tipo));
+  $("sinWod").hidden = !!valido;
+  $("enviar").disabled = !valido;
+  $("error").textContent = "";
+  $("wodDesc").textContent = wod?.descripcion || "";
+  $("wodDesc").hidden = !wod?.descripcion;
+}, () => { $("wodNombre").textContent = "WOD de hoy"; $("sinWod").hidden = false; $("enviar").disabled = true; });
+
+const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)" };
+
+$("categoria").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  categoria = b.dataset.v;
+  $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+});
+
+$("tipo").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (!wod) return;
+  if (b.dataset.v !== wod.tipo) {
+    $("error").textContent = `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}. Solo puedes poner tu resultado en ${NOMBRE_MEDIDA[wod.tipo]}.`;
+    return;
+  }
+  $("error").textContent = "";
+  ponerTipo(b.dataset.v);
+});
+
+const entero = (id) => { const v = $(id).value.trim(); return v === "" ? 0 : (/^\d+$/.test(v) ? parseInt(v, 10) : NaN); };
+
+$("formulario").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("error").textContent = "";
+  const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
+  if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
+  if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
+
+  let valor;
+  if (tipo === "tiempo") {
+    const m = entero("min"), s = entero("seg");
+    if (isNaN(m) || isNaN(s) || s > 59 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
+    valor = m * 60 + s;
+  } else if (tipo === "rondas") {
+    const r = entero("rondas"), x = entero("repsExtra");
+    if (isNaN(r) || isNaN(x) || x > 999 || (r === 0 && x === 0)) return ($("error").textContent = "Revisa las rondas y las reps.");
+    valor = r * 1000 + x;
+  } else {
+    valor = parseFloat($("kg").value.replace(",", "."));
+    if (isNaN(valor) || valor <= 0 || valor > 1000) return ($("error").textContent = "Escribe los kilos.");
+  }
+
+  $("enviar").disabled = true;
+  try {
+    await addDoc(collection(db, "resultados"), {
+      nombre, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp(),
+      ...(sensacion ? { sensacion } : {})
+    });
+    try { localStorage.setItem("wod-nombre", nombre); } catch {}
+    $("resumen").textContent = `${nombre} · ${categoria} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+    $("formulario").hidden = true;
+    $("hecho").hidden = false;
+  } catch (err) {
+    console.error(err);
+    $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
+  } finally {
+    $("enviar").disabled = !wod;
+  }
+});
+
+$("otro").addEventListener("click", () => {
+  ["nombre", "min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
+  sensacion = null;
+  $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+  $("hecho").hidden = true;
+  $("formulario").hidden = false;
+  $("nombre").focus();
+});
+</script>
+</body>
+</html>
