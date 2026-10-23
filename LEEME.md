@@ -1,63 +1,39 @@
-# Ranking del WOD con QR — Olympo Box
+# Olympo Box · Resultados, ranking y puntos
 
-## Archivos de esta carpeta (deben estar los 8 sueltos en el repositorio de GitHub)
+## Páginas
 
-| Archivo | Para qué sirve |
-|---|---|
-| `index.html` | Formulario que abre el QR en el móvil del socio (nombre, RX/Scaled, tiempo/rondas/kg) |
-| `pantalla.html` | Pantalla de la TV con el ranking en directo y el QR |
-| `ranking.html` | Ranking para ver desde casa (solo lectura, sin ajustes) |
-| `estilos.css` | Colores y estilo (fondo gris antracita, título lila malva) |
-| `comun.js` | Funciones compartidas (formato de tiempos y rondas, orden del ranking) |
-| `config.js` | Tus claves de Firebase **(hay que rellenarlo)** |
-| `firestore.rules` | Reglas de seguridad: se copian en Firebase, no hace falta que estén en GitHub |
-| `LEEME.md` | Estas instrucciones |
+| Página | Para quién | Qué hace |
+|---|---|---|
+| `index.html` | Socios (lo abre el QR) | Entrar/crear cuenta, subir el resultado (1 por clase y día), editarlo o validarlo, ver su posición |
+| `ranking.html` | Socios, desde casa | Clasificación en directo por clase (WOD / Hyrox / Funcional) y categoría |
+| `puntos.html` | Socios | Cartera de puntos, historial y ranking de puntos |
+| `pantalla.html` | TV del box | Clasificación en directo con QR por clase; reparte los puntos a las 00:00 si la sesión del coach está abierta |
+| `publicar.html` | Coach | Publicar el WOD de cada clase y corregir, validar o borrar resultados |
 
-## 1. config.js (ya rellenado con tus claves)
+Todas tienen un menú abajo para pasar de una a otra.
 
-Abre `config.js` con el Bloc de notas y sustituye cada `PEGA_AQUI` por tus claves de Firebase
-(Firebase → ⚙ Configuración del proyecto → Tus apps → tu app web). Mantén las comillas. Guarda.
+## Archivos de apoyo
 
-Si ya tenías un `config.js` con tus claves en GitHub, puedes copiar las claves desde allí
-(abre el archivo en GitHub y copia los valores).
+`comun.js`, `cuenta.js`, `menu.js`, `cierre.js`, `config.js` (claves de Firebase y email del coach), `estilos.css`, `sw.js` (avisos) y `firestore.rules` (reglas; se pegan en Firebase, no hace falta que estén en GitHub).
 
-## 2. Actualizar las reglas en Firebase
+## Puesta en marcha (una sola vez)
 
-Firebase → Firestore Database → pestaña **Reglas** → borra todo → pega el contenido de
-`firestore.rules` → **Publicar**.
+1. **GitHub** → repositorio `wodresults` → *Add file → Upload files* → arrastra **todos los archivos sueltos** (no la carpeta) → **Commit changes**.
+2. **Firebase → Firestore → Reglas** → pega el contenido de `firestore.rules` → **Publicar**.
+3. **Firebase → Authentication → Método de acceso** → activa **Google** y **Correo electrónico/contraseña**.
+4. **Authentication → Configuración → Dominios autorizados** → añade `olympoboxgranollers.github.io`.
+5. En el navegador de la TV, entra una vez en `publicar.html` con la cuenta del coach (Google, olympoboxgranollers@gmail.com).
 
-## 3. Subir a GitHub
+## Puntos
 
-1. Entra en tu repositorio `wod`.
-2. Si hay una carpeta `wod-ranking` u otros archivos viejos, bórralos: abre el archivo → menú `...` → **Delete file** → Commit changes.
-3. **Add file → Upload files** → arrastra **los archivos de dentro de esta carpeta** (no la carpeta) → **Commit changes**.
-4. Espera a que en la pestaña **Actions** salga el check verde ✅ (1–3 min).
+- 10 por registrar el resultado (al momento, una vez por clase y día).
+- Podio de cada categoría a las 00:00: RX +30/+20/+10 · Scaled +15/+10/+5 · Open +7,5/+5/+2,5.
+- Los empates comparten puesto. RX va por delante de Scaled y Scaled por delante de Open.
 
-## 4. Comprobar
+## Enlaces
 
-- Formulario de socios: `https://TU-USUARIO.github.io/wod/?v=3`
-- Pantalla TV: `https://TU-USUARIO.github.io/wod/pantalla.html?v=3`
-
-Ábrelo en incógnito o recarga con Ctrl+Shift+R para no ver la versión antigua.
-Debe verse con fondo gris antracita, "TU RESULTADO" en lila y la fecha abajo a la derecha.
-
-## Uso diario
-
-1. En la TV abre `pantalla.html` (F11 para pantalla completa).
-2. Pulsa **⚙ WOD de hoy** (abajo a la izquierda): nombre del WOD y cómo se puntúa (tiempo, rondas + reps o kg).
-3. Los socios escanean el QR y suben su resultado; aparece al instante en el ranking.
-
-**Borrar un resultado equivocado:** Firebase → Firestore Database → `resultados` → documento → ⋮ → Eliminar documento.
-
-**Sin historial:** cada vez que se abre la pantalla se borran solos los resultados de días anteriores.
-
-## Cuentas y puntos (Firebase Authentication)
-
-1. Firebase → **Compilación → Authentication → Comenzar**.
-2. Pestaña **Método de acceso**: activa **Google** (elige tu email de asistencia) y **Correo electrónico/contraseña**.
-3. Pestaña **Configuración → Dominios autorizados → Agregar dominio**: `olympoboxgranollers.github.io`.
-4. Pega las reglas nuevas de `firestore.rules` en Firestore → Reglas → Publicar.
-
-- El coach es la cuenta de Google `olympoboxgranollers@gmail.com` (está en las reglas, función `esCoach`).
-- `publicar.html`: publicar los WODs y corregir o borrar resultados. Los puntos se reparten solos a las 00:00 desde cualquier aparato con la sesión del coach (la pantalla de la TV, o publicar.html en cuanto lo abras).
-- `puntos.html`: cartera de cada socio y ranking de puntos.
+- Subir resultado: https://olympoboxgranollers.github.io/wodresults/
+- Ranking: https://olympoboxgranollers.github.io/wodresults/ranking.html
+- Puntos: https://olympoboxgranollers.github.io/wodresults/puntos.html
+- Pantalla TV: https://olympoboxgranollers.github.io/wodresults/pantalla.html
+- Publicar (coach): https://olympoboxgranollers.github.io/wodresults/publicar.html

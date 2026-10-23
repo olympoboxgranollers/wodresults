@@ -1,6 +1,6 @@
 // Cuentas de socio: entrar con Google o con email y contraseña.
 // Cada socio tiene su ficha en usuarios/{uid} con su nombre y sus puntos.
-import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, setPersistence, browserLocalPersistence, browserSessionPersistence,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -49,6 +49,17 @@ export async function guardarNombre(user, ficha, nombre) {
 
 export const salir = () => signOut(auth);
 
+// Google siempre pregunta qué cuenta usar (así, después de salir, no vuelve a entrar sola con la misma)
+const proveedorGoogle = () => {
+  const p = new GoogleAuthProvider();
+  p.setCustomParameters({ prompt: "select_account" });
+  return p;
+};
+// "Recordarme": si no está marcado, la sesión se cierra al cerrar el navegador
+async function aplicarRecordar(recordar) {
+  try { await setPersistence(auth, recordar ? browserLocalPersistence : browserSessionPersistence); } catch {}
+}
+
 // Dibuja el panel de acceso dentro de "contenedor"
 export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto = "" } = {}) {
   contenedor.classList.add("acceso");
@@ -56,6 +67,7 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
     <div class="acceso-titulo"></div>
     <p class="acceso-texto"></p>
     <button type="button" class="acceso-google"><span class="g">G</span> Entrar con Google</button>
+    <label class="acceso-recordar"><input type="checkbox" checked> Mantener la sesión iniciada en este dispositivo</label>
     <div class="acceso-o"><span>o con tu email</span></div>
     <form class="acceso-email" novalidate>
       <input type="email" autocomplete="email" placeholder="Email" aria-label="Email" required>
@@ -77,12 +89,14 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
   const msg = (t, ok = false) => { q(".acceso-msg").textContent = t; q(".acceso-msg").classList.toggle("ok", ok); };
   let crear = false;
 
+  const recordar = q(".acceso-recordar input");
   q(".acceso-google").addEventListener("click", async () => {
     msg("");
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    await aplicarRecordar(recordar.checked);
+    try { await signInWithPopup(auth, proveedorGoogle()); }
     catch (e) {
       if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") {
-        await signInWithRedirect(auth, new GoogleAuthProvider());
+        await signInWithRedirect(auth, proveedorGoogle());
       } else msg(textoError(e));
     }
   });
@@ -103,6 +117,7 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
     e.preventDefault();
     msg("");
     const em = email.value.trim(), pw = pass.value;
+    await aplicarRecordar(recordar.checked);
     try {
       if (crear) {
         const n = nombre.value.trim().replace(/\s+/g, " ");
