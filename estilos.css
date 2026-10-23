@@ -184,3 +184,12 @@ header .marca::before {
   -webkit-mask: url("logo-400.png") center / contain no-repeat; mask: url("logo-400.png") center / contain no-repeat;
 }
 .menu-tv .menu-logo::before { width: 17px; height: 17px; }
+
+/* Cabeceras y títulos de apartado: en minúscula con la primera letra en mayúscula (tal como están escritos) */
+h1, h2, h3, h4,
+main label, dialog label,
+.estado-etiqueta, .cartera-etiqueta, .descripcion b, .aviso-etiqueta, .cierre-titulo, .acceso-titulo,
+.nuevo-titulo, .saldo > span, .ir-cartera small, .podio-cat h4, .open-titulo, .dialogo-editor h3 {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}

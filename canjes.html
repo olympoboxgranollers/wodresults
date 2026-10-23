@@ -17,7 +17,7 @@
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
   header .marca { color: #fff; font-size: 13px; }
-  h1 { font-family: "Inter", sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -.02em; margin-top: 14px; }
+  h1 { font-family: "Inter", sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -.02em; margin-top: 14px; color: var(--lila); }
   .sub { color: var(--suave); margin-top: 6px; font-size: 15px; line-height: 1.5; }
 
   /* Saldo */
@@ -40,6 +40,16 @@
   .item-estado { grid-column: 1 / -1; font-size: 13px; color: var(--suave); }
   .item.alcanzable .item-estado { color: var(--lila); font-weight: 600; }
   .item.alcanzable .item-coste b { color: var(--lila); }
+  .item.con-foto .item-foto, .item.con-foto .item-nombre { cursor: zoom-in; }
+  .zoom { margin: auto; padding: 0; border: 0; background: transparent; width: min(560px, 94vw); color: var(--texto); }
+  .zoom::backdrop { background: rgba(10,10,12,.85); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .zoom img { display: block; width: 100%; max-height: 70vh; object-fit: contain; border-radius: 18px; background: var(--panel); }
+  .zoom-info { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 14px; }
+  .zoom-info b { font-size: 18px; }
+  .zoom-info span { color: var(--lila); font-weight: 800; white-space: nowrap; }
+  .zoom p { color: var(--suave); font-size: 14px; margin-top: 4px; line-height: 1.45; }
+  .zoom-cerrar { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 16px; }
+  .zoom-caja { position: relative; }
   .item-acciones { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 6px; }
   .item-acciones button { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
   .item-acciones .borrar { color: var(--error); }
@@ -113,6 +123,15 @@
   <p class="nota" id="nota">Para canjear un objeto, díselo al coach en el box. Él te lo entregará y descontará los puntos.</p>
 </main>
 
+<dialog class="zoom" id="zoom" aria-label="Foto del objeto">
+  <div class="zoom-caja">
+    <img id="zoomImg" alt="">
+    <button type="button" class="zoom-cerrar" id="zoomCerrar" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="zoom-info"><b id="zoomNombre"></b><span id="zoomPuntos"></span></div>
+  <p id="zoomDesc"></p>
+</dialog>
+
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, hoy } from "./comun.js";
@@ -163,10 +182,16 @@ function pintar() {
   }
   for (const o of objetos) {
     const li = document.createElement("li"); li.className = "item" + (o.imagen ? " con-foto" : "");
-    if (o.imagen) li.append(Object.assign(document.createElement("img"), { className: "item-foto", src: o.imagen, alt: o.nombre, loading: "lazy" }));
+    if (o.imagen) {
+      const im = Object.assign(document.createElement("img"), { className: "item-foto", src: o.imagen, alt: o.nombre, loading: "lazy" });
+      im.addEventListener("click", () => verFoto(o));
+      li.append(im);
+    }
     const falta = Math.max(0, o.puntos - puntos);
     if (!coach && falta === 0) li.classList.add("alcanzable");
-    li.append(Object.assign(document.createElement("div"), { className: "item-nombre", textContent: o.nombre }));
+    const nom = Object.assign(document.createElement("div"), { className: "item-nombre", textContent: o.nombre });
+    if (o.imagen) nom.addEventListener("click", () => verFoto(o));
+    li.append(nom);
     const coste = document.createElement("div"); coste.className = "item-coste";
     coste.append(Object.assign(document.createElement("b"), { textContent: `${fmtPuntos(o.puntos)} pts` }));
     if (o.precio) coste.append(Object.assign(document.createElement("small"), { textContent: `valor ${euros(o.precio)}` }));
@@ -258,6 +283,17 @@ $("fImagen").addEventListener("change", async (e) => {
   e.target.value = "";
 });
 $("fQuitar").addEventListener("click", () => ponerImagen(null));
+
+// Ver la foto en grande al tocar el producto
+function verFoto(o) {
+  $("zoomImg").src = o.imagen; $("zoomImg").alt = o.nombre;
+  $("zoomNombre").textContent = o.nombre;
+  $("zoomPuntos").textContent = `${fmtPuntos(o.puntos)} pts`;
+  $("zoomDesc").textContent = o.descripcion || "";
+  $("zoom").showModal();
+}
+$("zoomCerrar").addEventListener("click", () => $("zoom").close());
+$("zoom").addEventListener("click", (e) => { if (e.target === $("zoom")) $("zoom").close(); });
 
 function mensaje(t, error = false) { $("fMsg").className = "msg " + (error ? "error" : "ok"); $("fMsg").textContent = t; }
 
