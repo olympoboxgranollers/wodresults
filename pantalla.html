@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ranking WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
+  header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
+  header .marca { color: #fff; font-size: 1.3vw; }
+  .fecha-hoy { right: 2.5vw; bottom: 1.2vw; font-size: 1.4vw; }
+  header h1 { color: var(--malva); }
+  header h1 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 4.2vw; line-height: 1; margin-top: .4vw; }
+  header .meta { text-align: right; color: var(--suave); font-size: 1.3vw; }
+  header .meta strong { display: block; color: var(--texto); font-size: 2vw; font-family: "Oswald", sans-serif; }
+  .columna { min-height: 0; display: flex; flex-direction: column; }
+  .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .08em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
+  .columna h2 small { font-size: 1.1vw; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
+  ol { list-style: none; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: .6vw 1.5vw; align-content: start; }
+  .vacio { grid-column: 1 / -1; }
+  li { display: grid; grid-template-columns: 3.2vw 1fr auto; align-items: center; gap: 1vw; background: var(--panel); border: 1px solid var(--borde); border-radius: .8vw; padding: .9vw 1.2vw; font-size: 1.7vw; }
+  li .pos { font-family: "Oswald", sans-serif; font-size: 2vw; color: var(--suave); text-align: center; }
+  li .nom { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li .emoji { margin-left: .6vw; width: 2.2vw; height: 2.2vw; font-size: 1.8vw; vertical-align: middle; display: inline-block; line-height: 2.2vw; }
+  li .res { font-family: "Oswald", sans-serif; font-size: 2vw; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
+  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
+  li.p1 { border-color: var(--oro); } li.p1 .pos { color: var(--oro); }
+  li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
+  li.nuevo { animation: entra 1.6s ease-out; }
+  @keyframes entra { 0% { background: var(--acento); color: var(--acento-texto); transform: scale(1.03); } 100% { background: var(--panel); color: var(--texto); transform: none; } }
+  .vacio { color: var(--suave); font-size: 1.4vw; padding: 1vw 0; }
+  aside { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.2vw; }
+  #qr { background: #fff; padding: 1vw; border-radius: 1vw; width: 100%; aspect-ratio: 1; }
+  #qr img, #qr canvas { width: 100% !important; height: auto !important; display: block; }
+  aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
+  aside .cta span { color: var(--acento); }
+  aside .total { color: var(--suave); font-size: 1.2vw; }
+  #qr { width: 11vw; flex: none; padding: .6vw; border-radius: .7vw; }
+  .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
+  .escanear .cta { font-size: 1.7vw; }
+  .escanear .total { margin-top: .5vw; }
+  .descripcion { width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
+  #descripcionTexto { display: block; column-gap: 1.6vw; }
+  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
+  aside { min-height: 0; }
+  .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
+  .descripcion b { font-size: 1.2vw; }
+  dialog textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
+  .ajustes { position: fixed; left: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
+  .ajustes:hover { opacity: 1; }
+  dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
+  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog h3 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 24px; margin-bottom: 16px; }
+  dialog label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 14px 0 6px; letter-spacing: .06em; }
+  dialog input, dialog select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; }
+  dialog .botones { display: flex; gap: 10px; margin-top: 22px; }
+  dialog .botones button { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--borde); background: none; color: var(--texto); }
+  dialog .botones .principal { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 800; }
+  @media (max-width: 800px) {
+    body { height: auto; overflow: auto; grid-template-columns: 1fr; padding: 16px; }
+    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } header .meta strong { font-size: 18px; }
+    .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
+    li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
+    li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
+    li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
+    aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="marca" id="box"></div>
+    <h1 id="wodNombre">WOD del día</h1>
+  </div>
+  <div class="meta"><strong id="tipo"></strong></div>
+</header>
+
+<section class="columna">
+  <h2>Clasificación <small id="nAtletas"></small></h2>
+  <ol id="lista"></ol>
+</section>
+
+<aside>
+  <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
+  <div class="escanear">
+    <div id="qr"></div>
+    <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
+  </div>
+</aside>
+
+<button class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
+<div class="fecha-hoy" id="fecha"></div>
+
+<dialog id="dialogo">
+  <form method="dialog" id="formWod">
+    <h3>WOD de hoy</h3>
+    <label for="wNombre">Nombre del WOD</label>
+    <input id="wNombre" maxlength="60" placeholder="Ej. Fran, Cindy, 21-15-9… (opcional)">
+    <label for="wTipo">Cómo se puntúa</label>
+    <select id="wTipo">
+      <option value="tiempo">Por tiempo (menos es mejor)</option>
+      <option value="rondas">AMRAP: rondas + reps (más es mejor)</option>
+      <option value="kg">Carga en kg (más es mejor)</option>
+    </select>
+    <label for="wDesc">El WOD (lo que se ve en pantalla)</label>
+    <textarea id="wDesc" rows="7" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
+    <div class="botones">
+      <button value="cancelar" formnovalidate>Cancelar</button>
+      <button value="guardar" class="principal">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, crearEmoji } from "./comun.js";
+import { NOMBRE_BOX } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+// QR que apunta al formulario de esta misma web
+const urlFormulario = new URL("index.html", location.href).href;
+new QRCode($("qr"), { text: urlFormulario, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+
+let wod = null;
+let resultados = [];
+const vistos = new Set();
+let primeraCarga = true;
+
+// Si el WOD es muy largo, reduce la letra hasta que quepa entero en su recuadro
+function ajustarDescripcion() {
+  const caja = $("descripcion");
+  const texto = $("descripcionTexto");
+  if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; texto.style.columnCount = ""; return; }
+  const encaja = (columnas) => {
+    texto.style.columnCount = columnas > 1 ? columnas : "";
+    let vw = 2.6;
+    caja.style.fontSize = vw + "vw";
+    while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
+      vw -= 0.05;
+      caja.style.fontSize = vw.toFixed(2) + "vw";
+    }
+    return vw;
+  };
+  // Primero en una columna; si la letra queda pequeña, prueba en dos columnas y se queda con la más grande
+  const una = encaja(1);
+  if (una < 1.6) {
+    const dos = encaja(2);
+    if (dos < una) encaja(1);
+  }
+}
+window.addEventListener("resize", ajustarDescripcion);
+
+function pintar() {
+  // Tipo del ranking: el del WOD configurado o, si no hay, el más usado por los socios
+  let tipo = wod?.tipo;
+  if (!tipo) {
+    const cuenta = {};
+    resultados.forEach((r) => (cuenta[r.tipo] = (cuenta[r.tipo] || 0) + 1));
+    tipo = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])[0] || "tiempo";
+  }
+  // Una sola clasificación; la categoría (RX / Scaled) aparece en pequeño bajo el resultado
+  // Solo cuentan los resultados en la misma medida que el WOD configurado
+  const validos = wod ? resultados.filter((r) => (r.tipo || tipo) === tipo) : [];
+  const lista = ordenar(validos, tipo);
+  const ol = $("lista");
+  ol.replaceChildren();
+  $("nAtletas").textContent = lista.length ? `${lista.length} atleta${lista.length > 1 ? "s" : ""}` : "";
+  if (!lista.length) {
+    const v = document.createElement("div");
+    v.className = "vacio"; v.textContent = wod ? "Todavía no hay resultados" : "Pulsa ⚙ WOD de hoy para configurar el WOD";
+    ol.append(v);
+  }
+  // Orden en columnas: 1, 2, 3… hacia abajo en la izquierda y luego sigue en la derecha
+  ol.style.gridAutoFlow = "column";
+  ol.style.gridTemplateRows = `repeat(${Math.max(1, Math.ceil(lista.length / 2))}, auto)`;
+  lista.forEach((r, i) => {
+    const li = document.createElement("li");
+    if (i < 3) li.classList.add("p" + (i + 1));
+    if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
+    const pos = document.createElement("span"); pos.className = "pos"; pos.textContent = i + 1;
+    const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
+    const em = crearEmoji(r.sensacion);
+    if (em) nom.append(em);
+    const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
+    const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
+    res.append(cat);
+    li.append(pos, nom, res);
+    ol.append(li);
+  });
+  resultados.forEach((r) => vistos.add(r.id));
+  primeraCarga = false;
+  $("total").textContent = lista.length ? `${lista.length} resultados hoy` : "";
+}
+
+onSnapshot(doc(db, "wods", hoy()), (snap) => {
+  wod = snap.exists() ? snap.data() : null;
+  $("wodNombre").textContent = wod?.nombre || "WOD del día";
+  $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "Pulsa ⚙ para configurar el WOD";
+  $("descripcionTexto").textContent = wod?.descripcion || "";
+  $("descripcion").hidden = !wod?.descripcion;
+  ajustarDescripcion();
+  pintar();
+});
+
+onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+  resultados = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  pintar();
+});
+
+// Configurar el WOD del día
+$("abrirAjustes").addEventListener("click", () => {
+  $("wNombre").value = wod?.nombre || "";
+  $("wTipo").value = wod?.tipo || "tiempo";
+  $("wDesc").value = wod?.descripcion || "";
+  $("dialogo").showModal();
+});
+$("dialogo").addEventListener("close", async () => {
+  if ($("dialogo").returnValue !== "guardar") return;
+  const nombre = $("wNombre").value.trim() || "WOD del día";
+  const descripcion = $("wDesc").value.replace(/\r/g, "").trim().slice(0, 1000);
+  try {
+    await setDoc(doc(db, "wods", hoy()), { nombre, tipo: $("wTipo").value, descripcion });
+  } catch (err) {
+    console.error(err);
+    alert("No se ha podido guardar el WOD. Revisa la configuración de Firebase.");
+  }
+});
+
+// Borrado automático a las 00:00: elimina los resultados y el WOD de días anteriores (no queda historial)
+async function borrarDiasAnteriores() {
+  try {
+    const viejos = await getDocs(query(collection(db, "resultados"), where("fecha", "<", hoy())));
+    for (const d of viejos.docs) await deleteDoc(d.ref).catch(() => {});
+    const wodsViejos = await getDocs(query(collection(db, "wods"), where(documentId(), "<", hoy())));
+    for (const d of wodsViejos.docs) await deleteDoc(d.ref).catch(() => {});
+  } catch (err) { console.warn("No se han podido borrar resultados antiguos", err); }
+}
+borrarDiasAnteriores();
+
+// A medianoche recarga para empezar el ranking del día siguiente
+const ahora = new Date();
+const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
+setTimeout(() => location.reload(), manana - ahora);
+</script>
+</body>
+</html>
