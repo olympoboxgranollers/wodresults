@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
 <title>Puntos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
@@ -116,7 +121,10 @@ escucharCuenta(({ user, ficha }) => {
       const t = document.createElement("div"); t.className = "t";
       const dia = new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
       const dd = document.createElement("div"); dd.className = "d";
-      if (m.tipo === "registro") {
+      if (m.tipo === "canje") {
+        t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`;
+        dd.textContent = dia;
+      } else if (m.tipo === "registro") {
         t.textContent = `${c.nombre} · ✅ Resultado registrado`;
         dd.textContent = dia;
       } else {
@@ -124,7 +132,7 @@ escucharCuenta(({ user, ficha }) => {
         dd.textContent = `${dia} · podio${m.resultado ? " · " + m.resultado : ""}`;
       }
       izq.append(t, dd);
-      const p = document.createElement("div"); p.className = "p"; p.textContent = "+" + fmtPuntos(m.puntos);
+      const p = document.createElement("div"); p.className = "p"; p.textContent = (m.puntos < 0 ? "−" : "+") + fmtPuntos(Math.abs(m.puntos));
       fila.append(izq, p); cont.append(fila);
     });
   }, () => {});

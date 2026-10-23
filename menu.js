@@ -14,11 +14,14 @@ const ICONOS = {
   pantalla: '<rect x="3" y="4.5" width="18" height="12" rx="2.5"/><path d="M8.5 20.5h7"/><path d="M12 16.5v4"/>',
   publicar: '<path d="M4.5 19.5l1-4.5L15.8 4.7a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L9 18.5z"/><path d="M13.5 7l3.5 3.5"/>',
   entrar: '<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M9.5 16.5L14 12 9.5 7.5"/><path d="M14 12H3.5"/>',
+  canjes: '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 12.5h17"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8 0-4.5-.6-4.5-2.6 0-1.3 1-2 2-2 2 0 2.5 2.6 2.5 4.6z"/><path d="M12 8.5c1.8 0 4.5-.6 4.5-2.6 0-1.3-1-2-2-2-2 0-2.5 2.6-2.5 4.6z"/>',
   salir: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'
 };
 const icono = (n) => {
   const s = document.createElement("span");
   s.className = "menu-icono";
+  // Canjes: el logo del box, en una sola tinta como el resto de iconos
+  if (n === "canjes") { s.classList.add("menu-logo"); return s; }
   s.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n]}</svg>`;
   return s;
 };
@@ -27,6 +30,7 @@ const PAGINAS = [
   { id: "resultado", href: "index.html",    texto: "Resultado" },
   { id: "ranking",   href: "ranking.html",  texto: "Ranking" },
   { id: "puntos",    href: "puntos.html",   texto: "Puntos" },
+  { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },
   { id: "publicar",  href: "publicar.html", texto: "Publicar", coach: true }
 ];

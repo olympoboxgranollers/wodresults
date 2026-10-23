@@ -25,6 +25,7 @@ body {
   letter-spacing: .08em;
 }
 button { font: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
 input, select { font: inherit; color: inherit; }
 .fecha-hoy {
   position: fixed; right: 16px; bottom: 12px;
@@ -171,3 +172,15 @@ li.editable .nom::after { content: " ✎"; color: var(--lila); font-weight: 400;
 
 /* Mientras se comprueba la sesión en una página protegida, no se enseña nada */
 html.esperando-sesion body { visibility: hidden; }
+
+/* Logo del box: siempre en una sola tinta (blanco en cabeceras, color del icono en el menú) */
+header .marca { display: inline-flex; align-items: center; gap: .6em; }
+header .marca::before {
+  content: ""; flex: none; width: 1.7em; height: 1.7em; background: currentColor;
+  -webkit-mask: url("logo-400.png") center / contain no-repeat; mask: url("logo-400.png") center / contain no-repeat;
+}
+.menu-logo::before {
+  content: ""; width: 22px; height: 22px; background: currentColor;
+  -webkit-mask: url("logo-400.png") center / contain no-repeat; mask: url("logo-400.png") center / contain no-repeat;
+}
+.menu-tv .menu-logo::before { width: 17px; height: 17px; }

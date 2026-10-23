@@ -7,6 +7,7 @@
 | `index.html` | Socios (lo abre el QR) | Entrar/crear cuenta, subir el resultado (1 por clase y día), editarlo o validarlo, ver su posición |
 | `ranking.html` | Socios, desde casa | Clasificación en directo por clase (WOD / Hyrox / Funcional) y categoría |
 | `puntos.html` | Socios | Cartera de puntos, historial y ranking de puntos |
+| `canjes.html` | Socios y coach | Catálogo de objetos canjeables con puntos; el coach añade objetos (precio y puntos) y los entrega descontando puntos |
 | `pantalla.html` | TV del box | Clasificación en directo con QR por clase; reparte los puntos a las 00:00 si la sesión del coach está abierta |
 | `publicar.html` | Coach | Publicar el WOD de cada clase y corregir, validar o borrar resultados |
 

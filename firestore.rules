@@ -146,6 +146,20 @@ service cloud.firestore {
       allow delete: if esCoach();
     }
 
+    // ---------- Catálogo de canjes: lo ven todos los socios con cuenta, solo el coach lo cambia ----------
+    match /canjeables/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['nombre', 'descripcion', 'precio', 'puntos', 'creado', 'imagen'])
+        && (!('imagen' in request.resource.data) || (request.resource.data.imagen is string && request.resource.data.imagen.size() <= 400000
+            && (request.resource.data.imagen == '' || request.resource.data.imagen.matches('^data:image/(jpeg|png|webp);base64,.*'))))
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 60
+        && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 140))
+        && request.resource.data.precio is number && request.resource.data.precio >= 0
+        && request.resource.data.puntos is number && request.resource.data.puntos > 0;
+      allow delete: if esCoach();
+    }
+
     // ---------- WOD del día de cada clase (lo publica el coach). Id: "2026-10-23_hyrox" ----------
     match /wods/{id} {
       allow read: if true;

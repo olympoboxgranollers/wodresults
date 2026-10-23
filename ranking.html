@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
@@ -95,7 +100,7 @@ $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long
 
 let clase = claseInicial();
 let esCoach = false;
-const menu = montarMenu({ actual: "ranking", alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
+const menu = montarMenu({ actual: "ranking", cuenta: false, alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
 let wod = null;
 let todos = [];        // resultados de hoy de todas las clases
 let resultados = [];   // solo los de la clase elegida
