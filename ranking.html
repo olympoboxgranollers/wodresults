@@ -45,7 +45,9 @@
   li .res { font-family: "Oswald", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
   li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
   li .cat { display: block; font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: 3px; }
-  li.p1 { border-color: var(--oro); } li.p1 .pos { color: var(--oro); }
+  /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
+  li { border-color: color-mix(in srgb, var(--malva) 55%, transparent) !important; background: color-mix(in srgb, var(--malva) 7%, var(--panel)); }
+  li.p1 { border-color: var(--malva) !important; box-shadow: 0 0 0 1px var(--malva), 0 0 18px color-mix(in srgb, var(--malva) 30%, transparent); } li.p1 .pos { color: var(--oro); }
   li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
   li.nuevo { animation: entra 1.6s ease-out; }
   @keyframes entra { 0% { background: var(--malva); } 100% { background: var(--panel); } }
@@ -152,7 +154,7 @@ function pintar() {
     lideresAntes = ahora;
   }
   resultados.forEach((r) => vistos.add(r.id));
-  primeraCarga = false;
+  if (cargado.res) primeraCarga = false;  // no resaltar como "nuevos" los que ya estaban al abrir
 }
 
 let dejarWod = null;
