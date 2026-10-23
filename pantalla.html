@@ -137,6 +137,8 @@
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
+import { escucharCuenta } from "./cuenta.js";
+import { cerrarDiasPendientes } from "./cierre.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -328,7 +330,9 @@ $("dialogo").addEventListener("close", async () => {
     await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });
   } catch (err) {
     console.error(err);
-    alert("No se ha podido guardar el WOD. Revisa la configuración de Firebase.");
+    alert(err?.code === "permission-denied"
+      ? "Solo la cuenta del coach puede publicar el WOD. Entra con tu cuenta en publicar.html (en este mismo navegador) y vuelve a intentarlo."
+      : "No se ha podido guardar el WOD. Revisa la conexión.");
   }
 });
 
@@ -342,6 +346,14 @@ async function borrarDiasAnteriores() {
   } catch (err) { console.warn("No se han podido borrar resultados antiguos", err); }
 }
 borrarDiasAnteriores();
+
+// Reparto automático de puntos: si en este navegador está abierta la sesión del coach,
+// cierra los días terminados (al abrir la pantalla y a las 00:00, que se recarga sola) y luego limpia
+escucharCuenta(async ({ user }) => {
+  if (!user) return;
+  const n = await cerrarDiasPendientes();
+  if (n) borrarDiasAnteriores();
+});
 
 // A medianoche recarga para empezar el ranking del día siguiente
 const ahora = new Date();

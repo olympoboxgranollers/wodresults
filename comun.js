@@ -212,3 +212,55 @@ function siguienteAviso() {
   setTimeout(() => el.classList.add("fuera"), 6500);
   setTimeout(() => { el.remove(); siguienteAviso(); }, 7100);
 }
+
+// ---------- Puntos ----------
+// 10 por registrar (igual en todas las categorías) + extra por el podio de su categoría.
+// Scaled suma la mitad que RX y Open la mitad que Scaled. Los empates comparten puesto.
+export const PUNTOS = {
+  registrar: 10,
+  podio: {
+    RX:     { 1: 30,  2: 20, 3: 10 },
+    Scaled: { 1: 15,  2: 10, 3: 5 },
+    Open:   { 1: 7.5, 2: 5,  3: 2.5 }
+  }
+};
+// 7.5 -> "7,5"; 40 -> "40"
+export const fmtPuntos = (n) => (Math.round(n * 10) / 10).toLocaleString("es-ES");
+
+// Id del resultado de un socio: uno por socio, clase y día
+export const idResultado = (clase, uid) => `${hoy()}_${clase}_${uid}`;
+export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
+
+// Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
+export function calcularPuntos(resultados, tipo) {
+  const filas = [];
+  for (const cat of CATEGORIAS) {
+    const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, cat);
+    lista.forEach((r, i) => {
+      const extra = PUNTOS.podio[cat]?.[pos[i]] || 0;
+      filas.push({ r, categoria: cat, posicion: pos[i], puntos: PUNTOS.registrar + extra });
+    });
+  }
+  return filas;
+}
+
+// Convierte lo que escribe el coach al editar ("9:12", "5+12", "85") al valor guardado
+export function leerValor(texto, tipo) {
+  const t = String(texto).trim().replace(",", ".");
+  if (tipo === "tiempo") {
+    const m = t.match(/^(\d{1,3}):(\d{1,2})$/);
+    if (!m || +m[2] > 59) return NaN;
+    return +m[1] * 60 + +m[2];
+  }
+  if (tipo === "rondas") {
+    const m = t.match(/^(\d{1,3})(?:\s*\+\s*(\d{1,3}))?$/);
+    return m ? +m[1] * 1000 + +(m[2] || 0) : NaN;
+  }
+  const n = parseFloat(t);
+  return n > 0 && n <= 1000 ? n : NaN;
+}
+export function escribirValor(valor, tipo) {
+  if (tipo === "tiempo") return `${Math.floor(valor / 60)}:${String(valor % 60).padStart(2, "0")}`;
+  if (tipo === "rondas") return `${Math.floor(valor / 1000)}+${valor % 1000}`;
+  return String(valor);
+}

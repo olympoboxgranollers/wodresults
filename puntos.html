@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Puntos Olympo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
+  main { width: 100%; max-width: 560px; }
+  header .marca { color: #fff; font-size: 14px; }
+  h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--oro); }
+  .sub { color: var(--suave); margin-top: 8px; font-size: 15px; line-height: 1.45; }
+  h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .08em; margin: 28px 0 12px; }
+  .cartera { position: relative; overflow: hidden; margin-top: 22px; border-radius: 20px; padding: 22px 20px; border: 1px solid rgba(245,197,66,.5); background: linear-gradient(160deg, #46402c, #2a2d32 70%); box-shadow: 0 0 0 4px rgba(245,197,66,.08), 0 18px 50px rgba(0,0,0,.35); }
+  .cartera-etiqueta { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; color: var(--oro); }
+  .cartera-nombre { font-size: 18px; font-weight: 800; margin-top: 4px; }
+  .cartera-total { font-family: "Oswald", sans-serif; font-size: 64px; line-height: 1; margin-top: 10px; color: var(--oro); font-variant-numeric: tabular-nums; }
+  .cartera-total small { font-size: 20px; color: var(--suave); margin-left: 6px; }
+  .cartera-puesto { color: var(--suave); margin-top: 6px; font-size: 14px; }
+  .cartera .salir { position: absolute; top: 16px; right: 16px; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+  .historial { display: flex; flex-direction: column; gap: 6px; }
+  .mov { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--c, var(--malva)); border-radius: 12px; padding: 10px 14px; }
+  .mov .t { font-weight: 700; font-size: 15px; }
+  .mov .d { color: var(--suave); font-size: 13px; margin-top: 2px; }
+  .mov .p { font-family: "Oswald", sans-serif; font-size: 22px; color: var(--oro); }
+  ol { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  li { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+  li .pos { font-family: "Oswald", sans-serif; font-size: 20px; color: var(--suave); text-align: center; }
+  li .nom { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li .pts { font-family: "Oswald", sans-serif; font-size: 20px; font-variant-numeric: tabular-nums; }
+  li .pts small { font-family: "Inter", sans-serif; font-size: 12px; color: var(--suave); margin-left: 3px; }
+  li.p1 { border-color: var(--oro); } li.p1 .pos { color: var(--oro); }
+  li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
+  li.yo { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 12%, var(--panel)); }
+  .vacio { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 18px; text-align: center; font-size: 14px; }
+  .como { margin-top: 28px; color: var(--suave); font-size: 14px; line-height: 1.6; }
+  .como b { color: var(--texto); }
+  #acceso { margin-top: 22px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca" id="box">Olympo Box</div>
+    <h1>Puntos Olympo</h1>
+    <div class="sub">Suma puntos cada día que registras tu resultado y gana extra si subes al podio.</div>
+  </header>
+
+  <div id="acceso" hidden></div>
+
+  <section class="cartera" id="cartera" hidden>
+    <button type="button" class="salir" id="salir">Salir</button>
+    <div class="cartera-etiqueta">Tu cartera</div>
+    <div class="cartera-nombre" id="carteraNombre"></div>
+    <div class="cartera-total"><span id="carteraTotal">0</span><small>pts</small></div>
+    <div class="cartera-puesto" id="carteraPuesto"></div>
+  </section>
+
+  <section id="zonaHistorial" hidden>
+    <h2>Tus últimos puntos</h2>
+    <div class="historial" id="historial"></div>
+  </section>
+
+  <h2>Ranking de puntos</h2>
+  <ol id="ranking"><div class="vacio">Cargando…</div></ol>
+
+  <p class="como" id="como"></p>
+</main>
+
+<script type="module">
+import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, CLASES, PUNTOS, fmtPuntos } from "./comun.js";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
+import { NOMBRE_BOX } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+$("como").innerHTML = "";
+$("como").append(
+  Object.assign(document.createElement("b"), { textContent: "Cómo se ganan: " }),
+  `${PUNTOS.registrar} puntos por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
+  ["RX", "Scaled", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
+  ` (1º / 2º / 3º). Los puntos se suman solos a las 00:00.`
+);
+
+montarAcceso($("acceso"), { titulo: "Entra para ver tu cartera", texto: "Usa la misma cuenta con la que subes tus resultados." });
+$("salir").addEventListener("click", () => salir());
+
+let yo = null;
+let ranking = [];
+let dejarHistorial = null;
+
+escucharCuenta(({ user, ficha }) => {
+  yo = user;
+  $("acceso").hidden = !!user;
+  $("cartera").hidden = !user;
+  $("zonaHistorial").hidden = !user;
+  if (dejarHistorial) { dejarHistorial(); dejarHistorial = null; }
+  if (!user) { pintarRanking(); return; }
+  $("carteraNombre").textContent = ficha?.nombre || user.displayName || user.email;
+  $("carteraTotal").textContent = fmtPuntos(ficha?.puntos || 0);
+  dejarHistorial = onSnapshot(query(collection(db, "usuarios", user.uid, "movimientos"), orderBy("fecha", "desc"), limit(20)), (s) => {
+    const cont = $("historial"); cont.replaceChildren();
+    if (s.empty) { const v = document.createElement("div"); v.className = "vacio"; v.textContent = "Aún no tienes puntos. Sube tu resultado hoy y suma los primeros."; cont.append(v); return; }
+    s.forEach((d) => {
+      const m = d.data();
+      const c = CLASES[m.clase] || CLASES.wod;
+      const fila = document.createElement("div"); fila.className = "mov"; fila.style.setProperty("--c", c.color);
+      const izq = document.createElement("div");
+      const t = document.createElement("div"); t.className = "t";
+      t.textContent = `${c.nombre} · ${m.posicion <= 3 ? ["", "🥇", "🥈", "🥉"][m.posicion] + " " : ""}${m.posicion}º en ${m.categoria}`;
+      const dd = document.createElement("div"); dd.className = "d";
+      dd.textContent = `${new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })} · ${m.resultado}`;
+      izq.append(t, dd);
+      const p = document.createElement("div"); p.className = "p"; p.textContent = "+" + fmtPuntos(m.puntos);
+      fila.append(izq, p); cont.append(fila);
+    });
+  }, () => {});
+  pintarRanking();
+});
+
+onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(100)), (s) => {
+  ranking = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
+  pintarRanking();
+}, () => { $("ranking").innerHTML = '<div class="vacio">No se ha podido cargar el ranking.</div>'; });
+
+function pintarRanking() {
+  const ol = $("ranking"); ol.replaceChildren();
+  if (!ranking.length) { const v = document.createElement("div"); v.className = "vacio"; v.textContent = "Todavía nadie tiene puntos. ¡Sé el primero!"; ol.append(v); }
+  // Puestos con empates compartidos
+  let puesto = 0, anterior = null;
+  ranking.forEach((u, i) => {
+    if (u.puntos !== anterior) { puesto = i + 1; anterior = u.puntos; }
+    const li = document.createElement("li");
+    if (puesto <= 3) li.classList.add("p" + puesto);
+    if (yo && u.uid === yo.uid) li.classList.add("yo");
+    const a = document.createElement("span"); a.className = "pos"; a.textContent = puesto;
+    const b = document.createElement("span"); b.className = "nom"; b.textContent = u.nombre || "Socio";
+    const c = document.createElement("span"); c.className = "pts"; c.textContent = fmtPuntos(u.puntos);
+    c.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
+    li.append(a, b, c); ol.append(li);
+    if (yo && u.uid === yo.uid) $("carteraPuesto").textContent = `Vas ${puesto}º de ${ranking.length} en el ranking de puntos.`;
+  });
+  if (yo && !ranking.some((u) => u.uid === yo.uid)) $("carteraPuesto").textContent = "Aún no estás en el ranking. ¡Registra tu resultado!";
+}
+</script>
+</body>
+</html>

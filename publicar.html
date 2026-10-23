@@ -36,6 +36,32 @@
   .fila-resumen { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; font-size: 14px; }
   .fila-resumen b { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .06em; }
   .fila-resumen span { color: var(--suave); }
+  .cierre { margin-top: 18px; border-top-color: var(--oro); }
+  .cierre-titulo { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .04em; }
+  .cierre-texto { color: var(--suave); font-size: 14px; line-height: 1.5; margin-top: 6px; }
+  .cierre .guardar { background: var(--oro); }
+  .podio-cat { margin-top: 16px; }
+  .podio-cat h4 { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; font-size: 14px; color: var(--malva); margin-bottom: 6px; }
+  .podio-fila { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--fondo); margin-top: 4px; font-size: 15px; }
+  .podio-fila .p { font-family: "Oswald", sans-serif; color: var(--suave); text-align: center; }
+  .podio-fila.top .p { color: var(--oro); }
+  .podio-fila .pt { font-weight: 800; color: var(--oro); }
+  .rev { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--fondo); margin-top: 4px; font-size: 15px; }
+  .rev .p { font-family: "Oswald", sans-serif; color: var(--suave); text-align: center; }
+  .rev .n { min-width: 0; overflow-wrap: anywhere; }
+  .rev .n small { display: block; margin-left: 0; }
+  .rev .n small { color: var(--suave); margin-left: 6px; }
+  .rev .pt { font-weight: 800; color: var(--oro); white-space: nowrap; }
+  .rev .rv { font-size: 11px; font-weight: 700; color: var(--malva); text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
+  .rev button.ed { background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-left: 8px; }
+  .editor { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .editor input, .editor select { padding: 10px; font-size: 15px; }
+  .editor .btns { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .editor .btns button { flex: 1; border-radius: 10px; padding: 10px; font-weight: 700; border: 1px solid var(--borde); background: none; color: var(--texto); }
+  .editor .btns .si { background: var(--oro); color: #1f2125; border-color: var(--oro); }
+  .editor .btns .borrar { color: var(--error); border-color: color-mix(in srgb, var(--error) 50%, transparent); }
+  .editor .ayuda { grid-column: 1 / -1; color: var(--suave); font-size: 12px; }
+  .cerrado-ok { margin-top: 12px; color: #3ddc84; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -46,6 +72,13 @@
     <div class="sub" id="fecha"></div>
   </header>
 
+  <div class="cuenta-barra" id="barraCuenta" hidden style="margin-top:18px">
+    <span class="quien">Coach: <b id="quienNombre"></b></span>
+    <button type="button" class="salir" id="salir">Salir</button>
+  </div>
+  <div id="acceso" hidden style="margin-top:18px"></div>
+
+  <div id="zonaCoach" hidden>
   <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
 
   <form class="panel" id="formWod" autocomplete="off">
@@ -66,17 +99,28 @@
     </div>
   </form>
 
+  <section class="panel cierre" id="cierre">
+    <div class="cierre-titulo" id="cierreTitulo">Resultados de hoy</div>
+    <p class="cierre-texto" id="cierreTexto"></p>
+    <div id="revision"></div>
+    <div class="msg" id="msgCierre" role="status"></div>
+  </section>
+
   <div class="resumen" id="resumen"></div>
 
   <div class="enlaces">
     <a id="linkPantalla" href="pantalla.html">Ver en la pantalla <span>pantalla.html</span></a>
     <a id="linkRanking" href="ranking.html">Ver el ranking <span>ranking.html</span></a>
+    <a href="puntos.html">Ranking de puntos <span>puntos.html</span></a>
+  </div>
   </div>
 </main>
 
 <script type="module">
-import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas } from "./comun.js";
+import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor } from "./comun.js";
+import { cerrarDiasPendientes } from "./cierre.js";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -84,6 +128,16 @@ $("box").textContent = NOMBRE_BOX;
 $("fecha").textContent = "Entrenamientos de hoy · " + new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
 
 let clase = claseInicial();
+
+// Solo el coach puede publicar y cerrar el día (lo comprueban las reglas de Firebase)
+montarAcceso($("acceso"), { titulo: "Entra con la cuenta del coach", texto: "Solo la cuenta del coach puede publicar los entrenamientos y repartir los puntos." });
+$("salir").addEventListener("click", () => salir());
+escucharCuenta(({ user }) => {
+  $("acceso").hidden = !!user;
+  $("barraCuenta").hidden = !user;
+  $("zonaCoach").hidden = !user;
+  if (user) { $("quienNombre").textContent = user.email; cerrarDiasPendientes(); }
+});
 const publicados = {};   // WOD guardado de cada clase
 let editado = false;     // si hay cambios sin publicar en la clase actual
 
@@ -93,6 +147,7 @@ for (const clave of Object.keys(CLASES)) {
     publicados[clave] = snap.exists() ? snap.data() : null;
     pintarResumen();
     if (clave === clase && !editado) rellenar();
+    if (clave === clase) pintarRevision();
   }, (err) => console.warn(err));
 }
 
@@ -136,16 +191,97 @@ function cambiarClase(nueva) {
   $("msg").textContent = "";
   editado = false;
   rellenar();
+  escucharCierre();
 }
 
-// Aviso si se cambia de clase con cambios sin publicar (el aviso va dentro de la página)
-function confirmarCambio() {
-  const m = $("msg");
-  if (m.dataset.avisado === clase) { delete m.dataset.avisado; return true; }
-  m.className = "msg error";
-  m.textContent = "Tienes cambios sin publicar. Pulsa Publicar, o vuelve a pulsar la otra pestaña para descartarlos.";
-  m.dataset.avisado = clase;
-  return false;
+// ---------- Resultados de hoy: el coach puede corregir o borrar cualquiera ----------
+// Los puntos se reparten solos a las 00:00 (ver cierre.js); hasta entonces se puede corregir todo.
+let cierre = null, dejarCierre = null, dejarRes = null, resHoy = [], abierto = null;
+function escucharCierre() {
+  if (dejarCierre) dejarCierre();
+  if (dejarRes) dejarRes();
+  cierre = null; resHoy = []; abierto = null;
+  $("msgCierre").textContent = "";
+  dejarCierre = onSnapshot(doc(db, "cierres", idCierre(clase)), (s) => { cierre = s.exists() ? s.data() : null; pintarRevision(); }, () => {});
+  dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (s) => {
+    resHoy = s.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => claseDe(r) === clase && r.uid);
+    pintarRevision();
+  }, () => {});
+}
+
+function pintarRevision() {
+  const n = CLASES[clase].nombre;
+  const w = publicados[clase];
+  $("cierreTitulo").textContent = `Resultados de hoy · ${n}`;
+  const p = PUNTOS.podio;
+  $("cierreTexto").textContent = cierre
+    ? `${n} de hoy ya está cerrado: se han repartido ${fmtPuntos(cierre.puntosTotales)} puntos entre ${cierre.socios} socios.`
+    : `Los puntos se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
+  const cont = $("revision"); cont.replaceChildren();
+  if (!w) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Publica el entrenamiento de esta clase para que los socios puedan subir su resultado." })); return; }
+  const filas = calcularPuntos(resHoy, w.tipo);
+  if (!filas.length) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Todavía no hay resultados." })); return; }
+  for (const cat of ["RX", "Scaled", "Open"]) {
+    const deCat = filas.filter((f) => f.categoria === cat);
+    if (!deCat.length) continue;
+    const bloque = document.createElement("div"); bloque.className = "podio-cat";
+    bloque.append(Object.assign(document.createElement("h4"), { textContent: cat }));
+    for (const f of deCat) bloque.append(filaRevision(f, w.tipo));
+    cont.append(bloque);
+  }
+}
+
+function filaRevision(f, tipo) {
+  const r = f.r;
+  const fila = document.createElement("div"); fila.className = "rev";
+  const p = Object.assign(document.createElement("span"), { className: "p", textContent: f.posicion + "º" });
+  const nm = document.createElement("span"); nm.className = "n";
+  nm.append(r.nombre, Object.assign(document.createElement("small"), { textContent: formatearValor(r.valor, r.tipo) }));
+  if (r.revisado) nm.append(Object.assign(document.createElement("span"), { className: "rv", textContent: "corregido" }));
+  const der = document.createElement("span");
+  der.append(Object.assign(document.createElement("span"), { className: "pt", textContent: "+" + fmtPuntos(f.puntos) }));
+  if (!cierre) {
+    const ed = Object.assign(document.createElement("button"), { type: "button", className: "ed", textContent: "Editar" });
+    ed.addEventListener("click", () => { abierto = abierto === r.id ? null : r.id; pintarRevision(); });
+    der.append(ed);
+  }
+  fila.append(p, nm, der);
+  if (abierto === r.id && !cierre) fila.append(editor(r, tipo));
+  return fila;
+}
+
+function editor(r, tipo) {
+  const box = document.createElement("div"); box.className = "editor";
+  const sel = document.createElement("select");
+  for (const c of ["RX", "Scaled", "Open"]) sel.append(new Option(c, c, false, c === r.categoria));
+  sel.setAttribute("aria-label", "Categoría");
+  const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
+  val.setAttribute("aria-label", "Resultado");
+  const ayuda = Object.assign(document.createElement("div"), { className: "ayuda",
+    textContent: tipo === "tiempo" ? "Resultado en minutos:segundos, p. ej. 9:12" : tipo === "rondas" ? "Rondas+reps, p. ej. 5+12" : "Kilos, p. ej. 85" });
+  const btns = document.createElement("div"); btns.className = "btns";
+  const guardar = Object.assign(document.createElement("button"), { type: "button", className: "si", textContent: "Guardar" });
+  const borrar = Object.assign(document.createElement("button"), { type: "button", className: "borrar", textContent: "Borrar" });
+  const cancelar = Object.assign(document.createElement("button"), { type: "button", textContent: "Cancelar" });
+  const m = $("msgCierre");
+  guardar.addEventListener("click", async () => {
+    const v = leerValor(val.value, tipo);
+    if (isNaN(v)) { m.className = "msg error"; m.textContent = "Revisa el resultado: " + ayuda.textContent; return; }
+    try {
+      await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true });
+      abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} corregido.`;
+    } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido guardar (¿el día ya está cerrado?)."; }
+  });
+  let confirmar = false;
+  borrar.addEventListener("click", async () => {
+    if (!confirmar) { confirmar = true; borrar.textContent = "¿Seguro? Pulsa otra vez"; return; }
+    try { await deleteDoc(doc(db, "resultados", r.id)); abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado.`; }
+    catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido borrar."; }
+  });
+  cancelar.addEventListener("click", () => { abierto = null; pintarRevision(); });
+  btns.append(guardar, borrar, cancelar);
+  box.append(sel, val, ayuda, btns);
+  return box;
 }
 
 $("formWod").addEventListener("submit", async (e) => {
@@ -161,7 +297,7 @@ $("formWod").addEventListener("submit", async (e) => {
   } catch (err) {
     console.error(err);
     $("msg").className = "msg error";
-    $("msg").textContent = "No se ha podido publicar. Revisa la conexión y las reglas de Firebase.";
+    $("msg").textContent = err?.code === "permission-denied" ? "No se ha podido publicar: solo la cuenta del coach puede hacerlo." : "No se ha podido publicar. Revisa la conexión.";
   } finally {
     $("guardar").disabled = false;
   }

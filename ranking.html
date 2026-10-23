@@ -27,6 +27,9 @@
   header .pestanas { margin-top: 16px; }
   .directo { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin-top: 10px; }
   .directo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; }
+  button.directo { background: none; border: 0; padding: 0; cursor: default; }
+  .directo.pausa { color: var(--texto); cursor: pointer; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; padding: 6px 12px; }
+  .directo.pausa::before { background: var(--suave); }
   .descripcion { margin-top: 14px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 12px; padding: 14px 16px; font-size: 16px; line-height: 1.5; white-space: pre-line; }
   .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 13px; margin-bottom: 4px; font-weight: 600; }
   h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .08em; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
@@ -56,7 +59,7 @@
     <div class="marca" id="box">Resultados atletas</div>
     <h1 id="wodNombre">WOD del día</h1>
     <div class="meta" id="tipo"></div>
-    <div class="directo">En directo</div>
+    <button type="button" class="directo" id="directo">En directo</button>
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
   </header>
 
@@ -162,22 +165,52 @@ function escucharWod() {
   });
 }
 
-onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  resultados = todos.filter((r) => claseDe(r) === clase);
-  cargado.res = true;
-  pintar();
+// ---------- Resultados en directo, gastando las mínimas lecturas ----------
+// - Solo se leen los resultados de la clase que se está viendo (no los de las tres).
+// - Si la pestaña se queda en segundo plano más de 1 minuto, se desconecta.
+// - Si nadie toca la página en 15 minutos, se pone en pausa; un toque la vuelve a poner en directo.
+let dejarRes = null;
+function conectar() {
+  desconectar();
+  cargado.res = false;
+  dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy()), where("clase", "==", clase)), (snap) => {
+    todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    resultados = todos;
+    cargado.res = true;
+    pintar();
+  });
+  marcarDirecto(true);
+}
+function desconectar() { if (dejarRes) { dejarRes(); dejarRes = null; } }
+function marcarDirecto(enDirecto) {
+  const d = $("directo");
+  d.classList.toggle("pausa", !enDirecto);
+  d.textContent = enDirecto ? "En directo" : "En pausa · Pulsa para actualizar";
+}
+function pausar() { if (!dejarRes) return; desconectar(); marcarDirecto(false); }
+
+let ultimoToque = Date.now(), temporizadorOculto = null;
+for (const ev of ["pointerdown", "keydown", "scroll", "touchstart"]) {
+  addEventListener(ev, () => { ultimoToque = Date.now(); if (!dejarRes && document.visibilityState === "visible") conectar(); }, { passive: true });
+}
+setInterval(() => { if (dejarRes && Date.now() - ultimoToque > 15 * 60 * 1000) pausar(); }, 30 * 1000);
+document.addEventListener("visibilitychange", () => {
+  clearTimeout(temporizadorOculto);
+  if (document.visibilityState === "hidden") temporizadorOculto = setTimeout(pausar, 60 * 1000);
+  else { ultimoToque = Date.now(); if (!dejarRes) conectar(); }
 });
+$("directo").addEventListener("click", () => { if (!dejarRes) conectar(); });
 
 function cambiarClase(nueva) {
   clase = nueva;
   recordarClase(clase);
   ponerColorClase(clase);
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
-  resultados = todos.filter((r) => claseDe(r) === clase);
+  todos = []; resultados = [];
   $("wodNombre").textContent = `${CLASES[clase].nombre} del día`; $("tipo").textContent = ""; $("descripcion").hidden = true;
   pintar();
   escucharWod();
+  conectar();
 }
 crearPestanas($("pestanas"), clase, cambiarClase);
 cambiarClase(clase);

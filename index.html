@@ -82,6 +82,13 @@
   .sensaciones button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; }
   .sensaciones .icono { width: 38px; height: 38px; font-size: 30px; line-height: 38px; text-align: center; display: block; }
   .sensaciones button[aria-pressed="true"] { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 22%, var(--panel)); }
+  .cuenta-barra { margin-bottom: 18px; }
+  #acceso { margin-bottom: 18px; }
+  .ya-registrado { margin-top: 18px; background: color-mix(in srgb, var(--malva) 14%, var(--panel)); border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.45; }
+  .ya-registrado b { display: block; font-size: 15px; margin-bottom: 2px; }
+  .ya-registrado.cerrado { background: var(--panel); border-color: var(--borde); color: var(--suave); }
+  .puntos-hoy { margin-top: 16px; color: var(--suave); font-size: 14px; line-height: 1.45; }
+  .puntos-hoy b { color: var(--oro); }
   .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
 </style>
 </head>
@@ -94,9 +101,19 @@
     <div class="wod-desc" id="wodDesc" hidden></div>
   </header>
 
-  <form id="formulario" autocomplete="off">
+  <div class="cuenta-barra" id="barraCuenta" hidden>
+    <span class="quien">Hola, <b id="quienNombre"></b></span>
+    <a class="pts" id="misPuntos" href="puntos.html">0 pts</a>
+    <button type="button" class="salir" id="salir">Salir</button>
+  </div>
+  <div id="acceso" hidden></div>
+  <div class="aviso-wod" id="cargandoCuenta">Cargando…</div>
+
+  <form id="formulario" autocomplete="off" hidden>
     <label>Clase</label>
     <nav class="pestanas pestanas-form" id="pestanas" aria-label="Clase"></nav>
+
+    <div class="ya-registrado" id="yaRegistrado" hidden></div>
 
     <label for="nombre">Nombre</label>
     <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
@@ -158,14 +175,16 @@
       <button class="avisame" id="avisame" type="button" hidden>🔔 Avísame si me quitan el primer puesto</button>
       <div class="avisame-info" id="avisameInfo" hidden></div>
     </div>
-    <button class="secundario" id="otro">Enviar otro resultado</button>
+    <div class="puntos-hoy" id="puntosHoy"></div>
+    <button class="secundario" id="otro">Editar mi resultado</button>
   </div>
   <div class="fecha-hoy" id="fechaHoy"></div>
 </main>
 
 <script type="module">
-import { doc, onSnapshot, collection, addDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe } from "./comun.js";
+import { doc, onSnapshot, collection, setDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js";
+import { escucharCuenta, montarAcceso, guardarNombre, salir } from "./cuenta.js";
 import { NOMBRE_BOX } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
@@ -212,8 +231,84 @@ $("sensaciones").addEventListener("click", (e) => {
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === sensacion));
 });
 
-// Recordar el nombre en este móvil para la próxima vez
-try { $("nombre").value = localStorage.getItem("wod-nombre") || ""; } catch {}
+// ---------- Cuenta del socio ----------
+let user = null, ficha = undefined;
+montarAcceso($("acceso"), { titulo: "Entra para subir tu resultado", texto: `Con tu cuenta sumas puntos: ${PUNTOS.registrar} por registrar y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
+$("salir").addEventListener("click", () => salir());
+escucharCuenta((c) => {
+  const cambioUsuario = (c.user?.uid || null) !== (user?.uid || null);
+  user = c.user; ficha = c.ficha;
+  $("cargandoCuenta").hidden = true;
+  $("acceso").hidden = !!user;
+  $("barraCuenta").hidden = !user;
+  $("formulario").hidden = !user || !$("hecho").hidden;
+  if (!user) { $("hecho").hidden = true; return; }
+  $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
+  $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
+  if (!$("nombre").value || cambioUsuario) $("nombre").value = ficha?.nombre || user.displayName || "";
+  if (cambioUsuario) escucharMiResultado();
+});
+
+// ---------- Mi resultado de hoy en esta clase (solo uno; se puede editar mientras el día esté abierto) ----------
+let miDoc = null;        // mi resultado guardado de hoy en la clase elegida (o null)
+let diaCerrado = false;  // el coach ya ha repartido los puntos de esta clase
+let dejarMiDoc = null, dejarCierre = null;
+function escucharMiResultado() {
+  if (dejarMiDoc) dejarMiDoc();
+  if (dejarCierre) dejarCierre();
+  miDoc = null; diaCerrado = false;
+  if (!user) return;
+  dejarMiDoc = onSnapshot(doc(db, "resultados", idResultado(clase, user.uid)), (s) => {
+    const antes = miDoc;
+    miDoc = s.exists() ? { id: s.id, ...s.data() } : null;
+    if (miDoc && !antes && $("hecho").hidden) rellenarConMiResultado();
+    pintarAvisoRegistro();
+  }, () => {});
+  dejarCierre = onSnapshot(doc(db, "cierres", idCierre(clase)), (s) => { diaCerrado = s.exists(); pintarAvisoRegistro(); }, () => {});
+}
+
+function pintarAvisoRegistro() {
+  const a = $("yaRegistrado");
+  a.classList.toggle("cerrado", diaCerrado);
+  if (diaCerrado) {
+    a.hidden = false;
+    a.innerHTML = "<b>El día está cerrado</b>";
+    a.append(document.createTextNode(`Ya se han repartido los puntos de ${CLASES[clase].nombre} de hoy. Ya no se pueden subir ni cambiar resultados.`));
+  } else if (miDoc?.revisado) {
+    a.hidden = false;
+    a.classList.add("cerrado");
+    a.innerHTML = "<b>El coach ha revisado tu resultado</b>";
+    a.append(document.createTextNode("Ya no lo puedes cambiar. Si crees que hay un error, habla con el coach."));
+  } else if (miDoc) {
+    a.hidden = false;
+    a.innerHTML = "<b>Ya tienes tu resultado de hoy</b>";
+    a.append(document.createTextNode(`Solo se puede subir uno por clase. Si te has equivocado, cámbialo aquí y pulsa "Guardar cambios".`));
+  } else a.hidden = true;
+  $("enviar").textContent = miDoc ? "Guardar cambios" : "Enviar";
+  $("enviar").disabled = !wod || diaCerrado || !!miDoc?.revisado;
+}
+
+// Pone en el formulario lo que ya había enviado
+function rellenarConMiResultado() {
+  const r = miDoc;
+  if (!r) return;
+  categoria = r.categoria;
+  $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === categoria));
+  $("bloqueOpen").hidden = categoria !== "Open";
+  for (const clave of Object.keys(MATERIAL)) {
+    const kg = r.pesos?.[clave];
+    elegido[clave] = !!kg;
+    const i = $("peso-" + clave);
+    i.value = kg || ""; i.disabled = !kg;
+    i.parentElement.previousElementSibling.setAttribute("aria-pressed", !!kg);
+  }
+  ["min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
+  if (r.tipo === "tiempo") { $("min").value = Math.floor(r.valor / 60); $("seg").value = String(r.valor % 60).padStart(2, "0"); }
+  else if (r.tipo === "rondas") { $("rondas").value = Math.floor(r.valor / 1000); $("repsExtra").value = r.valor % 1000; }
+  else $("kg").value = r.valor;
+  sensacion = r.sensacion || null;
+  $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === sensacion));
+}
 
 function ponerTipo(t) {
   tipo = t;
@@ -237,7 +332,7 @@ function escucharWod() {
   if (valido) ponerTipo(wod.tipo);
   $("tipo").querySelectorAll("button").forEach((x) => x.classList.toggle("bloqueado", valido && x.dataset.v !== wod.tipo));
   $("sinWod").hidden = !!valido;
-  $("enviar").disabled = !valido;
+  $("enviar").disabled = !valido || diaCerrado;
   $("error").textContent = "";
   $("wodDesc").textContent = wod?.descripcion || "";
   $("wodDesc").hidden = !wod?.descripcion;
@@ -250,10 +345,12 @@ function cambiarClase(nueva) {
   recordarClase(clase);
   ponerColorClase(clase);
   $("sinWod").textContent = `El coach todavía no ha configurado el entrenamiento de ${CLASES[clase].nombre} de hoy. Espera un momento y vuelve a intentarlo.`;
+  limpiarFormulario();
+  $("hecho").hidden = true;
+  if (user) $("formulario").hidden = false;
   escucharWod();
+  escucharMiResultado();
 }
-crearPestanas($("pestanas"), clase, cambiarClase);
-cambiarClase(clase);
 
 const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)" };
 
@@ -282,6 +379,8 @@ const entero = (id) => { const v = $(id).value.trim(); return v === "" ? 0 : (/^
 $("formulario").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("error").textContent = "";
+  if (!user) return ($("error").textContent = "Entra en tu cuenta para subir el resultado.");
+  if (diaCerrado) return ($("error").textContent = "El día ya está cerrado.");
   const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
   if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
   if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
@@ -315,21 +414,31 @@ $("formulario").addEventListener("submit", async (e) => {
 
   $("enviar").disabled = true;
   try {
-    const ref = await addDoc(collection(db, "resultados"), {
-      nombre, clase, categoria, tipo, valor, fecha: hoy(), creado: serverTimestamp(),
+    await guardarNombre(user, ficha, nombre);
+    const id = idResultado(clase, user.uid);
+    await setDoc(doc(db, "resultados", id), {
+      uid: user.uid, nombre, clase, categoria, tipo, valor, fecha: hoy(),
+      creado: miDoc?.creado || serverTimestamp(),
+      ...(miDoc ? { editado: serverTimestamp() } : {}),
       ...(sensacion ? { sensacion } : {}),
       ...(pesos ? { pesos } : {})
     });
-    try { localStorage.setItem("wod-nombre", nombre); } catch {}
+    const ref = { id };
+    $("hecho").querySelector("h2").textContent = miDoc ? "¡Cambios guardados!" : "¡Registrado!";
+    $("puntosHoy").innerHTML = "";
+    const pc = PUNTOS.podio[categoria];
+    $("puntosHoy").append("Hoy sumas ", Object.assign(document.createElement("b"), { textContent: `${PUNTOS.registrar} puntos` }), ` por registrarte. Si acabas en el podio de ${categoria} sumarás +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º). Los puntos se suman a las 00:00.`);
     $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
     seguirMiPosicion({ id: ref.id, nombre, clase, categoria, tipo, valor });
   } catch (err) {
     console.error(err);
-    $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
+    $("error").textContent = err?.code === "permission-denied"
+      ? "No se ha podido guardar: puede que el día ya esté cerrado o que el WOD haya cambiado. Recarga la página."
+      : "No se ha podido enviar. Inténtalo de nuevo.";
   } finally {
-    $("enviar").disabled = !wod;
+    $("enviar").disabled = !wod || diaCerrado;
   }
 });
 
@@ -440,18 +549,31 @@ $("avisame").addEventListener("click", async () => {
     : "No has dado permiso para los avisos. Si dejas esta página abierta, verás el aviso aquí.";
 });
 
-$("otro").addEventListener("click", () => {
-  ["nombre", "min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
+// Vacía el formulario (al cambiar de clase) y deja de seguir la posición anterior
+function limpiarFormulario() {
+  ["min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
   sensacion = null;
   for (const clave of Object.keys(MATERIAL)) { elegido[clave] = false; const i = $("peso-" + clave); i.value = ""; i.disabled = true; i.parentElement.previousElementSibling.setAttribute("aria-pressed", "false"); }
-  if (dejarDeSeguir) { dejarDeSeguir(); dejarDeSeguir = null; }
-  miResultado = null; quiereAviso = false;
-  $("estado").hidden = true; $("avisameInfo").hidden = true;
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+  categoria = "RX";
+  $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === "RX"));
+  $("bloqueOpen").hidden = true;
+  if (dejarDeSeguir) { dejarDeSeguir(); dejarDeSeguir = null; }
+  miResultado = null;
+  $("estado").hidden = true; $("avisameInfo").hidden = true;
+}
+
+// Volver al formulario para corregir el resultado
+$("otro").addEventListener("click", () => {
+  rellenarConMiResultado();
   $("hecho").hidden = true;
   $("formulario").hidden = false;
-  $("nombre").focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
+
+// Arranque: pestañas de clase y la clase con la que se abre (la del QR o la última usada)
+crearPestanas($("pestanas"), clase, cambiarClase);
+cambiarClase(clase);
 </script>
 </body>
 </html>

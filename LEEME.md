@@ -1,11 +1,12 @@
 # Ranking del WOD con QR — Olympo Box
 
-## Archivos de esta carpeta (deben estar los 7 sueltos en el repositorio de GitHub)
+## Archivos de esta carpeta (deben estar los 8 sueltos en el repositorio de GitHub)
 
 | Archivo | Para qué sirve |
 |---|---|
 | `index.html` | Formulario que abre el QR en el móvil del socio (nombre, RX/Scaled, tiempo/rondas/kg) |
 | `pantalla.html` | Pantalla de la TV con el ranking en directo y el QR |
+| `ranking.html` | Ranking para ver desde casa (solo lectura, sin ajustes) |
 | `estilos.css` | Colores y estilo (fondo gris antracita, título lila malva) |
 | `comun.js` | Funciones compartidas (formato de tiempos y rondas, orden del ranking) |
 | `config.js` | Tus claves de Firebase **(hay que rellenarlo)** |
@@ -49,3 +50,14 @@ Debe verse con fondo gris antracita, "TU RESULTADO" en lila y la fecha abajo a l
 **Borrar un resultado equivocado:** Firebase → Firestore Database → `resultados` → documento → ⋮ → Eliminar documento.
 
 **Sin historial:** cada vez que se abre la pantalla se borran solos los resultados de días anteriores.
+
+## Cuentas y puntos (Firebase Authentication)
+
+1. Firebase → **Compilación → Authentication → Comenzar**.
+2. Pestaña **Método de acceso**: activa **Google** (elige tu email de asistencia) y **Correo electrónico/contraseña**.
+3. Pestaña **Configuración → Dominios autorizados → Agregar dominio**: `olympoboxgranollers.github.io`.
+4. Pega las reglas nuevas de `firestore.rules` en Firestore → Reglas → Publicar.
+
+- El coach es la cuenta de Google `olympoboxgranollers@gmail.com` (está en las reglas, función `esCoach`).
+- `publicar.html`: publicar los WODs y corregir o borrar resultados. Los puntos se reparten solos a las 00:00 desde cualquier aparato con la sesión del coach (la pantalla de la TV, o publicar.html en cuanto lo abras).
+- `puntos.html`: cartera de cada socio y ranking de puntos.

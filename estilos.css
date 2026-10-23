@@ -78,3 +78,28 @@ input, select { font: inherit; color: inherit; }
 .pestanas button::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); margin-right: 8px; vertical-align: 1px; }
 .pestanas button[aria-pressed="true"] { background: var(--c); color: #1f2125; border-color: var(--c); }
 .pestanas button[aria-pressed="true"]::before { background: #1f2125; }
+
+/* Panel de acceso (cuentas) */
+.acceso { background: var(--panel); border: 1px solid var(--borde); border-top: 4px solid var(--malva); border-radius: 16px; padding: 22px 18px; }
+.acceso-titulo { font-family: "Oswald", "Inter", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .04em; }
+.acceso-texto { color: var(--suave); font-size: 14px; line-height: 1.45; margin-top: 6px; }
+.acceso-google { width: 100%; margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #1f1f1f; border: 0; border-radius: 12px; padding: 14px; font-weight: 700; font-size: 16px; }
+.acceso-google .g { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; color: #fff; background: conic-gradient(#ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0); font-size: 13px; }
+.acceso-o { display: flex; align-items: center; gap: 10px; margin: 18px 0 12px; color: var(--suave); font-size: 13px; }
+.acceso-o::before, .acceso-o::after { content: ""; flex: 1; height: 1px; background: var(--borde); }
+.acceso-email { display: grid; gap: 8px; }
+.acceso-email input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 13px 12px; font-size: 16px; color: var(--texto); outline: none; }
+.acceso-email input:focus { border-color: var(--malva); }
+.acceso-entrar { background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 16px; margin-top: 4px; }
+.acceso-links { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; }
+.acceso-links button { background: none; border: 0; color: var(--suave); font-size: 14px; padding: 4px; }
+.acceso-links b { color: var(--texto); }
+.acceso-msg { margin-top: 10px; font-size: 14px; color: var(--error); text-align: center; min-height: 1em; }
+.acceso-msg.ok { color: #3ddc84; }
+
+/* Barra de cuenta: quién ha entrado y sus puntos */
+.cuenta-barra { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; padding: 6px 6px 6px 14px; font-size: 14px; }
+.cuenta-barra .quien { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--suave); }
+.cuenta-barra .quien b { color: var(--texto); }
+.cuenta-barra .pts { background: rgba(245,197,66,.14); color: var(--oro); border: 1px solid rgba(245,197,66,.45); border-radius: 999px; padding: 6px 12px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.cuenta-barra .salir { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
