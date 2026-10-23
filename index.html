@@ -39,6 +39,8 @@
   .ok p { color: var(--suave); margin-top: 8px; }
   .secundario { margin-top: 28px; background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px 20px; }
   [hidden] { display: none !important; }
+  .segmentado button.bloqueado { opacity: .35; }
+  .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
 </style>
 </head>
 <body>
@@ -85,7 +87,8 @@
       <input class="campo" id="kg" inputmode="decimal" placeholder="Ej. 85"><small>kilos</small>
     </div>
 
-    <button class="enviar" id="enviar" type="submit">Enviar</button>
+    <div class="aviso-wod" id="sinWod" hidden>El coach todavía no ha configurado el WOD de hoy. Espera un momento y vuelve a intentarlo.</div>
+    <button class="enviar" id="enviar" type="submit" disabled>Enviar</button>
     <div class="error" id="error"></div>
   </form>
 
@@ -110,7 +113,6 @@ $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "l
 let wod = null;
 let categoria = "RX";
 let tipo = "tiempo";
-let tipoElegidoAMano = false;
 
 // Recordar el nombre en este móvil para la próxima vez
 try { $("nombre").value = localStorage.getItem("wod-nombre") || ""; } catch {}
@@ -127,10 +129,18 @@ function ponerTipo(t) {
 onSnapshot(doc(db, "wods", hoy()), (snap) => {
   wod = snap.exists() ? snap.data() : null;
   $("wodNombre").textContent = wod ? `${wod.nombre} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : "WOD de hoy";
-  if (wod && TIPOS[wod.tipo] && !tipoElegidoAMano) ponerTipo(wod.tipo);
+  // El resultado solo se puede poner en la medida del WOD (tiempo, rondas o kg)
+  const valido = wod && TIPOS[wod.tipo];
+  if (valido) ponerTipo(wod.tipo);
+  $("tipo").querySelectorAll("button").forEach((x) => x.classList.toggle("bloqueado", valido && x.dataset.v !== wod.tipo));
+  $("sinWod").hidden = !!valido;
+  $("enviar").disabled = !valido;
+  $("error").textContent = "";
   $("wodDesc").textContent = wod?.descripcion || "";
   $("wodDesc").hidden = !wod?.descripcion;
-}, () => { $("wodNombre").textContent = "WOD de hoy"; });
+}, () => { $("wodNombre").textContent = "WOD de hoy"; $("sinWod").hidden = false; $("enviar").disabled = true; });
+
+const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)" };
 
 $("categoria").addEventListener("click", (e) => {
   const b = e.target.closest("button");
@@ -142,7 +152,12 @@ $("categoria").addEventListener("click", (e) => {
 $("tipo").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
-  tipoElegidoAMano = true;
+  if (!wod) return;
+  if (b.dataset.v !== wod.tipo) {
+    $("error").textContent = `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}. Solo puedes poner tu resultado en ${NOMBRE_MEDIDA[wod.tipo]}.`;
+    return;
+  }
+  $("error").textContent = "";
   ponerTipo(b.dataset.v);
 });
 
@@ -153,6 +168,7 @@ $("formulario").addEventListener("submit", async (e) => {
   $("error").textContent = "";
   const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
   if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
+  if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
 
   let valor;
   if (tipo === "tiempo") {
@@ -181,7 +197,7 @@ $("formulario").addEventListener("submit", async (e) => {
     console.error(err);
     $("error").textContent = "No se ha podido enviar. Inténtalo de nuevo.";
   } finally {
-    $("enviar").disabled = false;
+    $("enviar").disabled = !wod;
   }
 });
 

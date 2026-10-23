@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="estilos.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  body { height: 100vh; overflow: hidden; padding: 2.5vw; display: grid; grid-template-columns: 1fr 22vw; grid-template-rows: auto 1fr; gap: 2vw; }
+  body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 29vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
   header .marca { color: #fff; font-size: 1.3vw; }
   .fecha-hoy { right: 2.5vw; bottom: 1.2vw; font-size: 1.4vw; }
@@ -39,10 +39,15 @@
   aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
   aside .cta span { color: var(--acento); }
   aside .total { color: var(--suave); font-size: 1.2vw; }
-  #qr { width: 16vw; }
+  #qr { width: 11vw; flex: none; padding: .6vw; border-radius: .7vw; }
+  .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
+  .escanear .cta { font-size: 1.7vw; }
+  .escanear .total { margin-top: .5vw; }
   .descripcion { width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
   .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
   aside { min-height: 0; }
+  .descripcion { flex: 1 1 auto; font-size: 1.5vw; padding: 1.2vw 1.4vw; }
+  .descripcion b { font-size: 1.2vw; }
   dialog textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
   .ajustes { position: fixed; left: 1vw; bottom: 1vw; background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; }
   .ajustes:hover { opacity: 1; }
@@ -60,7 +65,7 @@
     .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
     li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
     li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
-    aside { order: -1; } #qr { width: 100%; max-width: 240px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
+    aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
   }
 </style>
 </head>
@@ -79,10 +84,11 @@
 </section>
 
 <aside>
-  <div id="qr"></div>
-  <div class="cta">Escanea y<br><span>sube tu resultado</span></div>
-  <div class="total" id="total"></div>
   <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
+  <div class="escanear">
+    <div id="qr"></div>
+    <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
+  </div>
 </aside>
 
 <button class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
@@ -126,6 +132,19 @@ let resultados = [];
 const vistos = new Set();
 let primeraCarga = true;
 
+// Si el WOD es muy largo, reduce la letra hasta que quepa entero en su recuadro
+function ajustarDescripcion() {
+  const caja = $("descripcion");
+  if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; return; }
+  let vw = 1.5;
+  caja.style.fontSize = vw + "vw";
+  while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
+    vw -= 0.05;
+    caja.style.fontSize = vw.toFixed(2) + "vw";
+  }
+}
+window.addEventListener("resize", ajustarDescripcion);
+
 function pintar() {
   // Tipo del ranking: el del WOD configurado o, si no hay, el más usado por los socios
   let tipo = wod?.tipo;
@@ -135,13 +154,15 @@ function pintar() {
     tipo = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])[0] || "tiempo";
   }
   // Una sola clasificación; la categoría (RX / Scaled) aparece en pequeño bajo el resultado
-  const lista = ordenar(resultados, tipo);
+  // Solo cuentan los resultados en la misma medida que el WOD configurado
+  const validos = wod ? resultados.filter((r) => (r.tipo || tipo) === tipo) : [];
+  const lista = ordenar(validos, tipo);
   const ol = $("lista");
   ol.replaceChildren();
   $("nAtletas").textContent = lista.length ? `${lista.length} atleta${lista.length > 1 ? "s" : ""}` : "";
   if (!lista.length) {
     const v = document.createElement("div");
-    v.className = "vacio"; v.textContent = "Todavía no hay resultados";
+    v.className = "vacio"; v.textContent = wod ? "Todavía no hay resultados" : "Pulsa ⚙ WOD de hoy para configurar el WOD";
     ol.append(v);
   }
   // Orden en columnas: 1, 2, 3… hacia abajo en la izquierda y luego sigue en la derecha
@@ -161,7 +182,7 @@ function pintar() {
   });
   resultados.forEach((r) => vistos.add(r.id));
   primeraCarga = false;
-  $("total").textContent = resultados.length ? `${resultados.length} resultados hoy` : "";
+  $("total").textContent = lista.length ? `${lista.length} resultados hoy` : "";
 }
 
 onSnapshot(doc(db, "wods", hoy()), (snap) => {
@@ -170,6 +191,7 @@ onSnapshot(doc(db, "wods", hoy()), (snap) => {
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "Pulsa ⚙ para configurar el WOD";
   $("descripcionTexto").textContent = wod?.descripcion || "";
   $("descripcion").hidden = !wod?.descripcion;
+  ajustarDescripcion();
   pintar();
 });
 

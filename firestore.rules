@@ -8,6 +8,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['nombre', 'categoria', 'tipo', 'valor', 'fecha', 'creado'])
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg']
+        && request.resource.data.tipo == get(/databases/$(database)/documents/wods/$(request.resource.data.fecha)).data.tipo
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() > 0
         && request.resource.data.nombre.size() <= 40
