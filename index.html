@@ -15,6 +15,7 @@
   header .marca { color: #fff; font-size: 14px; }
   h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
   .wod { color: var(--suave); margin-top: 8px; font-size: 15px; }
+  .wod-desc { margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; white-space: pre-line; }
   label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
   .campo { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; font-size: 20px; outline: none; }
   .campo:focus { border-color: var(--acento); }
@@ -46,6 +47,7 @@
     <div class="marca" id="box"></div>
     <h1>Tu resultado</h1>
     <div class="wod" id="wodNombre">WOD de hoy</div>
+    <div class="wod-desc" id="wodDesc" hidden></div>
   </header>
 
   <form id="formulario" autocomplete="off">
@@ -126,6 +128,8 @@ onSnapshot(doc(db, "wods", hoy()), (snap) => {
   wod = snap.exists() ? snap.data() : null;
   $("wodNombre").textContent = wod ? `${wod.nombre} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : "WOD de hoy";
   if (wod && TIPOS[wod.tipo] && !tipoElegidoAMano) ponerTipo(wod.tipo);
+  $("wodDesc").textContent = wod?.descripcion || "";
+  $("wodDesc").hidden = !wod?.descripcion;
 }, () => { $("wodNombre").textContent = "WOD de hoy"; });
 
 $("categoria").addEventListener("click", (e) => {

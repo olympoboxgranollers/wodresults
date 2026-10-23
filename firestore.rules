@@ -24,7 +24,8 @@ service cloud.firestore {
     // WOD del día (lo configura el coach desde la pantalla)
     match /wods/{fecha} {
       allow read: if true;
-      allow write: if request.resource.data.keys().hasOnly(['nombre', 'tipo'])
+      allow write: if request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
+        && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 1000))
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() <= 60
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
