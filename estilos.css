@@ -289,5 +289,5 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 @media (max-width: 480px) {
   .menu:not(.menu-tv) { width: calc(100vw - 16px); max-width: calc(100vw - 16px); }
   .menu:not(.menu-tv) .menu-item { flex: 1 1 0; min-width: 0 !important; padding: 7px 2px 6px !important; }
-  .menu:not(.menu-tv) .menu-texto { font-size: 9.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .menu:not(.menu-tv) .menu-texto { font-size: 9px !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 }

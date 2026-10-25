@@ -16,6 +16,7 @@ const ICONOS = {
   entrar: '<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M9.5 16.5L14 12 9.5 7.5"/><path d="M14 12H3.5"/>',
   canjes: '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 12.5h17"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8 0-4.5-.6-4.5-2.6 0-1.3 1-2 2-2 2 0 2.5 2.6 2.5 4.6z"/><path d="M12 8.5c1.8 0 4.5-.6 4.5-2.6 0-1.3-1-2-2-2-2 0-2.5 2.6-2.5 4.6z"/>',
   logros: '<circle cx="12" cy="9" r="5.5"/><path d="M8.6 13.4L7 21l5-2.6 5 2.6-1.6-7.6"/><path d="M12 6.6l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>',
+  perfil: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
   eventos: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h2"/><path d="M14 14h2"/><path d="M8 17h2"/>',
   salir: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'
 };
@@ -35,6 +36,7 @@ const PAGINAS = [
   { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
   { id: "logros",    href: "logros.html",   texto: "Logros" },
   { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
+  { id: "perfil",    href: "perfil.html",   texto: "Perfil", socio: true },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },
   { id: "publicar",  href: "publicar.html", texto: "Publicar", coach: true }
 ];
@@ -74,8 +76,9 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     for (const p of PAGINAS) {
       if (p.coach && !coach) continue;
       if (p.id === "resultado" && coach) continue;  // el coach no registra resultados
+      if (p.socio && coach) continue;               // el coach no tiene perfil de atleta
       const a = document.createElement("a");
-      a.href = p.href + (clase ? "?clase=" + clase : "");
+      a.href = p.href + (clase && p.id !== "perfil" ? "?clase=" + clase : "");
       a.className = "menu-item" + (p.id === actual ? " activo" : "");
       if (p.id === actual) a.setAttribute("aria-current", "page");
       a.append(icono(p.id), Object.assign(document.createElement("span"), { className: "menu-texto", textContent: p.texto }));

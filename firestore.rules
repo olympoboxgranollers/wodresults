@@ -116,6 +116,11 @@ service cloud.firestore {
         && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado')
         && (!('ocultarPuntos' in request.resource.data) || request.resource.data.ocultarPuntos is bool)
         && (!('atleta' in request.resource.data) || request.resource.data.atleta is bool))
+        // Sus marcas personales (los ejercicios que quiera, hasta 40) y las 2 que destaca en el perfil
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['marcas', 'destacadas'])
+        && request.resource.data.marcas is map && request.resource.data.marcas.size() <= 40
+        && request.resource.data.destacadas is list && request.resource.data.destacadas.size() <= 2)
         // Sus marcas personales (RM de snatch y clean & jerk), que verán los demás en su perfil
         || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rm'])

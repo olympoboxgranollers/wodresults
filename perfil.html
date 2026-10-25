@@ -14,9 +14,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css">
 <style>
-  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
+    /* Chapa perforada de rombos */
+    background-color: #26282c;
+    background-image:
+      radial-gradient(ellipse at 50% 35%, rgba(70, 70, 76, .55), transparent 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg%3E%3Cpath d='M14 6 L22 14 L14 22 L6 14Z' fill='%23121317'/%3E%3Cpath d='M6 14 L14 22 L22 14' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3Cpath d='M14 7.6 L20.4 14 L14 20.4 L7.6 14Z' fill='%23191b20'/%3E%3Cpath d='M0 -8 L8 0 L0 8 L-8 0Z M28 -8 L36 0 L28 8 L20 0Z M0 20 L8 28 L0 36 L-8 28Z M28 20 L36 28 L28 36 L20 28Z' fill='%23121317'/%3E%3Cpath d='M-8 0 L0 8 L8 0 M20 0 L28 8 L36 0 M-8 28 L0 36 L8 28 M20 28 L28 36 L36 28' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: auto, 28px 28px; background-attachment: fixed; }
+  main { position: relative; }
   main { width: 100%; max-width: 560px; }
-  header .marca { color: #fff; font-size: 13px; }
+  header .fila-marca { color: #fff; font-size: 13px; }
   .volver { display: inline-block; margin-top: 18px; color: var(--suave); text-decoration: none; font-size: 14px; background: none; border: 0; padding: 0; }
   .cabeza { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
   .avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; flex: none;
@@ -38,7 +45,33 @@
   .rm-titulo { display: flex; align-items: center; justify-content: space-between; }
   .rm-editar { background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 500; }
   .rm { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .rm-caja { background: var(--panel); border-radius: 16px; padding: 16px; }
+  .rm-caja { background: rgba(48, 51, 57, .92); border: 1px solid var(--borde); border-radius: 16px; padding: 16px; min-width: 0; }
+  .rm-caja span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rm-caja.vacia b { color: var(--suave); }
+  .mis-marcas { margin-top: 12px; width: 100%; background: rgba(48, 51, 57, .92); border: 1px solid var(--borde); color: var(--texto); border-radius: 14px; padding: 13px 16px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .mis-marcas span { color: var(--suave); font-weight: 500; font-size: 13px; }
+  .dlg-marcas { margin: auto; width: min(460px, calc(100vw - 24px)); max-height: 86dvh; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 20px; padding: 20px; }
+  .dlg-marcas::backdrop { background: rgba(0, 0, 0, .7); }
+  .dlg-marcas h3 { font-size: 20px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .dlg-marcas h3 button { background: none; border: 0; color: var(--suave); font-size: 20px; }
+  .dlg-marcas .ayuda { color: var(--suave); font-size: 13px; line-height: 1.45; margin-top: 6px; }
+  .fila-marca { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--borde); }
+  .fila-marca .nom { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fila-marca .nom small { display: block; color: var(--suave); font-weight: 400; font-size: 11px; }
+  .fila-marca .kg { font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .fila-marca .kg small { font-size: 12px; color: var(--suave); font-weight: 500; margin-left: 2px; }
+  .fila-marca .estrella { background: none; border: 0; font-size: 20px; line-height: 1; color: var(--borde); padding: 4px; }
+  .fila-marca .estrella.on { color: #ffd24a; }
+  .fila-marca .estrella:disabled { cursor: default; }
+  .fila-marca .borrar { background: none; border: 0; color: var(--suave); font-size: 13px; padding: 4px; }
+  .fila-marca .borrar.seguro { color: var(--error); }
+  .nueva-marca { display: grid; grid-template-columns: 1fr 96px auto; gap: 8px; margin-top: 14px; }
+  .nueva-marca input { min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 16px; color: var(--texto); }
+  .nueva-marca input:focus { border-color: var(--lila); outline: none; }
+  .nueva-marca button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 14px; font-weight: 700; font-size: 14px; }
+  .dlg-marcas .msg { font-size: 13px; color: var(--error); min-height: 1em; margin-top: 6px; }
+  .dlg-marcas .lista-marcas { max-height: 46dvh; overflow: auto; margin-top: 10px; }
+  .dlg-marcas .vacia { color: var(--suave); text-align: center; padding: 20px 0; font-size: 14px; }
   .rm-caja span { display: block; color: var(--suave); font-size: 13px; }
   .rm-caja b { display: block; font-size: 30px; font-weight: 700; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
   .rm-caja b small { font-size: 15px; font-weight: 500; color: var(--suave); margin-left: 3px; }
@@ -55,11 +88,13 @@
   .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .avatar.grande { width: 84px; height: 84px; font-size: 32px; }
   .avatar.con-foto { cursor: zoom-in; }
-  .gustos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-  .gusto { background: var(--panel); border-radius: 16px; padding: 14px 16px; }
-  .gusto span { display: block; color: var(--suave); font-size: 12px; }
-  .gusto b { display: block; font-size: 17px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
+  .gustos { display: flex; align-items: center; gap: 8px; margin-top: 18px; padding: 10px 14px; border-radius: 999px; background: rgba(32, 34, 38, .85); border: 1px solid var(--borde); font-size: 14px; white-space: nowrap; overflow: hidden; }
+  .gusto { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex: 0 1 auto; }
+  .gustos { justify-content: center; }
+  .gusto span { color: var(--suave); font-size: 13px; flex: none; }
+  .gusto b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
   .gusto.fav b { color: #7ee2a8; } .gusto.odio b { color: #ff8f8f; }
+  .gustos .sep { color: var(--borde); flex: none; }
   .editar-perfil { margin-top: 14px; background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 500; }
   .perfil-form { margin-top: 16px; border: 1px solid var(--borde); border-radius: 18px; padding: 18px; display: grid; gap: 12px; }
   .perfil-form label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
@@ -112,8 +147,9 @@
   </form>
 
   <div class="gustos" id="gustos" hidden>
-    <div class="gusto fav"><span>💚 Ejercicio favorito</span><b id="gFav">–</b></div>
-    <div class="gusto odio"><span>💀 Ejercicio más odiado</span><b id="gOdio">–</b></div>
+    <div class="gusto fav" id="gFavCaja" title="Ejercicio favorito"><span>💚</span><b id="gFav">–</b></div>
+    <span class="sep" id="gSep">·</span>
+    <div class="gusto odio" id="gOdioCaja" title="Ejercicio más odiado"><span>💀</span><b id="gOdio">–</b></div>
   </div>
 
   <div class="datos">
@@ -124,17 +160,21 @@
 
   <dialog class="zoom-foto" id="zoomFoto"><img id="zoomImg" alt=""></dialog>
 
-  <h2 class="rm-titulo">Marcas personales <button type="button" class="rm-editar" id="rmEditar" hidden>Editar</button></h2>
-  <div class="rm">
-    <div class="rm-caja"><span>Snatch</span><b id="rmSnatch">–</b></div>
-    <div class="rm-caja"><span>Clean &amp; Jerk</span><b id="rmCj">–</b></div>
-  </div>
-  <form class="rm-form" id="rmForm" hidden autocomplete="off">
-    <label>Snatch (kg)<input id="fSnatch" inputmode="decimal" placeholder="Ej. 60"></label>
-    <label>Clean &amp; Jerk (kg)<input id="fCj" inputmode="decimal" placeholder="Ej. 80"></label>
-    <div class="rm-acc"><button type="submit" class="rm-guardar">Guardar</button><button type="button" class="rm-cancelar" id="rmCancelar">Cancelar</button><span class="rm-msg" id="rmMsg"></span></div>
-  </form>
-  <div class="rm-fecha" id="rmFecha"></div>
+  <h2 class="rm-titulo">Marcas personales</h2>
+  <div class="rm" id="rmDestacadas"></div>
+  <button type="button" class="mis-marcas" id="misMarcas">Mis marcas <span id="nMarcas"></span></button>
+
+  <dialog class="dlg-marcas" id="dlgMarcas">
+    <h3><span id="dlgTitulo">Mis marcas</span><button type="button" id="dlgCerrar" aria-label="Cerrar">✕</button></h3>
+    <p class="ayuda" id="dlgAyuda">Añade el ejercicio y los kilos. Marca con ★ las 2 que quieres que se vean en tu perfil.</p>
+    <div class="lista-marcas" id="listaMarcas"></div>
+    <form class="nueva-marca" id="nuevaMarca" autocomplete="off">
+      <input id="mNombre" maxlength="30" placeholder="Ejercicio (ej. back squat)" aria-label="Ejercicio">
+      <input id="mKg" inputmode="decimal" placeholder="Kg" aria-label="Kilos">
+      <button type="submit" id="mGuardar">Añadir</button>
+    </form>
+    <div class="msg" id="mMsg"></div>
+  </dialog>
 
   <h2>Logros conseguidos</h2>
   <div class="rejilla" id="conseguidos"></div>
@@ -150,7 +190,7 @@ import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
-montarMenu({ actual: "", cuenta: false });
+montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
 $("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "puntos.html")));
 
 const uid = new URLSearchParams(location.search).get("uid");
@@ -196,6 +236,7 @@ function pintar() {
   $("dPuntos").classList.toggle("oculto-txt", oculto);
   $("dPuntos").title = oculto ? "Ha ocultado sus puntos" : (ficha.ocultarPuntos ? "Tus puntos están ocultos para los demás" : "");
   $("gustos").hidden = !ficha.favorito && !ficha.odiado;
+  $("gFavCaja").hidden = !ficha.favorito; $("gOdioCaja").hidden = !ficha.odiado; $("gSep").hidden = !ficha.favorito || !ficha.odiado;
   $("gFav").textContent = ficha.favorito || "–";
   $("gOdio").textContent = ficha.odiado || "–";
   $("editarPerfil").hidden = !esYo || !$("perfilForm").hidden;
@@ -207,13 +248,7 @@ function pintar() {
   const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad } : m; });
   $("dLogros").textContent = mias.length;
 
-  // Marcas personales (RM)
-  const rm = ficha.rm || {};
-  const kg = (v) => (v ? `${String(v).replace(".", ",")}<small>kg</small>` : "–");
-  $("rmSnatch").innerHTML = kg(rm.snatch);
-  $("rmCj").innerHTML = kg(rm.cleanJerk);
-  $("rmFecha").textContent = rm.fecha ? "Actualizado el " + new Date(rm.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
-  $("rmEditar").hidden = !esYo || !$("rmForm").hidden;
+  pintarMarcas(esYo);
 
   const c = $("conseguidos"); c.replaceChildren();
   if (!mias.length) c.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no tiene logros." }));
@@ -294,27 +329,109 @@ $("perfilForm").addEventListener("submit", async (e) => {
   $("pGuardar").disabled = false;
 });
 
-// ---------- Editar mis RM (solo en mi propio perfil) ----------
-$("rmEditar").addEventListener("click", () => {
-  const rm = ficha?.rm || {};
-  $("fSnatch").value = rm.snatch ? String(rm.snatch).replace(".", ",") : "";
-  $("fCj").value = rm.cleanJerk ? String(rm.cleanJerk).replace(".", ",") : "";
-  $("rmMsg").textContent = "";
-  $("rmForm").hidden = false; $("rmEditar").hidden = true;
-  $("fSnatch").focus();
-});
-$("rmCancelar").addEventListener("click", () => { $("rmForm").hidden = true; pintar(); });
-$("rmForm").addEventListener("submit", async (e) => {
+// ---------- Marcas personales: las que quiera cada uno; 2 destacadas en el perfil ----------
+// Nombre siempre con la primera letra en mayúscula y el resto en minúscula
+const nombreMarca = (t) => { const x = String(t || "").trim().replace(/\s+/g, " ").toLowerCase(); return x ? x[0].toUpperCase() + x.slice(1) : ""; };
+const kgTxt = (v) => `${String(v).replace(".", ",")}<small>kg</small>`;
+// Marcas guardadas (o las dos antiguas de snatch y clean & jerk si aún no tiene ninguna)
+function marcasDe(f) {
+  if (f?.marcas && Object.keys(f.marcas).length) return Object.entries(f.marcas).map(([id, m]) => ({ id, ...m }));
+  const rm = f?.rm || {}, fuera = [];
+  if (rm.snatch) fuera.push({ id: "snatch", nombre: "Snatch", kg: rm.snatch, fecha: rm.fecha || "" });
+  if (rm.cleanJerk) fuera.push({ id: "cleanjerk", nombre: "Clean & jerk", kg: rm.cleanJerk, fecha: rm.fecha || "" });
+  return fuera;
+}
+function destacadasDe(f, lista) {
+  const elegidas = (f?.destacadas || []).filter((id) => lista.some((m) => m.id === id));
+  if (Array.isArray(f?.destacadas)) return elegidas.slice(0, 2);   // ya ha elegido él
+  // Si todavía no ha elegido, se muestran las más recientes
+  for (const m of [...lista].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))) { if (elegidas.length >= 2) break; if (!elegidas.includes(m.id)) elegidas.push(m.id); }
+  return elegidas.slice(0, 2);
+}
+function pintarMarcas(esYo) {
+  const lista = marcasDe(ficha), dest = destacadasDe(ficha, lista);
+  const caja = $("rmDestacadas"); caja.replaceChildren();
+  for (let i = 0; i < 2; i++) {
+    const m = lista.find((x) => x.id === dest[i]);
+    const c = document.createElement("div"); c.className = "rm-caja" + (m ? "" : " vacia");
+    c.append(Object.assign(document.createElement("span"), { textContent: m ? nombreMarca(m.nombre) : (esYo ? (marcasDe(ficha).length > i ? "Elige otra con ★" : "Añade una marca") : "—") }));
+    const b = document.createElement("b"); if (m) b.innerHTML = kgTxt(m.kg); else b.textContent = "–";
+    c.append(b); caja.append(c);
+  }
+  $("misMarcas").firstChild.textContent = esYo ? "Mis marcas " : "Ver todas sus marcas ";
+  $("nMarcas").textContent = lista.length ? `${lista.length} →` : (esYo ? "Añadir →" : "");
+  $("misMarcas").hidden = !esYo && lista.length <= 2;
+  if ($("dlgMarcas").open) pintarDialogo();
+}
+let seguroBorrar = null;
+function pintarDialogo() {
+  const esYo = !!yo && yo.uid === ficha?.uid;
+  const lista = marcasDe(ficha).sort((a, b) => nombreMarca(a.nombre).localeCompare(nombreMarca(b.nombre), "es"));
+  const dest = destacadasDe(ficha, lista);
+  $("dlgTitulo").textContent = esYo ? "Mis marcas" : `Marcas de ${ficha?.nombre || ""}`;
+  $("dlgAyuda").hidden = !esYo; $("nuevaMarca").hidden = !esYo;
+  const cont = $("listaMarcas"); cont.replaceChildren();
+  if (!lista.length) cont.append(Object.assign(document.createElement("div"), { className: "vacia", textContent: esYo ? "Aún no tienes marcas. Añade la primera abajo." : "Todavía no tiene marcas." }));
+  for (const m of lista) {
+    const fila = document.createElement("div"); fila.className = "fila-marca";
+    const est = Object.assign(document.createElement("button"), { type: "button", className: "estrella" + (dest.includes(m.id) ? " on" : ""), textContent: "★", title: esYo ? "Destacar en mi perfil" : "" });
+    est.disabled = !esYo;
+    est.addEventListener("click", () => destacar(m.id));
+    const nom = document.createElement("div"); nom.className = "nom"; nom.textContent = nombreMarca(m.nombre);
+    if (m.fecha) nom.append(Object.assign(document.createElement("small"), { textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) }));
+    const kg = document.createElement("div"); kg.className = "kg"; kg.innerHTML = kgTxt(m.kg);
+    fila.append(est, nom, kg);
+    if (esYo) {
+      const bo = Object.assign(document.createElement("button"), { type: "button", className: "borrar" + (seguroBorrar === m.id ? " seguro" : ""), textContent: seguroBorrar === m.id ? "¿Borrar?" : "✕" });
+      bo.addEventListener("click", () => borrar(m.id));
+      fila.append(bo);
+    } else fila.append(document.createElement("span"));
+    // Tocar el nombre o los kilos: cargar en el formulario para cambiar los kilos
+    if (esYo) [nom, kg].forEach((el) => el.addEventListener("click", () => { $("mNombre").value = nombreMarca(m.nombre); $("mKg").value = String(m.kg).replace(".", ","); $("mGuardar").textContent = "Guardar"; $("mKg").focus(); }));
+    cont.append(fila);
+  }
+}
+async function guardarMarcas(lista, destacadas) {
+  const marcas = {};
+  for (const m of lista) marcas[m.id] = { nombre: m.nombre, kg: m.kg, fecha: m.fecha || hoy() };
+  if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre: ficha.nombre.slice(0, 40), puntos: 0 });
+  await updateDoc(doc(db, "usuarios", yo.uid), { marcas, destacadas });
+}
+async function destacar(id) {
+  const lista = marcasDe(ficha);
+  let dest = destacadasDe(ficha, lista);   // las que se ven ahora con ★
+  if (dest.includes(id)) dest = dest.filter((x) => x !== id);
+  else { dest.push(id); if (dest.length > 2) dest = dest.slice(-2); }
+  try { await guardarMarcas(lista, dest); } catch (e) { console.error(e); $("mMsg").textContent = "No se ha podido guardar."; }
+}
+async function borrar(id) {
+  if (seguroBorrar !== id) { seguroBorrar = id; pintarDialogo(); setTimeout(() => { if (seguroBorrar === id) { seguroBorrar = null; pintarDialogo(); } }, 3500); return; }
+  seguroBorrar = null;
+  const lista = marcasDe(ficha).filter((m) => m.id !== id);
+  try { await guardarMarcas(lista, (ficha.destacadas || []).filter((x) => x !== id)); } catch (e) { console.error(e); $("mMsg").textContent = "No se ha podido borrar."; }
+}
+$("nuevaMarca").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const leer = (id) => { const t = $(id).value.trim().replace(",", "."); if (!t) return 0; const n = parseFloat(t); return n > 0 && n <= 400 ? Math.round(n * 10) / 10 : NaN; };
-  const snatch = leer("fSnatch"), cleanJerk = leer("fCj");
-  if (isNaN(snatch) || isNaN(cleanJerk)) { $("rmMsg").textContent = "Escribe los kilos (por ejemplo 62,5)."; return; }
+  const nombre = nombreMarca($("mNombre").value);
+  const t = $("mKg").value.trim().replace(",", "."), kg = parseFloat(t);
+  if (nombre.length < 2) { $("mMsg").textContent = "Escribe el nombre del ejercicio."; return; }
+  if (!(kg > 0 && kg <= 500)) { $("mMsg").textContent = "Escribe los kilos (por ejemplo 62,5)."; return; }
+  const lista = marcasDe(ficha);
+  if (lista.length >= 40 && !lista.some((m) => nombreMarca(m.nombre) === nombre)) { $("mMsg").textContent = "Has llegado al máximo de 40 marcas."; return; }
+  // Mismo ejercicio: se actualizan los kilos
+  const id = nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 30) || ("m" + Date.now());
+  const sin = lista.filter((m) => m.id !== id && nombreMarca(m.nombre) !== nombre);
+  sin.push({ id, nombre, kg: Math.round(kg * 10) / 10, fecha: hoy() });
+  $("mGuardar").disabled = true; $("mMsg").textContent = "";
   try {
-    if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre: ficha.nombre.slice(0, 40), puntos: 0 });
-    await updateDoc(doc(db, "usuarios", yo.uid), { rm: { snatch, cleanJerk, fecha: hoy() } });
-    $("rmForm").hidden = true; pintar();
-  } catch (err) { console.error(err); $("rmMsg").textContent = "No se ha podido guardar."; }
+    await guardarMarcas(sin, (ficha.destacadas || []).filter((x) => sin.some((m) => m.id === x)));
+    $("nuevaMarca").reset(); $("mGuardar").textContent = "Añadir";
+  } catch (err) { console.error(err); $("mMsg").textContent = "No se ha podido guardar."; }
+  $("mGuardar").disabled = false;
 });
+$("misMarcas").addEventListener("click", () => { $("mMsg").textContent = ""; pintarDialogo(); $("dlgMarcas").showModal(); });
+$("dlgCerrar").addEventListener("click", () => $("dlgMarcas").close());
+$("dlgMarcas").addEventListener("click", (e) => { if (e.target === $("dlgMarcas")) $("dlgMarcas").close(); });
 </script>
 </body>
 </html>
