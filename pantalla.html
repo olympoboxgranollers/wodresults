@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="estilos.css?v=20261025c">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -149,10 +149,10 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js";
-import { NOMBRE_BOX } from "./config.js";
-import { escucharCuenta } from "./cuenta.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js?v=20261025c";
+import { NOMBRE_BOX } from "./config.js?v=20261025c";
+import { escucharCuenta } from "./cuenta.js?v=20261025c";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261025c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;

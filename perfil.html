@@ -12,7 +12,7 @@
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css">
+<link rel="stylesheet" href="estilos.css?v=20261025c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -253,9 +253,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio } from "./comun.js";
-import { escucharCuenta } from "./cuenta.js";
-import { montarMenu } from "./menu.js";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261025c";
+import { escucharCuenta } from "./cuenta.js?v=20261025c";
+import { montarMenu } from "./menu.js?v=20261025c";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
