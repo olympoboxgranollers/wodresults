@@ -19,17 +19,12 @@ jobs:
   sincronizar:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: sync
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install --no-audit --no-fund --loglevel=error
       - run: node aimharder.mjs
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          AIMHARDER_REFRESH_TOKEN: ${{ secrets.AIMHARDER_REFRESH_TOKEN }}
-          PRUEBA: ${{ github.event_name == 'workflow_dispatch' && inputs.prueba && 'true' || 'false' }}
+          FIREBASE
