@@ -1,35 +1,19 @@
 name: Clases desde AimHarder
 
 on:
-  schedule:
-    - cron: "17 * * * *"   # cada hora (a y 17)
   workflow_dispatch:
     inputs:
       prueba:
-        description: "Solo prueba (lee AimHarder pero no cambia ningún socio)"
+        description: "Solo prueba"
         type: boolean
         default: true
-
-# Nunca dos a la vez (el token de AimHarder cambia en cada uso)
-concurrency:
-  group: aimharder
-  cancel-in-progress: false
 
 jobs:
   sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: sync
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install --no-audit --no-fund --loglevel=error
-      - run: node aimharder.mjs
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          AIMHARDER_REFRESH_TOKEN: ${{ secrets.AIMHARDER_REFRESH_TOKEN }}
-          PRUEBA: ${{ github.event_name == 'workflow_dispatch' && inputs.prueba && 'true' || 'false' }}
+      - name: Buscar archivos
+        run: |
+          echo "=== ARCHIVOS EN EL REPOSITORIO ==="
+          find . -maxdepth 3 -not -path '*/.*'
