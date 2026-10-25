@@ -1,9 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ZONA_HORARIA } from "./config.js";
 
 export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// Memoria local en el móvil: al cambiar de página solo se descarga lo que ha cambiado (ahorra lecturas del plan gratis)
+export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
 // Fecha de hoy en formato YYYY-MM-DD según la zona horaria del box
 export function hoy() {
@@ -295,6 +296,18 @@ export const MEDALLAS = {
   benchpress:    { nombre: "Bench press",    color: "#e85454" }
 };
 export const rutaMedalla = (id) => `medallas/${id}.webp`;
+// Imagen de una medalla. Si la carpeta medallas/ no carga (no subida o en otra ruta),
+// prueba en la raíz y, si tampoco, usa la copia guardada dentro del código.
+export function imagenMedalla(id) {
+  const img = Object.assign(document.createElement("img"), { src: rutaMedalla(id), alt: "", draggable: false, decoding: "async" });
+  let intento = 0;
+  img.addEventListener("error", () => {
+    intento++;
+    if (intento === 1) img.src = `${id}.webp`;
+    else if (intento === 2) import("./medallas-datos.js").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+  });
+  return img;
+}
 // Niveles de dificultad de los logros: cuanto más difícil, más exótica la medalla
 export const NIVELES = {
   bronce:   { nombre: "Bronce",   texto: "#ffc89a", color: "#c47a45" },
@@ -388,7 +401,7 @@ export function crearInsignia(ins, tam = 56) {
     d.style.setProperty("--t", tam + "px");
     d.style.setProperty("--nc", m.nivel ? NIVELES[m.nivel].color : m.color);
     d.title = ins.nombre || m.nombre;
-    d.append(Object.assign(document.createElement("img"), { src: rutaMedalla(ins.imagen), alt: "", loading: "lazy", draggable: false }));
+    d.append(imagenMedalla(ins.imagen));
     // En las de nivel se pone el número (100, 250…) en una plaquita abajo
     if (m.numero && ins.corto && ins.corto !== "★" && tam >= 40) d.append(Object.assign(document.createElement("span"), { className: "insignia-placa", textContent: ins.corto }));
     return d;

@@ -1,5 +1,5 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
-import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { COACH_EMAIL } from "./config.js";
@@ -214,7 +214,8 @@ function vigilarEventosNuevos(paginaActual) {
   const clave = "eventos-avisos";
   const leer = () => { try { return JSON.parse(localStorage.getItem(clave) || "{}"); } catch { return {}; } };
   const guardar = (o) => { try { localStorage.setItem(clave, JSON.stringify(o)); } catch {} };
-  onSnapshot(collection(db, "eventos"), async (s) => {
+  // Solo los eventos que aún no han pasado
+  onSnapshot(query(collection(db, "eventos"), where("fecha", ">=", hoy())), async (s) => {
     const ahora = Date.now(), estado = leer();
     const futuros = s.docs.map((d) => ({ id: d.id, ...d.data() })).filter((e) => e.fecha >= hoy()).sort((a, b) => a.fecha.localeCompare(b.fecha));
     // Limpia lo guardado de eventos que ya pasaron

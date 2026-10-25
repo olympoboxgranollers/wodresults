@@ -219,7 +219,7 @@
 </dialog>
 
 <script type="module">
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
@@ -246,7 +246,7 @@ escucharCuenta(({ user: u, ficha }) => {
   $("ocultar").textContent = oculto ? "Mostrar mis puntos" : "Ocultar mis puntos";
   $("zonaHistorial").hidden = coach || !u;
   escucharHistorial(coach ? null : u);
-  pintarRanking();
+  if (rankingCargado) pintarRanking(); else puestoCartera();
   $("nuevo").hidden = !coach;
   $("nota").textContent = coach
     ? "Los socios ven este catálogo y cuántos puntos les faltan. Cuando entregues un objeto, pulsa Entregar y elige al socio: se le descuentan los puntos y queda en su historial."
@@ -574,10 +574,38 @@ function escucharHistorial(u) {
     });
   }, () => {});
 }
-onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(100)), (s) => {
-  todos = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
-  pintarRanking();
-}, () => { $("ranking").innerHTML = '<div class="vacio-caja">No se ha podido cargar el ranking.</div>'; });
+// El top 100 solo se carga al abrir la ventana del ranking (ahorra lecturas del plan gratis)
+let rankingCargado = false;
+function cargarRanking() {
+  if (rankingCargado) return;
+  rankingCargado = true;
+  onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(100)), (s) => {
+    todos = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
+    pintarRanking();
+  }, () => { $("ranking").innerHTML = '<div class="vacio-caja">No se ha podido cargar el ranking.</div>'; });
+}
+// Puesto en la cartera con recuentos (2-3 lecturas en vez de 100)
+let clavePuesto = "";
+async function puestoCartera() {
+  if (!user || coach) return;
+  const clave = user.uid + ":" + puntos + ":" + oculto;
+  if (clave === clavePuesto) return;
+  clavePuesto = clave;
+  if (oculto || !(puntos > 0)) { $("carteraPuesto").textContent = oculto ? "" : "Aún no estás en el ranking. ¡Registra tu resultado!"; return; }
+  try {
+    const usuarios = collection(db, "usuarios");
+    const [mas, total, ocultos] = await Promise.all([
+      getCountFromServer(query(usuarios, where("puntos", ">", puntos))),
+      getCountFromServer(query(usuarios, where("puntos", ">", 0))),
+      getDocs(query(usuarios, where("ocultarPuntos", "==", true)))
+    ]);
+    const oc = ocultos.docs.map((d) => d.data().puntos || 0);
+    if (clave !== clavePuesto) return;
+    const puesto = mas.data().count - oc.filter((p) => p > puntos).length + 1;
+    const n = total.data().count - oc.filter((p) => p > 0).length;
+    $("carteraPuesto").textContent = `Vas ${puesto}º de ${n} en el ranking de puntos.`;
+  } catch { /* sin conexión */ }
+}
 function pintarRanking() {
   // Quien ha ocultado sus puntos no sale (el coach sí lo ve, con un candado)
   const ranking = coach ? todos : todos.filter((u) => !u.ocultarPuntos);
@@ -600,7 +628,8 @@ function pintarRanking() {
     li.addEventListener("click", () => (location.href = "perfil.html?uid=" + encodeURIComponent(u.uid)));
     ol.append(li);
   });
-  $("carteraPuesto").textContent = mio || (oculto ? "" : "Aún no estás en el ranking. ¡Registra tu resultado!");
+  // Si estás fuera del top 100 se calcula con un recuento
+  if (mio) $("carteraPuesto").textContent = mio; else { clavePuesto = ""; puestoCartera(); }
 }
 $("como").append(
   Object.assign(document.createElement("b"), { textContent: "Cómo se ganan puntos: " }),
@@ -609,7 +638,7 @@ $("como").append(
   ". También con logros y eventos."
 );
 
-const abrirRanking = () => $("dlgRanking").showModal();
+const abrirRanking = () => { cargarRanking(); $("dlgRanking").showModal(); };
 $("verRanking").addEventListener("click", abrirRanking);
 $("rankingCoach").addEventListener("click", abrirRanking);
 $("cerrarRanking").addEventListener("click", () => $("dlgRanking").close());

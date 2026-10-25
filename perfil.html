@@ -234,7 +234,7 @@
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
@@ -244,7 +244,7 @@ montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "per
 $("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "canjes.html")));
 
 const uid = new URLSearchParams(location.search).get("uid");
-let ficha = null, catalogo = [], ranking = [], yo = null, foto = null, dejarFoto = null, fotoNueva;
+let ficha = null, catalogo = [], yo = null, foto = null, dejarFoto = null, fotoNueva;
 
 escucharCuenta(({ user }) => {
   yo = user;
@@ -269,8 +269,23 @@ function escucharFicha(id) {
     pintar();
   }, () => { ficha = false; pintar(); });
 }
-onSnapshot(query(collection(db, "logros"), orderBy("orden", "asc")), (s) => { catalogo = s.docs.map((d) => ({ id: d.id, ...d.data() })); pintar(); }, () => {});
-onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc")), (s) => { ranking = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0); pintar(); }, () => {});
+onSnapshot(collection(db, "logros"), (s) => { catalogo = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 0) - (b.orden || 0)); pintar(); }, () => {});
+// Puesto en el ranking de puntos con un recuento (1 lectura en lugar de leer a todos los socios).
+// Empates comparten puesto: puesto = socios visibles con más puntos + 1
+let puestoDe = { clave: "", txt: "–" };
+async function calcularPuesto(f) {
+  const clave = f.uid + ":" + (f.puntos || 0) + ":" + !!f.ocultarPuntos;
+  if (puestoDe.clave === clave) return;
+  puestoDe = { clave, txt: "–" };
+  if (f.ocultarPuntos || !(f.puntos > 0)) { $("dPuesto").textContent = "–"; return; }
+  try {
+    const mas = (await getCountFromServer(query(collection(db, "usuarios"), where("puntos", ">", f.puntos)))).data().count;
+    const ocultosMas = (await getDocs(query(collection(db, "usuarios"), where("ocultarPuntos", "==", true)))).docs.filter((d) => (d.data().puntos || 0) > f.puntos).length;
+    if (puestoDe.clave !== clave) return;
+    puestoDe.txt = (mas - ocultosMas + 1) + "º";
+    $("dPuesto").textContent = puestoDe.txt;
+  } catch { /* sin conexión: se queda en – */ }
+}
 
 function pintar() {
   if (ficha === false) { $("nombre").textContent = "Socio no encontrado"; return; }
@@ -287,9 +302,8 @@ function pintar() {
   $("dPuntos").title = oculto ? "Ha ocultado sus puntos" : (ficha.ocultarPuntos ? "Tus puntos están ocultos para los demás" : "");
   $("editarPerfil").hidden = !esYo || !$("perfilForm").hidden;
   // Puesto en el ranking de puntos (empates comparten puesto)
-  let puesto = "–", p = 0, ant = null;
-  ranking.filter((u) => !u.ocultarPuntos).forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
-  $("dPuesto").textContent = puesto;
+  $("dPuesto").textContent = puestoDe.txt;
+  calcularPuesto(ficha);
   // Nivel y texto actuales del catálogo (por si el coach los ha cambiado después de darlo)
   const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad, imagen: c.imagen || m.imagen || "" } : m; });
   $("dLogros").textContent = mias.length;

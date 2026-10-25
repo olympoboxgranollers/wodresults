@@ -24,7 +24,7 @@ Avisos automáticos: ventana de **logro nuevo** (los logros de clases se dan sol
 
 `config.js` (Firebase, nombre, coach, clases y extras), `tema.css` (colores), `estilos.css`, `comun.js`, `cuenta.js`, `menu.js`, `cierre.js`, `sw.js`, `manifest.json`, logo e iconos, y `firestore.rules` (se pega en Firebase).
 
-Medallas ilustradas: carpeta `medallas/` (súbela entera).
+Medallas ilustradas: carpeta `medallas/` (súbela entera, como carpeta). Si por lo que sea no cargara, la app usa la copia que va dentro de `medallas-datos.js`, así que las medallas se ven igual.
 Sincronización con AimHarder: carpeta `sync/` y `.github/workflows/aimharder.yml`.
 
 ## Subir y actualizar
@@ -36,6 +36,12 @@ Sincronización con AimHarder: carpeta `sync/` y `.github/workflows/aimharder.ym
 4. En la TV, abre `pantalla.html` con la cuenta del coach (Google) y pulsa ⛶.
 5. Después de cada actualización, recarga con Ctrl+Shift+R.
 
+## Plan gratuito de Firebase
+
+La app está pensada para no salir del plan gratis (Spark), que no lleva tarjeta: nunca te pueden cobrar. Si algún día se pasara del límite de lecturas, la app dejaría de cargar datos hasta que se reinicia el contador (sobre las 9 de la mañana).
+Para gastar poco: el móvil guarda una copia de los datos y al cambiar de página solo descarga lo que ha cambiado; el puesto del ranking se calcula con un recuento; el ranking de puntos solo se carga al abrirlo; y AimHarder se sincroniza cada 3 horas.
+Puedes ver el consumo en **Firebase → Firestore → Uso**.
+
 ## Puntos
 
 - 10 por registrar el resultado (al momento, una vez por clase y día). Cada resultado cuenta además como una clase para los logros.
@@ -45,7 +51,7 @@ Sincronización con AimHarder: carpeta `sync/` y `.github/workflows/aimharder.ym
 
 ## Clases desde AimHarder (opcional, gratis)
 
-GitHub ejecuta cada hora `sync/aimharder.mjs`: lee las clases asistidas de cada socio en AimHarder (emparejados por email) y las pone en la app.
+GitHub ejecuta cada 3 horas `sync/aimharder.mjs`: lee las clases asistidas de cada socio en AimHarder (emparejados por email) y las pone en la app.
 
 1. **Firebase → ⚙ Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada** (no la compartas).
 2. **AimHarder → Configuración → API** → copia el refresh token.

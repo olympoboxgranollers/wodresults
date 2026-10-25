@@ -106,8 +106,12 @@ export async function darLogrosDeClases() {
 }
 
 // Primero reparte los puntos, después da los logros de clases y al final limpia
+// Para ahorrar lecturas, los logros se repasan como mucho cada 6 horas y la limpieza una vez al día
+// en cada aparato (los socios ya reciben solos sus logros de clases al entrar en la app).
+const ls = { leer: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, poner: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
 export async function cerrarYLimpiar() {
   await cerrarDiasPendientes();
-  await darLogrosDeClases();
-  await limpiarDiasCerrados();
+  const ahora = Date.now();
+  if (ahora - Number(ls.leer("cierre-logros") || 0) > 6 * 3600000) { await darLogrosDeClases(); ls.poner("cierre-logros", String(ahora)); }
+  if (ls.leer("cierre-limpieza") !== hoy()) { await limpiarDiasCerrados(); ls.poner("cierre-limpieza", hoy()); }
 }
