@@ -115,6 +115,24 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
   return { repintar: pintar };
 }
 
+// ---------- Paneles plegables del coach (crear eventos, logros, productos…) ----------
+// caja: el panel entero · cab: su título (al tocarlo se pliega o despliega) · clave: para recordarlo
+export function plegable(caja, cab, clave, { abierto = false } = {}) {
+  if (!caja || !cab) return { abrir() {} };
+  caja.classList.add("plegable"); cab.classList.add("plegable-cab");
+  cab.setAttribute("role", "button"); cab.tabIndex = 0;
+  let plegado = !abierto;
+  try { const g = localStorage.getItem("plegado-" + clave); if (g !== null) plegado = g === "1"; } catch {}
+  const poner = (v) => {
+    plegado = v; caja.classList.toggle("plegado", v); cab.setAttribute("aria-expanded", String(!v));
+    try { localStorage.setItem("plegado-" + clave, v ? "1" : "0"); } catch {}
+  };
+  poner(plegado);
+  cab.addEventListener("click", () => poner(!plegado));
+  cab.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poner(!plegado); } });
+  return { abrir: () => poner(false), cerrar: () => poner(true) };
+}
+
 // ---------- Perfil de atleta obligatorio ----------
 let dlgPerfil = null;
 function pedirPerfil(user, ficha) {

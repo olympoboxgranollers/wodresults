@@ -122,11 +122,12 @@
 import { collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, fmtPuntos } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
-import { montarMenu, esCuentaCoach } from "./menu.js";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
 import { ZONA_HORARIA } from "./config.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "eventos", cuenta: false });
+const plegNuevo = plegable(document.getElementById("nuevo"), document.getElementById("nTitulo"), "eventos-nuevo");
 
 const AÑO_INICIAL = 2027;
 let user = null, coach = false, miNombre = "", eventos = [], anio = AÑO_INICIAL, editando = null;
@@ -426,6 +427,7 @@ $("cargarBtn").addEventListener("click", async () => {
 function msg(t, err = false) { $("fMsg").className = "msg " + (err ? "error" : "ok"); $("fMsg").textContent = t; }
 function editar(e) {
   editando = e.id;
+  plegNuevo.abrir();
   $("fTitulo").value = e.titulo; $("fFecha").value = e.fecha; $("fHora").value = e.hora || ""; $("fFin").value = e.fin || "";
   $("fLugar").value = e.lugar || ""; $("fDesc").value = e.descripcion || ""; $("fPuntos").value = e.puntos ?? 100;
   $("fMomento").value = e.momento || ""; $("fConfirmar").checked = !!e.porConfirmar; $("fNuevo").checked = !!e.nuevo;

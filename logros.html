@@ -170,10 +170,17 @@
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
-import { montarMenu, esCuentaCoach } from "./menu.js";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
+// Paneles del coach plegables (se recuerda cómo los dejaste)
+const cajasCoach = [...document.querySelectorAll("#coach > .caja")];
+const cajaDar = cajasCoach.find((c) => c.querySelector("#dSocio"));
+const plegDar = plegable(cajaDar, cajaDar?.querySelector("h2"), "logros-dar");
+const plegNuevo = plegable($("nuevo"), $("nTitulo"), "logros-nuevo");
+const cajaClases = cajasCoach.find((c) => c.querySelector("#cSocio"));
+const plegClases = plegable(cajaClases, cajaClases?.querySelector("h2"), "logros-clases");
 
 let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null, dando = false, dejarSync = null;
 // Estado de la sincronización con AimHarder (la hace GitHub cada hora)
@@ -448,6 +455,7 @@ $("dDar").addEventListener("click", async () => {
 function msgN(t, err = false) { $("nMsg").className = "msg " + (err ? "error" : "ok"); $("nMsg").textContent = t; }
 function editar(l) {
   editando = l.id;
+  plegNuevo.abrir();
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
   $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || "";

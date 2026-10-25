@@ -126,8 +126,9 @@
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro } from "./comun.js";
-import { montarMenu } from "./menu.js";
+import { montarMenu , plegable } from "./menu.js";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
+plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { NOMBRE_BOX } from "./config.js";
 

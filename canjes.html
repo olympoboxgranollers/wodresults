@@ -222,10 +222,11 @@
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
-import { montarMenu, esCuentaCoach } from "./menu.js";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
+const plegNuevo = plegable(document.getElementById("nuevo"), document.getElementById("nuevoTitulo"), "canjes-nuevo");
 
 let user = null, coach = false, puntos = 0, objetos = [], editando = null, abierto = null, confirmando = null;
 let pedidos = [], dejarPedidos = null, pedidosDe = null, miNombre = "";
@@ -504,6 +505,7 @@ function mensaje(t, error = false) { $("fMsg").className = "msg " + (error ? "er
 
 function editar(o) {
   editando = o.id;
+  plegNuevo.abrir();
   $("fNombre").value = o.nombre; $("fDesc").value = o.descripcion || "";
   $("fPrecio").value = o.precio ? String(o.precio).replace(".", ",") : ""; $("fPuntos").value = o.puntos;
   ponerImagen(o.imagen || null);

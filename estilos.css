@@ -291,3 +291,12 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
   .menu:not(.menu-tv) .menu-item { flex: 1 1 0; min-width: 0 !important; padding: 7px 2px 6px !important; }
   .menu:not(.menu-tv) .menu-texto { font-size: 9px !important; letter-spacing: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 }
+
+/* ---------- Paneles plegables del coach ---------- */
+.plegable-cab { cursor: pointer; display: flex !important; align-items: center; justify-content: space-between; gap: 10px; -webkit-user-select: none; user-select: none; }
+.plegable-cab::after { content: ""; flex: none; width: 9px; height: 9px; border-right: 2px solid var(--suave); border-bottom: 2px solid var(--suave); transform: rotate(45deg) translateY(-3px); transition: transform .2s; }
+.plegable.plegado > .plegable-cab::after { transform: rotate(-45deg); }
+.plegable-cab:focus-visible { outline: 2px solid var(--lila); outline-offset: 4px; border-radius: 6px; }
+.plegable.plegado > :not(.plegable-cab) { display: none !important; }
+.plegable.plegado { padding-bottom: 16px !important; }
+.plegable.plegado > .plegable-cab { margin-bottom: 0 !important; }
