@@ -302,12 +302,35 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .plegable.plegado > .plegable-cab { margin-bottom: 0 !important; }
 
 /* ---------- Medallas ilustradas ---------- */
-.insignia.insignia-img { filter: drop-shadow(0 0 calc(var(--t) * .06) color-mix(in srgb, var(--nc) 45%, transparent)); }
-.insignia.insignia-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Medallas ilustradas: sin marco, con brillo que las recorre, destellos y se inclinan al tocarlas */
+.insignia.insignia-img { filter: none; perspective: calc(var(--t) * 4); }
+.insignia.insignia-img .med-arte { position: absolute; inset: 0; display: block; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .35s cubic-bezier(.2,.8,.3,1);
+  animation: med-flota 6s ease-in-out infinite; animation-delay: calc(var(--retraso, 0s) * -1); }
+.insignia.insignia-img img { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; }
+.insignia.insignia-img .med-brillo { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.5) 48%, rgba(255,255,255,.12) 53%, transparent 60%) no-repeat;
+  background-size: 260% 100%; background-position: 160% 0; mix-blend-mode: screen;
+  -webkit-mask: var(--silueta) center / contain no-repeat; mask: var(--silueta) center / contain no-repeat;
+  animation: med-brillo 5.5s ease-in-out infinite; animation-delay: var(--retraso, 0s); }
+.insignia.insignia-img .med-arte[style*="--bx"] .med-brillo { animation: none; background-position: calc(160% - var(--bx) * 1.6) 0; transition: background-position .1s; }
+.insignia.insignia-img .med-arte.toque { animation: med-salto .55s cubic-bezier(.3,1.6,.5,1); }
+.insignia.insignia-img .med-arte.toque .med-brillo { animation: med-brillo .7s ease-out 1; }
+.insignia.insignia-img .med-chispa { position: absolute; top: 8%; right: 10%; width: calc(var(--t) * .12); height: calc(var(--t) * .12); pointer-events: none;
+  background: #fff; clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px var(--nc)); animation: destello 3.6s ease-in-out infinite; animation-delay: var(--retraso, 0s); opacity: 0; }
+.insignia.insignia-img .med-chispa.c2 { top: 46%; right: auto; left: 7%; width: calc(var(--t) * .08); height: calc(var(--t) * .08); animation-delay: calc(var(--retraso, 0s) + 1.6s); }
+.insignia.insignia-img.nivel-diamante .med-arte img, .insignia.insignia-img.nivel-olimpo .med-arte img { animation: med-aura 4s ease-in-out infinite; }
+.insignia.insignia-img .insignia-placa { z-index: 2; }
+@keyframes med-brillo { 0%, 55% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+@keyframes med-flota { 0%, 100% { translate: 0 0; } 50% { translate: 0 calc(var(--t) * -.02); } }
+@keyframes med-salto { 0% { scale: 1; } 40% { scale: 1.12; } 100% { scale: 1; } }
+@keyframes med-aura { 0%, 100% { filter: drop-shadow(0 0 0 transparent); } 50% { filter: drop-shadow(0 0 calc(var(--t) * .06) color-mix(in srgb, var(--nc) 70%, transparent)); } }
+@media (prefers-reduced-motion: reduce) { .insignia.insignia-img .med-arte, .insignia.insignia-img .med-arte *, .insignia.insignia-img .med-chispa { animation: none !important; } }
 .insignia-placa { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); padding: 1px calc(var(--t) * .07); border-radius: 999px;
   font-size: calc(var(--t) * .13); font-weight: 800; line-height: 1.35; color: #fff; background: rgba(15, 16, 20, .82);
   border: 1px solid color-mix(in srgb, var(--nc) 70%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--nc) 45%, transparent); white-space: nowrap; }
 .insignia.insignia-img.bloqueada { filter: grayscale(1) !important; opacity: .4; }
+.insignia.insignia-img.bloqueada .med-arte, .insignia.insignia-img.bloqueada .med-brillo { animation: none; } .insignia.insignia-img.bloqueada .med-chispa { display: none; }
 
 /* ---------- Ventana de logro nuevo ---------- */
 .dialogo-logro { margin: auto; width: min(340px, calc(100vw - 40px)); padding: 26px 22px 22px; border-radius: 24px; text-align: center; color: var(--texto);
