@@ -39,7 +39,8 @@
   .hero .editar-perfil { position: relative; margin-top: 12px; border: 0; padding: 4px 8px; font-size: 13px; color: var(--suave); }
   .hero .editar-perfil:hover { color: var(--lila); }
   .sobre { margin-top: 12px; padding: 18px; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); }
-  .sobre-titulo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--texto); font-weight: 800; }
+  .sobre-titulo { display: flex; align-items: center; gap: 8px; font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--lila); font-weight: 800; text-shadow: 0 0 14px color-mix(in srgb, var(--lila) 35%, transparent); }
+  .sobre-titulo::before { content: ""; width: 3px; height: 14px; border-radius: 2px; background: var(--lila); box-shadow: 0 0 8px color-mix(in srgb, var(--lila) 60%, transparent); }
   .bio { margin-top: 10px; font-size: 15px; line-height: 1.55; color: var(--texto); font-weight: 400; }
   .proximo { display: block; margin-top: 12px; padding: 18px; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); color: var(--texto); text-decoration: none; }
   .prox-fila { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
@@ -53,10 +54,10 @@
   .cuenta-atras div { text-align: center; padding: 8px 0; border-radius: 12px; background: rgba(255,255,255,.04); }
   .cuenta-atras b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .cuenta-atras span { font-size: 10.5px; color: var(--suave); text-transform: uppercase; letter-spacing: .08em; }
-  .ficha-filas { margin-top: 12px; display: grid; gap: 10px; }
+  .ficha-filas { margin-top: 14px; display: grid; gap: 12px; }
   .ficha-fila { display: grid; gap: 2px; }
-  .ficha-fila span { font-size: 14px; font-weight: 700; color: var(--texto); }
-  .ficha-fila b { font-size: 15px; font-weight: 400; color: var(--suave); }
+  .ficha-fila span { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -.005em; }
+  .ficha-fila b { font-size: 15.5px; font-weight: 400; color: var(--suave); }
   .ficha-fila.vacia b { color: var(--suave); font-weight: 400; font-style: italic; }
   .perfil-form select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
   .perfil-form textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: var(--texto); resize: vertical; outline: none; }
@@ -152,7 +153,7 @@
   .vacio { color: var(--suave); padding: 24px 0; text-align: center; font-size: 15px; grid-column: 1 / -1; }
 
   /* ---------- Estilo cristal (como iOS) con borde lila malva en cada sección ---------- */
-  .hero, .sobre, .proximo, .datos, .rm-caja, .mis-marcas, .medalla, #perfilForm {
+  .sobre, .proximo, .datos, .rm-caja, .mis-marcas, .medalla, #perfilForm {
     position: relative; isolation: isolate;
     background: linear-gradient(145deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.05) 42%, rgba(195,155,211,.07) 100%) !important;
     -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
@@ -160,10 +161,13 @@
     box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.25), 0 10px 28px rgba(0,0,0,.32), 0 0 18px color-mix(in srgb, var(--lila) 14%, transparent);
   }
   /* Reflejo superior del cristal */
-  .hero::before, .sobre::before, .proximo::before, .datos::before, .rm-caja::before, .mis-marcas::before, .medalla::before, #perfilForm::before {
+  .sobre::before, .proximo::before, .datos::before, .rm-caja::before, .mis-marcas::before, .medalla::before, #perfilForm::before {
     content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
     background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 38%);
   }
+  /* Cabecera sin burbuja: foto, nombre y Editar perfil directamente sobre el fondo */
+  .hero { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
+  .hero .hero-fondo { display: none; }
   .datos .dato + .dato { border-left-color: color-mix(in srgb, var(--lila) 22%, transparent); }
   .cuenta-atras div { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
   .medalla.falta { border-color: color-mix(in srgb, var(--lila) 28%, transparent) !important; }

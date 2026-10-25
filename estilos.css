@@ -321,17 +321,12 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .insignia.insignia-img .med-chispa.c2 { top: 46%; right: auto; left: 7%; width: calc(var(--t) * .08); height: calc(var(--t) * .08); animation-delay: calc(var(--retraso, 0s) + 1.6s); }
 .insignia.insignia-img.nivel-diamante .med-arte img, .insignia.insignia-img.nivel-olimpo .med-arte img { animation: med-aura 4s ease-in-out infinite; }
 .insignia.insignia-img .insignia-placa { z-index: 2; }
-/* Cuanto más difícil, más vida: bronce solo reflejo · plata 1 destello · oro 2 y aura · diamante y olimpo rayos que giran */
+/* Cuanto más difícil, más vida: bronce solo reflejo · plata 1 destello · oro 2 y aura · diamante y olimpo aura más intensa */
 .insignia.insignia-img.nivel-bronce .med-chispa { display: none; }
 .insignia.insignia-img.nivel-plata .med-chispa.c2 { display: none; }
 .insignia.insignia-img.nivel-oro .med-arte img { animation: med-aura 4.5s ease-in-out infinite; }
 .insignia.insignia-img:is(.nivel-diamante, .nivel-olimpo) .med-brillo { animation-duration: 4s; }
-.insignia.insignia-img:is(.nivel-diamante, .nivel-olimpo)::before { content: ""; position: absolute; inset: -6%; border-radius: 50%; pointer-events: none;
-  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--nc) 30%, transparent) 0deg 4deg, transparent 4deg 22.5deg);
-  -webkit-mask: radial-gradient(closest-side, transparent 38%, #000 62%, transparent 100%); mask: radial-gradient(closest-side, transparent 38%, #000 62%, transparent 100%);
-  animation: girar 28s linear infinite; opacity: .7; }
-.insignia.insignia-img.nivel-olimpo::before { animation-duration: 16s; opacity: .9; }
-.insignia.insignia-img.bloqueada::before { display: none; }
+.insignia.insignia-img.nivel-olimpo .med-arte img { animation-duration: 3s; }
 @keyframes med-brillo { 0%, 55% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
 @keyframes med-flota { 0%, 100% { translate: 0 0; } 50% { translate: 0 calc(var(--t) * -.02); } }
 @keyframes med-salto { 0% { scale: 1; } 40% { scale: 1.12; } 100% { scale: 1; } }
