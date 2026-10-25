@@ -106,12 +106,14 @@ service cloud.firestore {
       allow read: if conCuenta();
       // El socio crea su perfil de atleta con 0 puntos; luego solo puede cambiar sus datos de perfil. Los puntos solo los toca el coach.
       allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['nombre', 'puntos', 'atleta', 'favorito', 'odiado'])
+        && request.resource.data.keys().hasOnly(['nombre', 'puntos', 'atleta', 'favorito', 'odiado', 'alta'])
         && request.resource.data.puntos == 0
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
         && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado'));
       allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos', 'bio', 'alta'])
+        && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 160))
+        && (!('alta' in request.resource.data) || (request.resource.data.alta is string && request.resource.data.alta.size() == 10))
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
         && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado')
         && (!('ocultarPuntos' in request.resource.data) || request.resource.data.ocultarPuntos is bool)

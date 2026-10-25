@@ -25,17 +25,40 @@
   main { width: 100%; max-width: 560px; }
   header .fila-marca { color: #fff; font-size: 13px; }
   .volver { display: inline-block; margin-top: 18px; color: var(--suave); text-decoration: none; font-size: 14px; background: none; border: 0; padding: 0; }
+  .hero { position: relative; margin-top: 10px; padding: 26px 16px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    border-radius: 22px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); }
+  .hero-fondo { position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--nc, var(--lila)) 16%, transparent), transparent 60%); pointer-events: none; }
+  .aro { position: relative; padding: 2px; border-radius: 50%; background: var(--nc, var(--lila)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--nc, var(--lila)) 12%, transparent); }
+  .aro .avatar { border: 3px solid #1d1f23 !important; }
+  .avatar.grande { width: 92px !important; height: 92px !important; font-size: 32px !important; }
+  .hero h1 { position: relative; margin-top: 12px; font-size: 26px; font-weight: 700; line-height: 1.15; color: var(--texto); letter-spacing: -.01em; }
+  .hero-sub { position: relative; color: var(--suave); font-size: 12.5px; }
+  .chips { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 500; border: 1px solid rgba(255,255,255,.1); color: var(--suave); }
+  .chip.nivel { color: var(--tcl, var(--lila)); border-color: color-mix(in srgb, var(--nc, var(--lila)) 45%, transparent); }
+  .hero .editar-perfil { position: relative; margin-top: 12px; border: 0; padding: 4px 8px; font-size: 13px; color: var(--suave); }
+  .hero .editar-perfil:hover { color: var(--lila); }
+  .sobre { margin-top: 12px; padding: 18px; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); }
+  .sobre-titulo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); font-weight: 600; }
+  .bio { margin-top: 10px; font-size: 15px; line-height: 1.55; color: var(--texto); }
+  .ficha-filas { margin-top: 12px; display: grid; gap: 10px; }
+  .ficha-fila { display: grid; gap: 2px; }
+  .ficha-fila span { font-size: 14px; font-weight: 700; color: var(--texto); }
+  .ficha-fila b { font-size: 15px; font-weight: 400; color: var(--suave); }
+  .ficha-fila.vacia b { color: var(--suave); font-weight: 400; font-style: italic; }
+  .perfil-form textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: var(--texto); resize: vertical; outline: none; }
+  .perfil-form textarea:focus { border-color: var(--lila); }
   .cabeza { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
   .avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; flex: none;
     background: color-mix(in srgb, var(--lila) 18%, var(--panel)); border: 2px solid color-mix(in srgb, var(--lila) 60%, transparent);
     color: var(--lila); font-size: 26px; font-weight: 700; }
   h1 { font-size: 30px; color: var(--lila); overflow-wrap: anywhere; }
   .yo { color: var(--suave); font-size: 13px; margin-top: 2px; }
-  .datos { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 24px; border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
+  .datos { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 12px; padding: 4px 0; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); }
   .dato { padding: 16px 4px; text-align: center; }
-  .dato + .dato { border-left: 1px solid var(--borde); }
-  .dato b { display: block; font-size: 24px; font-weight: 700; color: var(--texto); font-variant-numeric: tabular-nums; }
-  .dato span { color: var(--suave); font-size: 12px; }
+  .dato + .dato { border-left: 1px solid rgba(255,255,255,.06); }
+  .dato b { display: block; font-size: 19px; font-weight: 700; color: var(--texto); font-variant-numeric: tabular-nums; }
+  .dato span { color: var(--suave); font-size: 11px; }
   h2 { font-size: 20px; margin: 28px 0 14px; }
   .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
   .medalla { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 14px 6px 12px; border-radius: 16px; background: var(--panel); }
@@ -45,10 +68,10 @@
   .rm-titulo { display: flex; align-items: center; justify-content: space-between; }
   .rm-editar { background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 500; }
   .rm { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .rm-caja { background: rgba(48, 51, 57, .92); border: 1px solid var(--borde); border-radius: 16px; padding: 16px; min-width: 0; }
+  .rm-caja { background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); border-radius: 16px; padding: 16px; min-width: 0; }
   .rm-caja span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .rm-caja.vacia b { color: var(--suave); }
-  .mis-marcas { margin-top: 12px; width: 100%; background: rgba(48, 51, 57, .92); border: 1px solid var(--borde); color: var(--texto); border-radius: 14px; padding: 13px 16px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .mis-marcas { margin-top: 12px; width: 100%; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); color: var(--texto); border-radius: 14px; padding: 13px 16px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
   .mis-marcas span { color: var(--suave); font-weight: 500; font-size: 13px; }
   .dlg-marcas { margin: auto; width: min(460px, calc(100vw - 24px)); max-height: 86dvh; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 20px; padding: 20px; }
   .dlg-marcas::backdrop { background: rgba(0, 0, 0, .7); }
@@ -73,7 +96,7 @@
   .dlg-marcas .lista-marcas { max-height: 46dvh; overflow: auto; margin-top: 10px; }
   .dlg-marcas .vacia { color: var(--suave); text-align: center; padding: 20px 0; font-size: 14px; }
   .rm-caja span { display: block; color: var(--suave); font-size: 13px; }
-  .rm-caja b { display: block; font-size: 30px; font-weight: 700; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
+  .rm-caja b { display: block; font-size: 26px; font-weight: 700; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
   .rm-caja b small { font-size: 15px; font-weight: 500; color: var(--suave); margin-left: 3px; }
   .rm-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
   .rm-form label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
@@ -123,14 +146,23 @@
   </header>
   <button type="button" class="volver" id="volver">← Volver</button>
 
-  <div class="cabeza">
-    <div class="avatar grande" id="avatar">·</div>
-    <div>
-      <h1 id="nombre">Cargando…</h1>
-      <div class="yo" id="yo" hidden>Este es tu perfil</div>
+  <section class="hero" id="hero">
+    <div class="hero-fondo"></div>
+    <div class="aro" id="aro"><div class="avatar grande" id="avatar">·</div></div>
+    <h1 id="nombre">Cargando…</h1>
+    <div class="hero-sub" id="heroSub"></div>
+    <div class="chips" id="chips"></div>
+    <button type="button" class="editar-perfil" id="editarPerfil" hidden>✎ Editar perfil</button>
+  </section>
+
+  <section class="sobre" id="sobre" hidden>
+    <div class="sobre-titulo" id="sobreTitulo">Sobre mí</div>
+    <p class="bio" id="bio" hidden></p>
+    <div class="ficha-filas">
+      <div class="ficha-fila" id="filaFav"><span>Ejercicio favorito</span><b id="fFav"></b></div>
+      <div class="ficha-fila" id="filaOdio"><span>Ejercicio más odiado</span><b id="fOdio"></b></div>
     </div>
-  </div>
-  <button type="button" class="editar-perfil" id="editarPerfil" hidden>Editar perfil</button>
+  </section>
 
   <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
     <div class="foto-fila">
@@ -140,22 +172,19 @@
       <button type="button" class="quitar" id="pQuitar" hidden>Quitar foto</button>
     </div>
     <label>Nombre y apellido<input type="text" id="pNombre" maxlength="40" required></label>
-    <label>Ejercicio favorito<input type="text" id="pFav" maxlength="40" placeholder="Ej. Thrusters"></label>
-    <label>Ejercicio más odiado<input type="text" id="pOdio" maxlength="40" placeholder="Ej. Burpees"></label>
+    <label>Sobre mí <small style="opacity:.7">(opcional, una frase)</small><textarea id="pBio" maxlength="160" rows="2" placeholder="Ej. Madrugador, fan de la halterofilia y de los WOD largos."></textarea></label>
+    <label>Ejercicio favorito<input type="text" id="pFav" maxlength="40" placeholder="Ej. Thrusters" required></label>
+    <label>Ejercicio más odiado<input type="text" id="pOdio" maxlength="40" placeholder="Ej. Burpees" required></label>
     <label class="interruptor"><span>Ocultar mis puntos<small>Los demás no verán tus puntos ni saldrás en el ranking de puntos</small></span><input type="checkbox" id="pOcultar"></label>
     <div class="rm-acc"><button type="submit" class="rm-guardar" id="pGuardar">Guardar</button><button type="button" class="rm-cancelar" id="pCancelar">Cancelar</button><span class="rm-msg" id="pMsg"></span></div>
   </form>
 
-  <div class="gustos" id="gustos" hidden>
-    <div class="gusto fav" id="gFavCaja" title="Ejercicio favorito"><span>💚</span><b id="gFav">–</b></div>
-    <span class="sep" id="gSep">·</span>
-    <div class="gusto odio" id="gOdioCaja" title="Ejercicio más odiado"><span>💀</span><b id="gOdio">–</b></div>
-  </div>
 
   <div class="datos">
     <div class="dato"><b id="dPuntos">–</b><span>puntos</span></div>
     <div class="dato"><b id="dPuesto">–</b><span>en el ranking</span></div>
     <div class="dato"><b id="dLogros">–</b><span>logros</span></div>
+    <div class="dato"><b id="dClases">–</b><span>clases</span></div>
   </div>
 
   <dialog class="zoom-foto" id="zoomFoto"><img id="zoomImg" alt=""></dialog>
@@ -185,7 +214,7 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases } from "./comun.js";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases , NIVELES, nivelDe } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
 
@@ -199,7 +228,6 @@ let ficha = null, catalogo = [], ranking = [], yo = null, foto = null, dejarFoto
 escucharCuenta(({ user }) => {
   yo = user;
   const esYo = !!user && (!uid || uid === user.uid);
-  $("yo").hidden = !esYo;
   $("tituloFaltan").textContent = esYo ? "Te faltan" : "Le faltan";
   if (!uid && user) escucharFicha(user.uid);
   pintar();
@@ -231,14 +259,11 @@ function pintar() {
   document.title = `${nombre} · Olympo`;
   ponerAvatar($("avatar"), nombre, foto);
   const esYo = !!yo && yo.uid === ficha.uid;
+  pintarCabecera(esYo);
   const oculto = !!ficha.ocultarPuntos && !esYo;
   $("dPuntos").textContent = oculto ? "🔒" : fmtPuntos(ficha.puntos || 0);
   $("dPuntos").classList.toggle("oculto-txt", oculto);
   $("dPuntos").title = oculto ? "Ha ocultado sus puntos" : (ficha.ocultarPuntos ? "Tus puntos están ocultos para los demás" : "");
-  $("gustos").hidden = !ficha.favorito && !ficha.odiado;
-  $("gFavCaja").hidden = !ficha.favorito; $("gOdioCaja").hidden = !ficha.odiado; $("gSep").hidden = !ficha.favorito || !ficha.odiado;
-  $("gFav").textContent = ficha.favorito || "–";
-  $("gOdio").textContent = ficha.odiado || "–";
   $("editarPerfil").hidden = !esYo || !$("perfilForm").hidden;
   // Puesto en el ranking de puntos (empates comparten puesto)
   let puesto = "–", p = 0, ant = null;
@@ -247,6 +272,7 @@ function pintar() {
   // Nivel y texto actuales del catálogo (por si el coach los ha cambiado después de darlo)
   const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad } : m; });
   $("dLogros").textContent = mias.length;
+  $("dClases").textContent = ficha.clases || 0;
 
   pintarMarcas(esYo);
 
@@ -269,11 +295,42 @@ function pintar() {
     // Contador en los logros de clases: cuántas lleva y cuántas le faltan
     if (esLogroDeClases(l) && umbralClases(l) > 0) {
       const meta = umbralClases(l), n = ficha.clases || 0;
-      d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)} / ${meta}` }));
+      d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)}/${meta} clases` }));
     }
     f.append(d);
   }
 }
+
+// ---------- Cabecera: aro del color de su mejor medalla, "desde", chips y descripción ----------
+function pintarCabecera(esYo) {
+  const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel } : m; });
+  const orden = ["bronce", "plata", "oro", "diamante", "olimpo"];
+  const mejor = mias.map((m) => nivelDe(m.nivel)).filter(Boolean).sort((a, b) => orden.indexOf(b) - orden.indexOf(a))[0] || "";
+  const hero = $("hero");
+  if (mejor) { hero.style.setProperty("--nc", NIVELES[mejor].color); hero.style.setProperty("--tcl", NIVELES[mejor].texto); }
+  else { hero.style.removeProperty("--nc"); hero.style.removeProperty("--tcl"); }
+  const desde = ficha.alta ? new Date(ficha.alta + "T12:00:00").toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : "";
+  $("heroSub").textContent = (esYo ? "Tu perfil" : "Atleta") + " de Olympo Box" + (desde ? ` · desde ${desde}` : "");
+  const chips = $("chips"); chips.replaceChildren();
+  const chip = (txt, cls = "") => chips.append(Object.assign(document.createElement("span"), { className: "chip " + cls, textContent: txt }));
+  if (mejor) chip(`🏅 Nivel ${NIVELES[mejor].nombre}`, "nivel");
+  const top = marcasDe(ficha).sort((a, b) => b.kg - a.kg)[0];
+  if (top) chip(`🏋️ ${nombreMarca(top.nombre)} ${String(top.kg).replace(".", ",")} kg`);
+  // Sobre mí: su frase y sus ejercicios contados como parte de la descripción
+  const nombrePila = (ficha.nombre || "").split(" ")[0];
+  $("sobreTitulo").textContent = esYo ? "Sobre mí" : `Sobre ${nombrePila}`;
+  $("bio").hidden = !ficha.bio; $("bio").textContent = ficha.bio || "";
+  const pon = (fila, el, v) => { $(fila).classList.toggle("vacia", !v); $(el).textContent = v || (esYo ? "Sin rellenar · pulsa Editar perfil" : "—"); };
+  pon("filaFav", "fFav", ficha.favorito); pon("filaOdio", "fOdio", ficha.odiado);
+  $("sobre").hidden = false;
+  // Fecha de alta: se guarda la primera vez que el socio abre su perfil
+  if (esYo && !ficha.alta && !ficha.nueva && !guardandoAlta) {
+    guardandoAlta = true;
+    const t = yo?.metadata?.creationTime ? new Date(yo.metadata.creationTime) : new Date();
+    updateDoc(doc(db, "usuarios", yo.uid), { alta: t.toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }) }).catch(() => {});
+  }
+}
+let guardandoAlta = false;
 
 // Avatar: la foto si la hay, si no las iniciales
 function ponerAvatar(el, nombre, img) {
@@ -287,7 +344,7 @@ $("zoomFoto").addEventListener("click", () => $("zoomFoto").close());
 
 // ---------- Editar mi perfil: foto, nombre, ejercicios y ocultar puntos ----------
 $("editarPerfil").addEventListener("click", () => {
-  $("pNombre").value = ficha.nombre || ""; $("pFav").value = ficha.favorito || ""; $("pOdio").value = ficha.odiado || "";
+  $("pNombre").value = ficha.nombre || ""; $("pFav").value = ficha.favorito || ""; $("pOdio").value = ficha.odiado || ""; $("pBio").value = ficha.bio || "";
   $("pOcultar").checked = !!ficha.ocultarPuntos;
   fotoNueva = undefined; vistaFoto();
   $("pMsg").textContent = ""; $("perfilForm").hidden = false; $("editarPerfil").hidden = true;
@@ -322,9 +379,10 @@ $("perfilForm").addEventListener("submit", async (e) => {
   const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
   const nombre = limpio($("pNombre").value);
   if (nombre.length < 2) { $("pMsg").textContent = "Escribe tu nombre y apellido."; return; }
+  if (!limpio($("pFav").value) || !limpio($("pOdio").value)) { $("pMsg").textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }
   $("pGuardar").disabled = true;
   try {
-    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), ocultarPuntos: $("pOcultar").checked, atleta: true };
+    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), bio: $("pBio").value.trim().replace(/\s+/g, " ").slice(0, 160), ocultarPuntos: $("pOcultar").checked, atleta: true };
     if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre, puntos: 0 });
     await updateDoc(doc(db, "usuarios", yo.uid), datos);
     if (fotoNueva === null) await deleteDoc(doc(db, "fotos", yo.uid));

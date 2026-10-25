@@ -94,7 +94,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
   pintar();
   escucharCuenta(({ user: u, ficha }) => {
     // Sin perfil de atleta no se puede usar la app: se pide una vez (el coach no lo necesita)
-    if (u && !esCuentaCoach(u) && ficha !== undefined && (!ficha || !ficha.atleta)) pedirPerfil(u, ficha);
+    if (u && !esCuentaCoach(u) && ficha !== undefined && (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado)) pedirPerfil(u, ficha);
     else if (dlgPerfil?.open) dlgPerfil.close();
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
@@ -128,11 +128,11 @@ function pedirPerfil(user, ficha) {
   dlgPerfil.innerHTML = `
     <form method="dialog" autocomplete="off">
       <div class="perfil-marca">Olympo Box</div>
-      <h3>Crea tu perfil de atleta</h3>
+      <h3>${ficha?.atleta ? "Completa tu perfil" : "Crea tu perfil de atleta"}</h3>
       <p>Tu nombre saldrá en tus resultados, en el ranking y en tu perfil. Lo pones una vez y después lo puedes cambiar desde tu perfil.</p>
       <label>Nombre y apellido<input name="nombre" maxlength="40" required autocomplete="name"></label>
-      <label><span>Ejercicio favorito <small>(opcional)</small></span><input name="favorito" maxlength="40" placeholder="Ej. Thrusters"></label>
-      <label><span>Ejercicio más odiado <small>(opcional)</small></span><input name="odiado" maxlength="40" placeholder="Ej. Burpees"></label>
+      <label><span>Ejercicio favorito</span><input name="favorito" maxlength="40" placeholder="Ej. Thrusters" required></label>
+      <label><span>Ejercicio más odiado</span><input name="odiado" maxlength="40" placeholder="Ej. Burpees" required></label>
       <div class="perfil-msg" role="status"></div>
       <button type="submit">Crear mi perfil</button>
     </form>`;
@@ -146,12 +146,13 @@ function pedirPerfil(user, ficha) {
     const nombre = limpio(f.nombre.value), favorito = limpio(f.favorito.value), odiado = limpio(f.odiado.value);
     const msg = f.querySelector(".perfil-msg");
     if (nombre.length < 2) { msg.textContent = "Escribe tu nombre y apellido."; return; }
+    if (!favorito || !odiado) { msg.textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }
     f.querySelector("button").disabled = true;
     try {
       const ref = doc(db, "usuarios", user.uid);
       const actual = await getDoc(ref);
       if (actual.exists()) await updateDoc(ref, { nombre, favorito, odiado, atleta: true });
-      else await setDoc(ref, { nombre, puntos: 0, favorito, odiado, atleta: true });
+      else await setDoc(ref, { nombre, puntos: 0, favorito, odiado, atleta: true, alta: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }) });
       dlgPerfil.close();
     } catch (err) { console.error(err); msg.textContent = "No se ha podido guardar. Inténtalo de nuevo."; f.querySelector("button").disabled = false; }
   });

@@ -326,9 +326,8 @@ function pintarProgresoLogro() {
   const nv = nivelDe(l.nivel);
   $("plBarra").style.background = nv ? NIVELES[nv].color : "";
   $("plBarra").style.width = Math.min(100, (n / meta) * 100) + "%";
-  $("plLlevas").textContent = `${ficha.clases || 0} / ${meta} clases`;
-  const faltan = meta - (ficha.clases || 0);
-  $("plFaltan").textContent = faltan > 0 ? `te ${faltan === 1 ? "falta 1" : `faltan ${faltan}`}` : "¡conseguido!";
+  $("plLlevas").textContent = `${Math.min(ficha.clases || 0, meta)}/${meta} clases`;
+  $("plFaltan").textContent = "";
 }
 function escucharLogros() {
   if (escuchandoLogros) return;
