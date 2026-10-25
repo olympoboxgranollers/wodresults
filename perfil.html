@@ -150,6 +150,24 @@
   .zoom-foto::backdrop { background: rgba(0,0,0,.85); }
   .zoom-foto img { display: block; width: 100%; border-radius: 20px; }
   .vacio { color: var(--suave); padding: 24px 0; text-align: center; font-size: 15px; grid-column: 1 / -1; }
+
+  /* ---------- Estilo cristal (como iOS) con borde lila malva en cada sección ---------- */
+  .hero, .sobre, .proximo, .datos, .rm-caja, .mis-marcas, .medalla, #perfilForm {
+    position: relative; isolation: isolate;
+    background: linear-gradient(145deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.05) 42%, rgba(195,155,211,.07) 100%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+    border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.25), 0 10px 28px rgba(0,0,0,.32), 0 0 18px color-mix(in srgb, var(--lila) 14%, transparent);
+  }
+  /* Reflejo superior del cristal */
+  .hero::before, .sobre::before, .proximo::before, .datos::before, .rm-caja::before, .mis-marcas::before, .medalla::before, #perfilForm::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+    background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 38%);
+  }
+  .datos .dato + .dato { border-left-color: color-mix(in srgb, var(--lila) 22%, transparent); }
+  .cuenta-atras div { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+  .medalla.falta { border-color: color-mix(in srgb, var(--lila) 28%, transparent) !important; }
+  .mis-marcas:active, .proximo:active { transform: scale(.99); }
 </style>
 </head>
 <body>

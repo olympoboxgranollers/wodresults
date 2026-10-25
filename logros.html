@@ -85,11 +85,11 @@
   .sync.ok b::before { content: "● "; color: #3ddc84; } .sync.mal b::before { content: "● "; color: var(--error); } .sync.off b::before { content: "● "; color: var(--suave); }
   .sync details { margin-top: 6px; } .sync summary { cursor: pointer; color: var(--lila); }
   .etq { display: block; font-size: 12px; color: var(--suave); margin-bottom: 8px; }
-  .selector-medallas { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
-  .selector-medallas button { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 12px; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); font-size: 10px; line-height: 1.2; cursor: pointer; }
-  .selector-medallas button img { width: 54px; height: 54px; object-fit: contain; }
-  .selector-medallas button .sin { width: 54px; height: 54px; display: grid; place-items: center; font-size: 22px; }
-  .selector-medallas button[aria-pressed="true"] { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 14%, var(--fondo)); color: var(--texto); }
+  .selector-medallas { display: grid; gap: 10px; }
+  .med-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+  .med-grid button { display: grid; justify-items: center; gap: 4px; padding: 6px 4px; border-radius: 12px; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); font-size: 10.5px; line-height: 1.2; cursor: pointer; }
+  .med-grid button img, .med-grid button .sin { width: 56px; height: 56px; object-fit: contain; display: grid; place-items: center; font-size: 20px; }
+  .med-grid button[aria-pressed="true"] { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 16%, var(--fondo)); color: var(--texto); box-shadow: 0 0 0 2px color-mix(in srgb, var(--lila) 40%, transparent); }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
 </style>
 </head>
@@ -156,7 +156,7 @@
         <label>Debajo<input id="nUnidad" maxlength="10" placeholder="clases"></label>
         <label class="ancho">Descripción<input id="nDesc" maxlength="100" placeholder="Has entrenado 100 clases con nosotros."></label>
         <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
-        <label>Dificultad<select id="nNivel"><option value="bronce">Bronce</option><option value="plata">Plata</option><option value="oro">Oro</option><option value="diamante">Diamante</option><option value="olimpo">Olimpo (el más difícil)</option><option value="">Lila (sin nivel)</option></select></label>
+        <label>Dificultad (metal de la medalla)<select id="nNivel"><option value="bronce">Bronce · fácil</option><option value="plata">Plata · media</option><option value="oro">Oro · difícil</option><option value="diamante">Diamante · muy difícil</option><option value="olimpo">Olimpo · élite</option><option value="">Lila (sin nivel)</option></select></label>
         <label>Automático al llegar a… clases<input id="nClases" inputmode="numeric" placeholder="Vacío = lo das tú"></label>
         <div class="ancho"><span class="etq">Medalla</span><div class="selector-medallas" id="nMedallas"></div></div>
         <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
@@ -175,7 +175,7 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla } from "./comun.js";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
 
@@ -491,22 +491,38 @@ function rellenarClases() {
 }
 // ---------- Elegir la medalla ilustrada del logro ----------
 let medallaElegida = "";
+// Metal que se está viendo en el selector (bronce, plata, oro, diamante u olimpo)
+let metalSelector = "bronce";
 function pintarSelector() {
   const caja = $("nMedallas"); caja.replaceChildren();
-  const opcion = (id, txt, contenido) => {
-    const b = Object.assign(document.createElement("button"), { type: "button" });
+  if (MEDALLAS[medallaElegida]?.nivel) metalSelector = MEDALLAS[medallaElegida].nivel;
+  else if (METALES.includes($("nNivel")?.value)) metalSelector = $("nNivel").value;
+  const grid = document.createElement("div"); grid.className = "med-grid";
+  const boton = (id, contenido, txt) => {
+    const b = Object.assign(document.createElement("button"), { type: "button", title: id ? MEDALLAS[id].nombre : txt });
     b.setAttribute("aria-pressed", String(medallaElegida === id));
-    b.append(contenido, document.createTextNode(txt));
+    b.append(contenido, Object.assign(document.createElement("span"), { textContent: txt }));
     b.addEventListener("click", () => {
       medallaElegida = id; pintarSelector();
-      // Las de nivel ponen también su nivel
       if (MEDALLAS[id]?.nivel) $("nNivel").value = MEDALLAS[id].nivel;
     });
-    caja.append(b);
+    grid.append(b);
   };
-  opcion("", "Cristal (sin dibujo)", Object.assign(document.createElement("span"), { className: "sin", textContent: "◇" }));
-  for (const [id, m] of Object.entries(MEDALLAS)) opcion(id, m.nombre.split(" · ")[0], imagenMedalla(id));
+  boton("", Object.assign(document.createElement("span"), { className: "sin", textContent: "◇" }), "Sin dibujo");
+  boton(metalSelector, imagenMedalla(metalSelector), "Clases");
+  for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA)) boton(`${id}-${metalSelector}`, imagenMedalla(`${id}-${metalSelector}`), nombre);
+  caja.append(grid);
 }
+// El desplegable "Dificultad" elige el metal: el selector enseña las medallas de ese metal
+// y, si ya había un dibujo elegido, lo cambia al mismo dibujo en el metal nuevo (más difícil = más detalles)
+$("nNivel").addEventListener("change", () => {
+  const nv = $("nNivel").value;
+  if (!METALES.includes(nv)) return;
+  metalSelector = nv;
+  const m = MEDALLAS[medallaElegida];
+  if (m) medallaElegida = m.ejercicio ? `${m.ejercicio}-${nv}` : nv;
+  pintarSelector();
+});
 pintarSelector();
 function msgN(t, err = false) { $("nMsg").className = "msg " + (err ? "error" : "ok"); $("nMsg").textContent = t; }
 function editar(l) {
@@ -515,7 +531,7 @@ function editar(l) {
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
   $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || "";
-  medallaElegida = l.imagen || ""; pintarSelector();
+  medallaElegida = l.imagen ? idMedalla(l.imagen) : ""; pintarSelector();
   $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
   window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
 }

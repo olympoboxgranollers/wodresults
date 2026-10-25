@@ -306,23 +306,7 @@ export function imagenMedalla(id) {
     if (intento === 1) img.src = `${id}.webp`;
     else if (intento === 2) import("./medallas-datos.js").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
-  // El brillo que recorre la medalla usa su misma silueta
-  img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
   return img;
-}
-// Medallas interactivas: se inclinan siguiendo el dedo o el ratón y dan un pequeño salto al tocarlas
-if (typeof document !== "undefined" && !window.__medallasVivas) {
-  window.__medallasVivas = true;
-  const arte = (e) => e.target.closest?.(".insignia-img:not(.bloqueada)")?.querySelector(".med-arte");
-  document.addEventListener("pointermove", (e) => {
-    const a = arte(e); if (!a) return;
-    const r = a.getBoundingClientRect();
-    a.style.setProperty("--ry", ((e.clientX - r.left) / r.width - .5) * 24 + "deg");
-    a.style.setProperty("--rx", (.5 - (e.clientY - r.top) / r.height) * 24 + "deg");
-    a.style.setProperty("--bx", ((e.clientX - r.left) / r.width) * 100 + "%");
-  }, { passive: true });
-  document.addEventListener("pointerout", (e) => { const a = arte(e); if (a && !a.contains(e.relatedTarget)) { a.style.removeProperty("--rx"); a.style.removeProperty("--ry"); a.style.removeProperty("--bx"); } }, { passive: true });
-  document.addEventListener("pointerdown", (e) => { const a = arte(e); if (!a) return; a.classList.remove("toque"); void a.offsetWidth; a.classList.add("toque"); }, { passive: true });
 }
 // Niveles de dificultad de los logros: cuanto más difícil, más exótica la medalla
 export const NIVELES = {
@@ -417,11 +401,7 @@ export function crearInsignia(ins, tam = 56) {
     d.style.setProperty("--t", tam + "px");
     d.style.setProperty("--nc", m.nivel ? NIVELES[m.nivel].color : m.color);
     d.title = ins.nombre || m.nombre;
-    // Capa con la imagen, el brillo que la recorre y dos destellos (como las de cristal)
-    const arte = document.createElement("span"); arte.className = "med-arte";
-    arte.append(imagenMedalla(ins.imagen), Object.assign(document.createElement("i"), { className: "med-brillo" }));
-    d.style.setProperty("--retraso", (Math.random() * 4).toFixed(2) + "s");
-    d.append(arte, Object.assign(document.createElement("i"), { className: "med-chispa" }), Object.assign(document.createElement("i"), { className: "med-chispa c2" }));
+    d.append(imagenMedalla(ins.imagen));
     // En las de nivel se pone el número (100, 250…) en una plaquita abajo
     if (m.numero && ins.corto && ins.corto !== "★" && tam >= 40) d.append(Object.assign(document.createElement("span"), { className: "insignia-placa", textContent: ins.corto }));
     return d;
