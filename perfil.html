@@ -203,7 +203,8 @@ function pintar() {
   let puesto = "–", p = 0, ant = null;
   ranking.filter((u) => !u.ocultarPuntos).forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
   $("dPuesto").textContent = puesto;
-  const mias = insigniasDe(ficha);
+  // Nivel y texto actuales del catálogo (por si el coach los ha cambiado después de darlo)
+  const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad } : m; });
   $("dLogros").textContent = mias.length;
 
   // Marcas personales (RM)
@@ -218,7 +219,7 @@ function pintar() {
   if (!mias.length) c.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no tiene logros." }));
   for (const m of mias) {
     const d = document.createElement("div"); d.className = "medalla";
-    d.append(crearInsignia(m, 60), Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: m.nombre }));
+    d.append(crearInsignia(m, 88), Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: m.nombre }));
     if (m.fecha) d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" }) }));
     c.append(d);
   }
@@ -228,7 +229,7 @@ function pintar() {
   const f = $("faltan"); f.replaceChildren();
   for (const l of faltan) {
     const d = document.createElement("div"); d.className = "medalla falta";
-    const med = crearInsignia(l, 60); med.classList.add("bloqueada");
+    const med = crearInsignia(l, 88); med.classList.add("bloqueada");
     d.append(med, Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: l.nombre }));
     f.append(d);
   }

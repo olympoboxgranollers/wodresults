@@ -24,9 +24,23 @@
   .progreso b { font-size: 30px; font-weight: 700; color: var(--lila); }
   .progreso b small { font-size: 15px; color: var(--suave); font-weight: 500; }
 
-  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 20px; }
-  .logro { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 20px 12px 16px; border-radius: 18px; background: var(--panel); border: 1px solid transparent; }
-  .logro.conseguido { border-color: color-mix(in srgb, var(--lila) 45%, transparent); }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 12px; margin-top: 20px; }
+  .logro { --nc: var(--lila); position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 22px 12px 16px; border-radius: 20px; background: var(--panel); border: 1px solid transparent; }
+  .logro.conseguido { border-color: color-mix(in srgb, var(--nc) 45%, transparent);
+    background: radial-gradient(circle at 50% 24%, color-mix(in srgb, var(--nc) 12%, transparent), transparent 60%), var(--panel); }
+  .logro .halo { position: absolute; top: 8px; left: 50%; width: 120px; height: 120px; transform: translateX(-50%); border-radius: 50%; background: conic-gradient(from 0deg, transparent, color-mix(in srgb, var(--nc) 30%, transparent), transparent 40%); filter: blur(10px); animation: girar 9s linear infinite; pointer-events: none; }
+  .logro.n-olimpo.conseguido { border-color: color-mix(in srgb, #ffd24a 45%, transparent); }
+  @keyframes borde-olimpo { to { background-position: 0 0, 0 0, -300% 0; } }
+  .med { position: relative; display: inline-grid; margin-bottom: 4px; }
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--suave); background: rgba(255,255,255,.05); }
+  .logro.conseguido .chip, .logro.coach .chip { color: var(--tcl); background: color-mix(in srgb, var(--nc) 18%, transparent); }
+  .candado { position: absolute; right: -2px; bottom: 2px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); }
+  .candado svg { width: 13px; height: 13px; }
+  .mini-barra { width: 100%; margin-top: 2px; }
+  .mini-barra .b { height: 5px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .mini-barra .b i { display: block; height: 100%; border-radius: inherit; background: var(--nc); opacity: .8; }
+  .mini-barra span { display: block; font-size: 11px; color: var(--suave); margin-top: 5px; }
+  @media (prefers-reduced-motion: reduce) { .logro .halo, .logro.n-olimpo.conseguido { animation: none; } }
   .logro-nombre { font-weight: 600; font-size: 15px; }
   .logro-desc { color: var(--suave); font-size: 12px; line-height: 1.4; }
   .logro-pts { font-size: 12px; font-weight: 600; color: var(--lila); }
@@ -65,7 +79,11 @@
   .clases-mias .txt b { color: var(--texto); font-weight: 600; }
   .clases-mias .barra { height: 6px; border-radius: 999px; background: var(--panel); margin-top: 8px; overflow: hidden; }
   .clases-mias .barra i { display: block; height: 100%; background: var(--lila); border-radius: inherit; }
-  .logro-nivel { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
+
+  .sync { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--panel); font-size: 13px; line-height: 1.5; color: var(--suave); }
+  .sync b { color: var(--texto); font-weight: 600; margin-right: 4px; }
+  .sync.ok b::before { content: "● "; color: #3ddc84; } .sync.mal b::before { content: "● "; color: var(--error); } .sync.off b::before { content: "● "; color: var(--suave); }
+  .sync details { margin-top: 6px; } .sync summary { cursor: pointer; color: var(--lila); }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
 </style>
 </head>
@@ -114,6 +132,7 @@
         <label>Clases hechas<input id="cNum" inputmode="numeric" placeholder="0"></label>
         <div style="display:flex;align-items:end"><button type="button" class="boton" id="cGuardar" style="width:100%">Guardar</button></div>
       </div>
+      <div class="sync" id="sync"><b>AimHarder</b> <span id="syncTxt">Comprobando la sincronización…</span></div>
       <p style="margin-top:16px">Si quieres poner las clases reales de AimHarder, exporta la asistencia y pega aquí una línea por socio con su nombre y el total de clases (por ejemplo <b>Ana García; 102</b>). También vale pegar las columnas copiadas de Excel.</p>
       <div class="campos">
         <label class="ancho">Lista de AimHarder<textarea id="cLista" placeholder="Ana García; 102&#10;Bea López; 57"></textarea></label>
@@ -131,7 +150,7 @@
         <label>Debajo<input id="nUnidad" maxlength="10" placeholder="clases"></label>
         <label class="ancho">Descripción<input id="nDesc" maxlength="100" placeholder="Has entrenado 100 clases con nosotros."></label>
         <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
-        <label>Dificultad<select id="nNivel"><option value="bronce">Bronce</option><option value="plata">Plata</option><option value="oro">Oro</option><option value="diamante">Diamante</option><option value="">Lila (sin nivel)</option></select></label>
+        <label>Dificultad<select id="nNivel"><option value="bronce">Bronce</option><option value="plata">Plata</option><option value="oro">Oro</option><option value="diamante">Diamante</option><option value="olimpo">Olimpo (el más difícil)</option><option value="">Lila (sin nivel)</option></select></label>
         <label>Automático al llegar a… clases<input id="nClases" inputmode="numeric" placeholder="Vacío = lo das tú"></label>
         <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
       </div>
@@ -149,14 +168,34 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES } from "./comun.js";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
 
-let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null, dando = false;
+let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null, dando = false, dejarSync = null;
+// Estado de la sincronización con AimHarder (la hace GitHub cada hora)
+function escucharSync() {
+  return onSnapshot(doc(db, "sync", "aimharder"), (s) => {
+    const caja = $("sync"), txt = $("syncTxt");
+    if (!s.exists()) { caja.className = "sync off"; txt.textContent = "Aún no se ha conectado. Mientras tanto, cada resultado subido cuenta como una clase."; return; }
+    const d = s.data();
+    const cuando = d.ultima ? new Date(d.ultima).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "?";
+    if (!d.ok) { caja.className = "sync mal"; txt.textContent = `Falló el ${cuando}: ${d.mensaje || "error desconocido"}`; return; }
+    caja.className = "sync ok";
+    txt.replaceChildren(document.createTextNode(d.prueba
+      ? `Prueba hecha el ${cuando} · ${d.vinculados} socios se pueden vincular por email. Aún no se ha cambiado nada: en cuanto funcione la sincronización de cada hora, sus clases saldrán de AimHarder.`
+      : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las asistidas) y se actualizan cada hora.`));
+    if (d.sinVincular?.length) {
+      const det = document.createElement("details");
+      det.append(Object.assign(document.createElement("summary"), { textContent: `${d.sinVincular.length} socios de la app sin vincular` }),
+        Object.assign(document.createElement("div"), { textContent: d.sinVincular.join(", ") + ". Para vincularlos, su email de la app tiene que ser el mismo que tienen en AimHarder. Mientras, sus clases cuentan por resultado subido." }));
+      txt.append(det);
+    }
+  }, () => {});
+}
 
 escucharCuenta(({ user, ficha: f }) => {
   coach = esCuentaCoach(user);
@@ -166,6 +205,7 @@ escucharCuenta(({ user, ficha: f }) => {
   $("sub").textContent = coach
     ? "Crea logros y dáselos a los socios. Cada logro suma sus puntos a la cartera del socio."
     : "Medallas por tu constancia en el box. Cada logro suma puntos a tu cartera.";
+  if (coach && !dejarSync) dejarSync = escucharSync();
   if (coach && !dejarSocios) {
     dejarSocios = onSnapshot(query(collection(db, "usuarios"), orderBy("nombre", "asc")), (s) => {
       socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre);
@@ -213,9 +253,9 @@ function pintar() {
   const mias = ficha?.insignias || {};
   $("nTotal").textContent = logros.length;
   $("nConseguidos").textContent = logros.filter((l) => mias[l.id]).length;
-  const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || !("nivel" in l) || !("clases" in l); });
+  const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || l.nivel !== i.nivel || !("clases" in l); });
   $("nIniciales").hidden = !coach || !faltan.length;
-  $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner niveles y modo automático a los de clases" : "Crear los de 100 a 1000 clases";
+  $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner los niveles nuevos a los de clases (100 bronce · 250 plata · 500 oro · 750 diamante · 1000 olimpo)" : "Crear los de 100 a 1000 clases";
   if (!logros.length) {
     r.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: coach ? "Aún no hay logros. Crea los de 100 a 1000 clases con el botón de arriba o añade uno nuevo." : "Pronto habrá logros para conseguir." }));
     return;
@@ -224,14 +264,28 @@ function pintar() {
   const lista = coach ? logros : [...logros].sort((a, b) => (!!mias[b.id]) - (!!mias[a.id]) || a.orden - b.orden);
   for (const l of lista) {
     const mio = mias[l.id];
-    const c = document.createElement("div"); c.className = "logro" + (mio || coach ? " conseguido" : "");
-    const med = crearInsignia(l, 72);
-    if (!mio && !coach) med.classList.add("bloqueada");
-    c.append(med, Object.assign(document.createElement("div"), { className: "logro-nombre", textContent: l.nombre }));
-    if (NIVELES[l.nivel]) {
-      const nv = Object.assign(document.createElement("div"), { className: "logro-nivel", textContent: NIVELES[l.nivel].nombre + (l.clases ? " · automático" : "") });
-      nv.style.color = mio || coach ? NIVELES[l.nivel].texto : "var(--suave)";
-      c.append(nv);
+    const nv = nivelDe(l.nivel);
+    const c = document.createElement("div"); c.className = "logro" + (mio || coach ? " conseguido" : "") + (coach ? " coach" : "") + (nv ? " n-" + nv : "");
+    if (nv) { c.style.setProperty("--nc", NIVELES[nv].color); c.style.setProperty("--tcl", NIVELES[nv].texto); }
+    const med = crearInsignia(l, nv ? 124 : 92);
+    if (!mio && !coach) {
+      med.classList.add("bloqueada");
+      const cand = document.createElement("span"); cand.className = "candado";
+      cand.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+      const caja = document.createElement("span"); caja.className = "med"; caja.append(med, cand); c.append(caja);
+    } else {
+      const caja = document.createElement("span"); caja.className = "med"; caja.append(med); c.append(caja);
+    }
+    if (nv) c.append(Object.assign(document.createElement("span"), { className: "chip", textContent: NIVELES[nv].nombre + (l.clases ? " · auto" : "") }));
+    c.append(Object.assign(document.createElement("div"), { className: "logro-nombre", textContent: l.nombre }));
+    // Progreso hacia los logros de clases que aún no tiene
+    if (!coach && !mio && esLogroDeClases(l) && umbralClases(l) > 0) {
+      const n = ficha?.clases || 0;
+      const meta = umbralClases(l);
+      const mb = document.createElement("div"); mb.className = "mini-barra";
+      mb.innerHTML = `<div class="b"><i style="width:${Math.min(100, (n / meta) * 100)}%"></i></div>`;
+      mb.append(Object.assign(document.createElement("span"), { textContent: `${Math.min(n, meta)} / ${meta} clases · ${meta - n > 0 ? `faltan ${meta - n}` : "¡ya está!"}` }));
+      c.append(mb);
     }
     if (l.descripcion) c.append(Object.assign(document.createElement("div"), { className: "logro-desc", textContent: l.descripcion }));
     c.append(Object.assign(document.createElement("div"), { className: "logro-pts", textContent: `+${fmtPuntos(l.puntos)} pts` }));
@@ -394,7 +448,7 @@ function editar(l) {
   editando = l.id;
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
-  $("nNivel").value = l.nivel || ""; $("nClases").value = l.clases || "";
+  $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || "";
   $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
   window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
 }
@@ -422,11 +476,11 @@ $("nIniciales").addEventListener("click", async () => {
     const lote = writeBatch(db);
     for (const { id, ...datos } of LOGROS_INICIALES) {
       const ya = logros.find((x) => x.id === id);
-      if (ya) lote.update(doc(db, "logros", id), { nivel: "nivel" in ya ? ya.nivel : datos.nivel, clases: "clases" in ya ? ya.clases : datos.clases });
+      if (ya) lote.update(doc(db, "logros", id), { nivel: datos.nivel, clases: "clases" in ya ? ya.clases : datos.clases });
       else lote.set(doc(db, "logros", id), datos);
     }
     await lote.commit();
-    msgN("✓ Creados los logros de 100 (bronce), 250 (plata), 500 y 750 (oro) y 1000 clases (diamante).");
+    msgN("✓ Logros de clases listos: 100 bronce, 250 plata, 500 oro, 750 diamante y 1000 olimpo.");
   } catch (e) { console.error(e); msgN("No se han podido crear.", true); }
 });
 </script>

@@ -241,16 +241,29 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .insignia-txt small { font-size: calc(var(--t) * .15); font-weight: 500; margin-top: 1px; color: var(--suave); }
 .insignia.bloqueada { opacity: .35; filter: grayscale(1); }
 .insignia[style*="--tc"] .insignia-txt { color: var(--tc); }
-.insignia.nivel-oro { filter: drop-shadow(0 0 calc(var(--t) * .06) rgba(255, 205, 60, .35)); }
-.insignia.nivel-diamante { filter: drop-shadow(0 0 calc(var(--t) * .1) rgba(127, 227, 255, .45)); }
-.insignia.nivel-diamante svg { animation: brillo-diamante 6s linear infinite; }
-.insignia.nivel-diamante .destello { transform-origin: 47px 8px; animation: destello 2.4s ease-in-out infinite; }
-.insignia.nivel-diamante .insignia-txt b { background: linear-gradient(120deg, #e6fbff, #7fe3ff, #ff9ad5, #e6fbff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.insignia.bloqueada.nivel-oro, .insignia.bloqueada.nivel-diamante { filter: grayscale(1); }
-.insignia.bloqueada svg, .insignia.bloqueada .destello { animation: none; }
-@keyframes brillo-diamante { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg); } }
-@keyframes destello { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
-@media (prefers-reduced-motion: reduce) { .insignia svg, .insignia .destello { animation: none !important; } }
+/* Número de cristal: blanco con el resplandor del color del nivel */
+.insignia[class*="nivel-"] .insignia-txt { transform: translateY(calc(var(--t) * -.025)); }
+.insignia[class*="nivel-"] .insignia-txt b { font-weight: 800; letter-spacing: -.03em; color: #fff; font-size: calc(var(--t) * .2);
+  text-shadow: 0 0 .25em var(--nc), 0 0 .6em var(--nc), 0 .05em .05em rgba(0, 0, 0, .7); }
+.insignia[class*="nivel-"] .insignia-txt.medio b { font-size: calc(var(--t) * .16); }
+.insignia[class*="nivel-"] .insignia-txt.largo b { font-size: calc(var(--t) * .125); }
+.insignia:is(.nivel-bronce, .nivel-plata, .nivel-oro) .insignia-txt b { font-size: calc(var(--t) * .22); } .insignia:is(.nivel-bronce, .nivel-plata, .nivel-oro) .insignia-txt.medio b { font-size: calc(var(--t) * .18); } .insignia:is(.nivel-bronce, .nivel-plata, .nivel-oro) .insignia-txt.largo b { font-size: calc(var(--t) * .14); }
+.insignia.nivel-diamante .insignia-txt b { font-size: calc(var(--t) * .24); } .insignia.nivel-diamante .insignia-txt.medio b { font-size: calc(var(--t) * .2); } .insignia.nivel-diamante .insignia-txt.largo b { font-size: calc(var(--t) * .16); }
+.insignia[class*="nivel-"] { filter: drop-shadow(0 0 calc(var(--t) * .06) color-mix(in srgb, var(--nc) 55%, transparent)); }
+.insignia.nivel-olimpo { filter: drop-shadow(0 0 calc(var(--t) * .1) color-mix(in srgb, var(--nc) 65%, transparent)); }
+.insignia.nivel-diamante .rayos, .insignia.nivel-olimpo .rayos { transform-origin: 30px 28.5px; animation: girar 30s linear infinite; }
+.insignia.nivel-olimpo .rayos { animation-duration: 18s; }
+.insignia .destello { transform-box: fill-box; transform-origin: center; animation: destello 4s ease-in-out infinite; }
+.insignia .destello.d2 { animation-delay: 1.2s; }
+.insignia.bloqueada { opacity: .38; filter: grayscale(1) !important; }
+.insignia.bloqueada svg, .insignia.bloqueada svg *, .insignia.bloqueada .insignia-txt b { animation: none !important; }
+@keyframes brillo-diamante { 0%, 100% { filter: hue-rotate(0deg) saturate(1); } 50% { filter: hue-rotate(28deg) saturate(1.15); } }
+@keyframes destello { 0%, 100% { opacity: 0; transform: scale(.3); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes oro-olimpo { to { background-position: -220% 0; } }
+@keyframes barrido { 0%, 55% { transform: rotate(20deg) translateX(0); } 100% { transform: rotate(20deg) translateX(52px); } }
+@keyframes aura { 0%, 100% { opacity: .55; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .insignia svg, .insignia svg *, .insignia .insignia-txt b { animation: none !important; } }
 
 /* ---------- Protección contra copiar ---------- */
 .sin-copia body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }

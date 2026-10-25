@@ -126,7 +126,7 @@ service cloud.firestore {
         || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro', 'clases'])
         && request.resource.data.puntos == resource.data.puntos + 10
-        && request.resource.data.get('clases', 0) == resource.data.get('clases', 0) + 1
+        && (request.resource.data.get('clases', 0) == resource.data.get('clases', 0) + 1 || request.resource.data.get('clases', 0) == resource.data.get('clases', 0))
         && request.resource.data.ultimoRegistro is string
         && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
         && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)))
@@ -175,6 +175,17 @@ service cloud.firestore {
       allow create: if esCoach();
       allow update: if false;
       allow delete: if esCoach();
+    }
+
+    // ---------- Sincronización con AimHarder (la hace GitHub con la cuenta de servicio, que no pasa por estas reglas) ----------
+    // Tokens y estado interno: nadie los puede leer ni escribir desde la app
+    match /privado/{id} {
+      allow read, write: if false;
+    }
+    // Resumen de la última sincronización: solo lo ve el coach
+    match /sync/{id} {
+      allow read: if esCoach();
+      allow write: if false;
     }
 
     // ---------- Fotos de perfil (aparte, para no cargarlas en cada ranking) ----------
@@ -232,7 +243,7 @@ service cloud.firestore {
       allow read: if conCuenta();
       allow create, update: if esCoach()
         && request.resource.data.keys().hasOnly(['nombre', 'corto', 'unidad', 'descripcion', 'puntos', 'orden', 'nivel', 'clases'])
-        && (!('nivel' in request.resource.data) || request.resource.data.nivel in ['', 'bronce', 'plata', 'oro', 'diamante'])
+        && (!('nivel' in request.resource.data) || request.resource.data.nivel in ['', 'bronce', 'plata', 'oro', 'diamante', 'olimpo'])
         && (!('clases' in request.resource.data) || (request.resource.data.clases is int && request.resource.data.clases >= 0))
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
         && request.resource.data.corto is string && request.resource.data.corto.size() <= 5

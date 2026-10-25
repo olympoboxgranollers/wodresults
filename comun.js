@@ -276,64 +276,139 @@ export const LOGROS_INICIALES = [
   { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100,  nivel: "bronce",   clases: 100 },
   { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250,  nivel: "plata",    clases: 250 },
   { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500,  nivel: "oro",      clases: 500 },
-  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750,  nivel: "oro",      clases: 750 },
-  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000, nivel: "diamante", clases: 1000 }
+  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750,  nivel: "diamante", clases: 750 },
+  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000, nivel: "olimpo",   clases: 1000 }
 ];
 // Niveles de dificultad de los logros: cuanto más difícil, más exótica la medalla
 export const NIVELES = {
-  bronce:   { nombre: "Bronce",   texto: "#f3b98d" },
-  plata:    { nombre: "Plata",    texto: "#eef1f6" },
-  oro:      { nombre: "Oro",      texto: "#ffd969" },
-  diamante: { nombre: "Diamante", texto: "#c9f6ff" }
+  bronce:   { nombre: "Bronce",   texto: "#ffc89a", color: "#c47a45" },
+  plata:    { nombre: "Plata",    texto: "#eef1f6", color: "#b9c3d4" },
+  oro:      { nombre: "Oro",      texto: "#ffd969", color: "#f2c230" },
+  diamante: { nombre: "Diamante", texto: "#c9f6ff", color: "#7fe3ff" },
+  olimpo:   { nombre: "Olimpo",   texto: "#ffe9a8", color: "#e040fb" }
 };
+// El platino ya no existe: lo que se guardó como platino se ve como diamante
+export const nivelDe = (n) => (n === "platino" ? "diamante" : NIVELES[n] ? n : "");
 // Logros conseguidos por un socio, del más importante al menos
 export function insigniasDe(ficha) {
   const m = ficha?.insignias || {};
   return Object.entries(m).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.orden || 0) - (a.orden || 0) || String(b.fecha).localeCompare(String(a.fecha)));
 }
-// Estrella de n puntas (para el borde del oro)
-function estrella(n, R, r) {
+// Estrella de n puntas (canto dentado de la plata)
+function estrella(n, R, r, cx = 30, cy = 30) {
   const p = [];
-  for (let i = 0; i < n * 2; i++) { const a = (Math.PI * i) / n - Math.PI / 2, d = i % 2 ? r : R; p.push((30 + d * Math.cos(a)).toFixed(2) + "," + (30 + d * Math.sin(a)).toFixed(2)); }
+  for (let i = 0; i < n * 2; i++) { const a = (Math.PI * i) / n - Math.PI / 2, d = i % 2 ? r : R; p.push((cx + d * Math.cos(a)).toFixed(2) + "," + (cy + d * Math.sin(a)).toFixed(2)); }
   return p.join(" ");
 }
+// Rama de laurel con hojas de verdad (punta y nervio), a los dos lados, de abajo (desde) a arriba (hasta)
+function laurel(cx, cy, R, relleno, nervio, desde = -70, hasta = 60, hojas = 8, tam = 1) {
+  let h = "";
+  const hoja = (x, y, rot, t) => `<g transform="translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${rot.toFixed(1)}) scale(${t.toFixed(3)})"><path d="M0 0 C1.6 -1.9 4.6 -2.1 7.2 0 C4.6 2.1 1.6 1.9 0 0Z" fill="${relleno}"/><path d="M0.6 0 L6.4 0" stroke="${nervio}" stroke-width=".35" stroke-linecap="round"/></g>`;
+  // Hojas alternas a lo largo del tallo: una hacia fuera, la siguiente hacia dentro
+  const total = hojas * 2;
+  for (let i = 0; i < total; i++) {
+    const deg = desde + ((hasta - desde) * i) / (total - 1), a = (deg * Math.PI) / 180;
+    const t = tam * (0.78 + 0.22 * (1 - i / (total - 1)));
+    const fuera = i % 2 === 0;
+    const r = R + (fuera ? 1.4 : -0.6);
+    const x = cx + r * Math.cos(a), y = cy - r * Math.sin(a);
+    const rot = -deg - 90 + (fuera ? -34 : 30);
+    h += hoja(x, y, rot, t) + hoja(cx - r * Math.cos(a), y, 180 - rot, t);
+  }
+  // tallos
+  const arco = (sx) => { const a1 = (desde * Math.PI) / 180, a2 = (hasta * Math.PI) / 180;
+    return `<path d="M${(cx + sx * R * Math.cos(a1)).toFixed(2)} ${(cy - R * Math.sin(a1)).toFixed(2)} A${R} ${R} 0 0 ${sx > 0 ? 0 : 1} ${(cx + sx * R * Math.cos(a2)).toFixed(2)} ${(cy - R * Math.sin(a2)).toFixed(2)}" fill="none" stroke="${nervio}" stroke-width=".6" opacity=".7"/>`; };
+  return arco(1) + arco(-1) + h;
+}
+// Colores de cristal de cada nivel (luz, color, fondo)
+const CRISTAL = {
+  bronce:   { luz: "#ffd9b8", medio: "#e3894a", profundo: "#2e1405" },
+  plata:    { luz: "#ffffff", medio: "#b9c8e0", profundo: "#161d2b" },
+  oro:      { luz: "#fff4b5", medio: "#f2bf2a", profundo: "#2e2002" },
+  diamante: { luz: "#e9fdff", medio: "#5ad6f5", profundo: "#04222e" },
+  olimpo:   { luz: "#ffd6ff", medio: "#d83cf2", profundo: "#24042c" }
+};
+const mezcla = (h1, h2, t) => {
+  const a = parseInt(h1.slice(1), 16), b = parseInt(h2.slice(1), 16);
+  const c = (sh) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t);
+  return "#" + ((1 << 24) + (c(16) << 16) + (c(8) << 8) + c(0)).toString(16).slice(1);
+};
+// Estrella de cristal tallada: cada punta son dos caras (una con luz y otra en sombra) y un núcleo de cristal oscuro
+function estrellaCristal(cx, cy, n, R, r, c, { giro = 0, alterna = 1, nucleo = true, g = "" } = {}) {
+  const A = (i) => giro + (Math.PI * i) / n - Math.PI / 2;
+  const P = (i) => { const rr = i % 4 === 2 && alterna !== 1 ? R * alterna : R; return [cx + rr * Math.cos(A(i)), cy + rr * Math.sin(A(i))]; };
+  const Q = (i) => [cx + r * Math.cos(A(i)), cy + r * Math.sin(A(i))];
+  const f = (pts) => pts.map(([x, y]) => x.toFixed(2) + "," + y.toFixed(2)).join(" ");
+  let h = "";
+  for (let k = 0; k < n; k++) {
+    const i = 2 * k, tip = P(i), q0 = Q(i - 1), q1 = Q(i + 1), C = [cx, cy];
+    // luz que viene de arriba a la izquierda
+    const luzCara = (ang) => (Math.cos(ang - (-Math.PI * .75)) + 1) / 2;
+    const l1 = luzCara(A(i) - Math.PI / (2 * n)), l2 = luzCara(A(i) + Math.PI / (2 * n));
+    h += `<polygon points="${f([C, q0, tip])}" fill="${mezcla(mezcla(c.profundo, c.medio, .7), c.luz, .2 + l1 * .75)}"/>`;
+    h += `<polygon points="${f([C, tip, q1])}" fill="${mezcla(mezcla(c.profundo, c.medio, .5), c.luz, .05 + l2 * .45)}"/>`;
+    h += `<line x1="${cx}" y1="${cy}" x2="${tip[0].toFixed(2)}" y2="${tip[1].toFixed(2)}" stroke="${c.luz}" stroke-opacity=".55" stroke-width=".35"/>`;
+  }
+  const contorno = Array.from({ length: 2 * n }, (_, i) => (i % 2 === 0 ? P(i) : Q(i)));
+  h += `<polygon points="${f(contorno)}" fill="none" stroke="${c.luz}" stroke-opacity=".9" stroke-width=".55" stroke-linejoin="round"/>`;
+  if (nucleo) {
+    const nuc = Array.from({ length: n }, (_, k) => Q(2 * k + 1)).map(([x, y]) => [cx + (x - cx) * .92, cy + (y - cy) * .92]);
+    h += `<polygon points="${f(nuc)}" fill="url(#${g}nuc)" stroke="${c.luz}" stroke-opacity=".85" stroke-width=".6" stroke-linejoin="round"/>`;
+  }
+  return h;
+}
+
 let nInsignia = 0;
-// Medalla: número grande + unidad. Bronce = aro simple · Plata = doble aro con remaches ·
-// Oro = roseta con rayos · Diamante = gema facetada con brillo animado
+// Insignias de cristal (estilo emblema de logro): disco de cristal oscuro con brillo interior,
+// una estrella tallada distinta en cada nivel y, en los más difíciles, laurel de cristal.
+// Bronce = gema redonda de 12 caras · Plata = estrella de 6 puntas · Oro = estrella de 5 puntas con laurel ·
+// Diamante = gema octogonal con laurel largo y rayos · Olimpo = doble estrella de 8 puntas, corona de laurel completa y luz que gira.
 export function crearInsignia(ins, tam = 56) {
   const d = document.createElement("span");
-  const nivel = NIVELES[ins.nivel] ? ins.nivel : "";
+  const nivel = nivelDe(ins.nivel);
   d.className = "insignia" + (nivel ? " nivel-" + nivel : "");
   d.style.setProperty("--t", tam + "px");
-  if (nivel) d.style.setProperty("--tc", NIVELES[nivel].texto);
+  if (nivel) { d.style.setProperty("--tc", NIVELES[nivel].texto); d.style.setProperty("--nc", NIVELES[nivel].color); }
   d.title = (ins.nombre || "") + (nivel ? " · " + NIVELES[nivel].nombre : "");
   const corto = ins.corto || "★";
   const unidad = ins.unidad || "";
   const g = "g" + (++nInsignia);
   let svg;
-  if (nivel === "bronce") {
-    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6c49b"/><stop offset=".5" stop-color="#c47a45"/><stop offset="1" stop-color="#7a4522"/></linearGradient></defs>
-      <circle cx="30" cy="30" r="27" fill="none" stroke="url(#${g})" stroke-width="3.5"/>
-      <circle cx="30" cy="30" r="22" fill="rgba(196,122,69,.16)"/>`;
-  } else if (nivel === "plata") {
-    let rem = "";
-    for (let i = 0; i < 12; i++) { const a = (Math.PI * 2 * i) / 12; rem += `<circle cx="${(30 + 25.2 * Math.cos(a)).toFixed(2)}" cy="${(30 + 25.2 * Math.sin(a)).toFixed(2)}" r="1.1" fill="#fff" opacity=".85"/>`; }
-    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#b9c0cc"/><stop offset=".7" stop-color="#f2f4f8"/><stop offset="1" stop-color="#7d8594"/></linearGradient></defs>
-      <circle cx="30" cy="30" r="28" fill="none" stroke="url(#${g})" stroke-width="2.4"/>
-      <circle cx="30" cy="30" r="22.4" fill="rgba(200,206,216,.14)" stroke="url(#${g})" stroke-width="1.4"/>${rem}`;
-  } else if (nivel === "oro") {
-    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".4" stop-color="#f2c230"/><stop offset=".75" stop-color="#ffe680"/><stop offset="1" stop-color="#a8740c"/></linearGradient>
-      <radialGradient id="${g}r"><stop offset="0" stop-color="#3b3320"/><stop offset="1" stop-color="#26231c"/></radialGradient></defs>
-      <polygon points="${estrella(16, 29.5, 25)}" fill="url(#${g})"/>
-      <circle cx="30" cy="30" r="21.5" fill="url(#${g}r)" stroke="#fff3b0" stroke-width=".8"/>
-      <circle cx="30" cy="30" r="19" fill="none" stroke="url(#${g})" stroke-width=".6" stroke-dasharray="1.5 1.5"/>`;
-  } else if (nivel === "diamante") {
-    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6fbff"/><stop offset=".3" stop-color="#7fe3ff"/><stop offset=".55" stop-color="#d7b5ff"/><stop offset=".8" stop-color="#ff9ad5"/><stop offset="1" stop-color="#7fe3ff"/></linearGradient>
-      <radialGradient id="${g}r"><stop offset="0" stop-color="#1f2a3a"/><stop offset="1" stop-color="#151a24"/></radialGradient></defs>
-      <polygon points="30,1.5 51,10 58.5,30 51,50 30,58.5 9,50 1.5,30 9,10" fill="url(#${g})"/>
-      <polygon points="30,7 47,14 53,30 47,46 30,53 13,46 7,30 13,14" fill="url(#${g}r)"/>
-      <g stroke="#e6fbff" stroke-width=".5" opacity=".55"><line x1="30" y1="1.5" x2="30" y2="7"/><line x1="51" y1="10" x2="47" y2="14"/><line x1="58.5" y1="30" x2="53" y2="30"/><line x1="51" y1="50" x2="47" y2="46"/><line x1="30" y1="58.5" x2="30" y2="53"/><line x1="9" y1="50" x2="13" y2="46"/><line x1="1.5" y1="30" x2="7" y2="30"/><line x1="9" y1="10" x2="13" y2="14"/></g>
-      <path class="destello" d="M47 4 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2z" fill="#fff"/>`;
+  if (nivel) {
+    const c = CRISTAL[nivel], cx = 30, cy = 28.5, R = 21.5;
+    let rayos = "";
+    const nRayos = nivel === "olimpo" ? 24 : 16;
+    for (let i = 0; i < nRayos; i++) rayos += `<polygon points="${cx},${cy} ${cx - .9},${cy - R + 1} ${cx + .9},${cy - R + 1}" transform="rotate(${(360 * i) / nRayos} ${cx} ${cy})"/>`;
+    const opRayos = { bronce: .06, plata: .08, oro: .1, diamante: .14, olimpo: .16 }[nivel];
+    const defs = `<radialGradient id="${g}disco" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="${c.medio}" stop-opacity=".75"/><stop offset=".55" stop-color="${mezcla(c.profundo, c.medio, .25)}"/><stop offset="1" stop-color="${c.profundo}"/></radialGradient>
+      <linearGradient id="${g}aro" x1=".1" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="${c.luz}"/><stop offset=".35" stop-color="${c.medio}"/><stop offset=".7" stop-color="${mezcla(c.profundo, c.medio, .5)}"/><stop offset="1" stop-color="${c.luz}"/></linearGradient>
+      <radialGradient id="${g}nuc" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="${mezcla(c.profundo, c.medio, .55)}"/><stop offset="1" stop-color="${c.profundo}"/></radialGradient>
+      <radialGradient id="${g}halo"><stop offset=".6" stop-color="${c.medio}" stop-opacity=".45"/><stop offset="1" stop-color="${c.medio}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${g}hoja" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c.luz}"/><stop offset=".55" stop-color="${c.medio}"/><stop offset="1" stop-color="${mezcla(c.profundo, c.medio, .5)}"/></linearGradient>`;
+    // Estrella de cada nivel
+    let emblema;
+    // Bronce, plata y oro: solo un núcleo de cristal liso alrededor del número (sin caras talladas)
+    const nucleoLiso = (r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#${g}nuc)" stroke="${c.luz}" stroke-opacity=".85" stroke-width=".6"/>
+      <circle cx="${cx}" cy="${cy}" r="${r + 2.4}" fill="none" stroke="${c.luz}" stroke-opacity=".35" stroke-width=".4"/>`;
+    if (nivel === "bronce" || nivel === "plata" || nivel === "oro") emblema = nucleoLiso(13);
+    else if (nivel === "diamante") emblema = estrellaCristal(cx, cy, 8, 18.8, 15.6, c, { g, giro: Math.PI / 8 });
+    else emblema = estrellaCristal(cx, cy, 8, 19.5, 12, c, { g, giro: Math.PI / 8, nucleo: false }).replaceAll("<polygon", '<polygon opacity=".55"')
+      + estrellaCristal(cx, cy, 8, 20.5, 11.4, c, { g, alterna: .62 });
+    // Laurel de cristal (solo en los niveles altos)
+    const laurelDe = { oro: [-86, -26, 3], diamante: [-88, -6, 4], olimpo: [-90, 52, 6] }[nivel];
+    const rama = laurelDe ? laurel(cx, cy, 24.4, `url(#${g}hoja)`, c.luz, laurelDe[0], laurelDe[1], laurelDe[2], nivel === "olimpo" ? 1.3 : 1.45) : "";
+    svg = `<defs>${defs}</defs>
+      <circle cx="${cx}" cy="${cy}" r="${R + 6}" fill="url(#${g}halo)"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${g}disco)"/>
+      ${nivel === "olimpo" ? `<g class="rayos" fill="${c.luz}" opacity="${opRayos}">${rayos}</g>` : ""}
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#${g}aro)" stroke-width="2"/>
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${c.luz}" stroke-opacity=".5" stroke-width=".4"/>
+      <circle cx="${cx}" cy="${cy}" r="${R - 1.9}" fill="none" stroke="${c.luz}" stroke-opacity=".3" stroke-width=".4"/>
+      ${nivel === "plata" || nivel === "olimpo" ? `<circle cx="${cx}" cy="${cy}" r="${R + 2.2}" fill="none" stroke="${c.luz}" stroke-opacity=".45" stroke-width=".5"/>` : ""}
+      ${emblema}
+      <path d="M${cx - R * .78} ${cy - R * .3} A${R} ${R} 0 0 1 ${cx + R * .78} ${cy - R * .3} Q${cx} ${cy - R * .62} ${cx - R * .78} ${cy - R * .3}Z" fill="#fff" opacity=".1"/>
+      ${rama ? `<g class="laurel">${rama}</g>` : ""}
+      <path class="destello" d="M${cx + 13} ${cy - 18} l1 2.4 2.4 1 -2.4 1 -1 2.4 -1 -2.4 -2.4 -1 2.4 -1z" fill="#fff"/>`;
   } else {
     svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3c8ee"/><stop offset="1" stop-color="#9b6db0"/></linearGradient></defs>
       <circle cx="30" cy="30" r="27" fill="none" stroke="url(#${g})" stroke-width="3"/>
@@ -342,7 +417,17 @@ export function crearInsignia(ins, tam = 56) {
   d.innerHTML = `<svg viewBox="0 0 60 60" aria-hidden="true">${svg}</svg>`;
   const t = document.createElement("span"); t.className = "insignia-txt" + (corto.length >= 4 ? " largo" : corto.length === 3 ? " medio" : "");
   t.append(Object.assign(document.createElement("b"), { textContent: corto }));
-  if (unidad && tam >= 40) t.append(Object.assign(document.createElement("small"), { textContent: unidad }));
+  if (unidad && tam >= 40 && !nivel) t.append(Object.assign(document.createElement("small"), { textContent: unidad }));
   d.append(t);
   return d;
+}
+
+// ---------- Logros de clases ----------
+// Solo los que llevan la palabra "clases" en el nombre muestran el contador
+export const esLogroDeClases = (l) => /clases/i.test(l?.nombre || "");
+export const umbralClases = (l) => (l?.clases > 0 ? l.clases : parseInt(String(l?.nombre || "").match(/\d+/)?.[0] || "0", 10));
+// El siguiente logro de clases que aún no tiene (el de menos clases)
+export function siguienteLogroClases(logros, ficha) {
+  return logros.filter((l) => esLogroDeClases(l) && umbralClases(l) > 0 && !ficha?.insignias?.[l.id])
+    .sort((a, b) => umbralClases(a) - umbralClases(b))[0] || null;
 }

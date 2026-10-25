@@ -119,6 +119,17 @@
   .ir-cartera b { font-family: "Oswald", sans-serif; font-size: 30px; color: var(--lila); line-height: 1.1; }
   .ir-cartera-flecha { font-weight: 800; font-size: 15px; white-space: nowrap; }
   .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
+  .progreso-logro { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding: 14px 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); text-decoration: none; color: var(--texto); text-align: left; }
+  .pl-medalla { position: relative; flex: none; display: grid; }
+  .pl-medalla .candado { position: absolute; right: -3px; bottom: 0; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); }
+  .pl-medalla .candado svg { width: 11px; height: 11px; }
+  .pl-info { flex: 1; min-width: 0; display: grid; gap: 4px; }
+  .pl-info small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+  .pl-info b { font-size: 16px; font-weight: 700; }
+  .pl-barra { height: 7px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 2px; }
+  .pl-barra i { display: block; height: 100%; border-radius: inherit; background: var(--lila); transition: width .8s ease; }
+  .pl-texto { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--suave); }
+  .pl-texto strong { color: var(--texto); font-weight: 600; }
   .atleta-fijo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); }
   .atleta-fijo b { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
   .atleta-fijo a { color: var(--suave); font-size: 13px; white-space: nowrap; }
@@ -219,6 +230,15 @@
       <div class="avisame-info" id="avisameInfo" hidden></div>
     </div>
     <div class="puntos-hoy" id="puntosHoy"></div>
+    <a class="progreso-logro" id="progresoLogro" href="logros.html" hidden>
+      <span class="pl-medalla" id="plMedalla"></span>
+      <span class="pl-info">
+        <small>Próximo logro</small>
+        <b id="plNombre"></b>
+        <span class="pl-barra"><i id="plBarra"></i></span>
+        <span class="pl-texto"><strong id="plLlevas"></strong><span id="plFaltan"></span></span>
+      </span>
+    </a>
     <a class="ir-cartera" id="irCartera" href="puntos.html">
       <span class="ir-cartera-txt"><small>Tu cartera</small><b id="carteraTotal">0 pts</b></span>
       <span class="ir-cartera-flecha">Ver mis puntos →</span>
@@ -235,6 +255,7 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe } from "./comun.js";
 import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js";
 import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
@@ -289,9 +310,37 @@ let user = null, ficha = undefined;
 montarAcceso($("acceso"), { titulo: "Entra o crea tu cuenta", texto: `Registra tus resultados, sigue tu evolución y suma puntos: ${PUNTOS.registrar} por cada resultado y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
 $("portadaMarca").textContent = NOMBRE_BOX;
 $("salir").addEventListener("click", () => salir());
+// ---------- Contador de clases hacia el próximo logro (solo logros con "clases" en el nombre) ----------
+let catalogoLogros = [], escuchandoLogros = false;
+function pintarProgresoLogro() {
+  const caja = $("progresoLogro");
+  const l = user && ficha ? siguienteLogroClases(catalogoLogros, ficha) : null;
+  caja.hidden = !l;
+  if (!l) return;
+  const meta = umbralClases(l), n = Math.min(ficha.clases || 0, meta);
+  const med = crearInsignia(l, 78); med.classList.add("bloqueada");
+  const cand = document.createElement("span"); cand.className = "candado";
+  cand.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  $("plMedalla").replaceChildren(med, cand);
+  $("plNombre").textContent = l.nombre;
+  const nv = nivelDe(l.nivel);
+  $("plBarra").style.background = nv ? NIVELES[nv].color : "";
+  $("plBarra").style.width = Math.min(100, (n / meta) * 100) + "%";
+  $("plLlevas").textContent = `${ficha.clases || 0} / ${meta} clases`;
+  const faltan = meta - (ficha.clases || 0);
+  $("plFaltan").textContent = faltan > 0 ? `te ${faltan === 1 ? "falta 1" : `faltan ${faltan}`}` : "¡conseguido!";
+}
+function escucharLogros() {
+  if (escuchandoLogros) return;
+  escuchandoLogros = true;
+  onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...d.data() })); pintarProgresoLogro(); }, () => {});
+}
+
 escucharCuenta((c) => {
   const cambioUsuario = (c.user?.uid || null) !== (user?.uid || null);
   user = c.user; ficha = c.ficha;
+  if (user) escucharLogros();
+  pintarProgresoLogro();
   $("cargandoCuenta").hidden = true;
   document.body.classList.toggle("sin-sesion", !user);
   // Sin sesión, la pantalla de entrar siempre en lila (no en el color de la última clase usada)
@@ -530,7 +579,7 @@ $("formulario").addEventListener("submit", async (e) => {
     const eraNuevo = !miDoc;
     // Los puntos por registrar se suman al momento (una vez por clase y día)
     let sumadosAhora = false;
-    try { sumadosAhora = await sumarRegistro(user, clase); } catch (e) { console.warn("No se han podido sumar los puntos de registro", e); }
+    try { sumadosAhora = await sumarRegistro(user, clase, ficha); } catch (e) { console.warn("No se han podido sumar los puntos de registro", e); }
     $("hecho").querySelector("h2").textContent = eraNuevo ? "¡Registrado!" : "¡Cambios guardados!";
     $("puntosHoy").replaceChildren();
     const pc = PUNTOS.podio[categoria];
