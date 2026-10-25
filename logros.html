@@ -33,7 +33,7 @@
   @keyframes borde-olimpo { to { background-position: 0 0, 0 0, -300% 0; } }
   .med { position: relative; display: inline-grid; margin-bottom: 4px; }
   .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--suave); background: rgba(255,255,255,.05); }
-  .logro.conseguido .chip, .logro.coach .chip { color: var(--tcl); background: color-mix(in srgb, var(--nc) 18%, transparent); }
+  .logro.conseguido .chip, .logro.vista-coach .chip { color: var(--tcl); background: color-mix(in srgb, var(--nc) 18%, transparent); }
   .candado { position: absolute; right: -2px; bottom: 2px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); }
   .candado svg { width: 13px; height: 13px; }
   .mini-barra { width: 100%; margin-top: 2px; }
@@ -198,6 +198,8 @@ function escucharSync() {
 }
 
 escucharCuenta(({ user, ficha: f }) => {
+  // Los socios ven sus logros en su perfil; esta página es para que el coach los gestione
+  if (user && !esCuentaCoach(user)) { location.replace("perfil.html"); return; }
   coach = esCuentaCoach(user);
   ficha = f || null;
   $("coach").hidden = !coach;
@@ -265,7 +267,7 @@ function pintar() {
   for (const l of lista) {
     const mio = mias[l.id];
     const nv = nivelDe(l.nivel);
-    const c = document.createElement("div"); c.className = "logro" + (mio || coach ? " conseguido" : "") + (coach ? " coach" : "") + (nv ? " n-" + nv : "");
+    const c = document.createElement("div"); c.className = "logro" + (mio || coach ? " conseguido" : "") + (coach ? " vista-coach" : "") + (nv ? " n-" + nv : "");
     if (nv) { c.style.setProperty("--nc", NIVELES[nv].color); c.style.setProperty("--tcl", NIVELES[nv].texto); }
     const med = crearInsignia(l, nv ? 124 : 92);
     if (!mio && !coach) {

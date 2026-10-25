@@ -30,11 +30,10 @@ const icono = (n) => {
 };
 
 const PAGINAS = [
-  { id: "resultado", href: "index.html",    texto: "Resultado" },
-  { id: "ranking",   href: "ranking.html",  texto: "Ranking" },
-  { id: "puntos",    href: "puntos.html",   texto: "Puntos" },
   { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
-  { id: "logros",    href: "logros.html",   texto: "Logros" },
+  { id: "ranking",   href: "ranking.html",  texto: "Ranking" },
+  { id: "resultado", href: "index.html",    texto: "Resultado" },
+  { id: "logros",    href: "logros.html",   texto: "Logros", coach: true },   // los socios ven sus logros en su perfil
   { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
   { id: "perfil",    href: "perfil.html",   texto: "Perfil", socio: true },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },

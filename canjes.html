@@ -20,6 +20,46 @@
   h1 { font-family: "Inter", sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -.02em; margin-top: 14px; color: var(--lila); }
   .sub { color: var(--suave); margin-top: 6px; font-size: 15px; line-height: 1.5; }
 
+  /* Cartera */
+  .cartera { position: relative; overflow: hidden; margin-top: 22px; border-radius: 20px; padding: 20px; border: 1px solid rgba(195,155,211,.5); background: linear-gradient(160deg, #43384d, #2a2d32 70%); }
+  .cartera-etiqueta { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--lila); font-weight: 600; }
+  .cartera-nombre { font-size: 17px; font-weight: 700; margin-top: 4px; padding-right: 130px; }
+  .cartera-total { font-weight: 800; font-size: 54px; line-height: 1; margin-top: 10px; color: var(--lila); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .cartera-total small { font-size: 18px; color: var(--suave); margin-left: 6px; font-weight: 600; letter-spacing: 0; }
+  .cartera-puesto { color: var(--suave); margin-top: 6px; font-size: 14px; }
+  .cartera-acc { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .ver-perfil { color: var(--lila); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .ocultar { background: none; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); color: inherit; opacity: .8; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 500; }
+  .oculto-aviso { font-size: 13px; margin-top: 6px; opacity: .8; }
+  h2 { font-size: 20px; font-weight: 700; margin: 30px 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  h2 small { font-size: 13px; font-weight: 500; color: var(--lila); }
+  .historial { display: flex; flex-direction: column; gap: 6px; }
+  .mov { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--lila); border-radius: 12px; padding: 10px 14px; }
+  .mov .t { font-weight: 600; font-size: 15px; }
+  .mov .d { color: var(--suave); font-size: 13px; margin-top: 2px; }
+  .mov .p { font-weight: 800; font-size: 20px; color: var(--lila); }
+  ol.ranking { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  ol.ranking li { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid rgba(195,155,211,.4); border-radius: 12px; padding: 12px 14px; font-size: 16px; cursor: pointer; }
+  ol.ranking .pos { font-weight: 700; font-size: 18px; color: var(--suave); text-align: center; }
+  ol.ranking .nom { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+  ol.ranking .nom .insignia { --t: 22px; }
+  ol.ranking .pts { font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+  ol.ranking .pts small { font-size: 12px; color: var(--suave); margin-left: 3px; font-weight: 500; }
+  ol.ranking li.p1 { border-color: var(--lila); } ol.ranking li.p1 .pos { color: var(--oro); }
+  ol.ranking li.p2 .pos { color: var(--plata); } ol.ranking li.p3 .pos { color: var(--bronce); }
+  ol.ranking li.yo { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 12%, var(--panel)); }
+  ol.ranking .candado { font-size: 13px; }
+  .vacio-caja { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 16px; text-align: center; font-size: 14px; }
+  .ver-ranking { position: absolute; top: 14px; right: 14px; background: rgba(20, 20, 24, .35); border: 1px solid rgba(195,155,211,.45); color: var(--lila); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .ver-ranking.coach-ranking { position: static; margin-top: 16px; }
+  .dlg-ranking { margin: auto; width: min(480px, calc(100vw - 24px)); max-height: 86dvh; background: var(--fondo); color: var(--texto); border: 1px solid var(--borde); border-radius: 20px; padding: 18px; }
+  .dlg-ranking::backdrop { background: rgba(0, 0, 0, .7); }
+  .dlg-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .dlg-cab b { font-size: 19px; }
+  .dlg-cab button { background: none; border: 0; color: var(--suave); font-size: 20px; }
+  .dlg-ranking ol.ranking { max-height: calc(86dvh - 80px); overflow: auto; }
+  .como { margin-top: 22px; color: var(--suave); font-size: 13px; line-height: 1.6; }
+  .como b { color: var(--texto); }
   /* Saldo */
   .saldo { margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--borde); }
   .saldo > span { color: var(--suave); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
@@ -27,9 +67,12 @@
   .saldo b small { font-size: 15px; font-weight: 600; color: var(--suave); margin-left: 4px; letter-spacing: 0; }
 
   /* Catálogo */
-  .lista { list-style: none; margin-top: 8px; }
-  .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 20px 0; border-bottom: 1px solid var(--borde); }
-  .item:last-child { border-bottom: 0; }
+  .lista { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 12px; }
+  .item { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 16px; border-radius: 18px; background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--lila) 45%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lila) 7%, transparent); }
+  .item.alcanzable { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 9%, var(--panel)); }
+  .item-foto { border: 1px solid color-mix(in srgb, var(--lila) 40%, transparent); }
+  .lista .vacio { list-style: none; }
   .item-nombre { font-size: 17px; font-weight: 600; }
   .item-desc { grid-column: 1 / 2; color: var(--suave); font-size: 14px; line-height: 1.45; }
   .item-coste { grid-row: 1 / 3; grid-column: 2; text-align: right; align-self: start; }
@@ -106,13 +149,19 @@
   <header>
     <div class="marca">Olympo Box</div>
     <h1>Canjes</h1>
-    <p class="sub">Lo que puedes conseguir con tus puntos.</p>
+    <p class="sub">Tu cartera de puntos y todo lo que puedes conseguir con ellos.</p>
   </header>
 
-  <div class="saldo" id="saldo">
-    <span>Tus puntos</span>
-    <b><span id="misPuntos">0</span><small>pts</small></b>
-  </div>
+  <button type="button" class="ver-ranking coach-ranking" id="rankingCoach" hidden>🏆 Ranking de puntos</button>
+  <section class="cartera" id="saldo" hidden>
+    <button type="button" class="ver-ranking" id="verRanking">🏆 Ranking de puntos</button>
+    <div class="cartera-etiqueta">Tu cartera</div>
+    <div class="cartera-nombre" id="carteraNombre"></div>
+    <div class="cartera-total"><span id="misPuntos">0</span><small>pts</small></div>
+    <div class="cartera-puesto" id="carteraPuesto"></div>
+    <div class="oculto-aviso" id="ocultoAviso" hidden>🔒 Tus puntos están ocultos: los demás no los ven y no sales en el ranking.</div>
+    <div class="cartera-acc"><a class="ver-perfil" href="perfil.html">Ver mi perfil →</a><button type="button" class="ocultar" id="ocultar">Ocultar mis puntos</button></div>
+  </section>
 
   <div class="aviso-ok" id="avisoOk" role="status" hidden></div>
   <section class="pedidos" id="pedidos" hidden>
@@ -142,10 +191,23 @@
     </div>
   </form>
 
+  <h2 id="tituloCanjeables">Canjeables <small id="nAlcanzables"></small></h2>
   <ul class="lista" id="lista"><li class="vacio">Cargando…</li></ul>
+
+  <section id="zonaHistorial" hidden>
+    <h2>Tus puntos de hoy</h2>
+    <div class="historial" id="historial"></div>
+  </section>
+
+  <p class="como" id="como"></p>
 
   <p class="nota" id="nota"></p>
 </main>
+
+<dialog class="dlg-ranking" id="dlgRanking" aria-label="Ranking de puntos">
+  <div class="dlg-cab"><b>Ranking de puntos</b><button type="button" id="cerrarRanking" aria-label="Cerrar">✕</button></div>
+  <ol class="ranking" id="ranking"><div class="vacio-caja">Cargando…</div></ol>
+</dialog>
 
 <dialog class="zoom" id="zoom" aria-label="Foto del objeto">
   <div class="zoom-caja">
@@ -157,8 +219,8 @@
 </dialog>
 
 <script type="module">
-import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy } from "./comun.js";
+import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach } from "./menu.js";
 
@@ -175,7 +237,15 @@ escucharCuenta(({ user: u, ficha }) => {
   puntos = ficha?.puntos || 0;
   miNombre = ficha?.nombre || "";
   $("misPuntos").textContent = fmtPuntos(puntos);
-  $("saldo").hidden = coach;
+  $("saldo").hidden = coach || !u;
+  $("rankingCoach").hidden = !coach;
+  $("carteraNombre").textContent = ficha?.nombre || u?.displayName || "";
+  oculto = !!ficha?.ocultarPuntos;
+  $("ocultoAviso").hidden = !oculto;
+  $("ocultar").textContent = oculto ? "Mostrar mis puntos" : "Ocultar mis puntos";
+  $("zonaHistorial").hidden = coach || !u;
+  escucharHistorial(coach ? null : u);
+  pintarRanking();
   $("nuevo").hidden = !coach;
   $("nota").textContent = coach
     ? "Los socios ven este catálogo y cuántos puntos les faltan. Cuando entregues un objeto, pulsa Entregar y elige al socio: se le descuentan los puntos y queda en su historial."
@@ -270,7 +340,11 @@ function pintar() {
     ul.append(Object.assign(document.createElement("li"), { className: "vacio", textContent: coach ? "Todavía no hay objetos. Añade el primero arriba." : "Pronto habrá objetos para canjear." }));
     return;
   }
-  for (const o of objetos) {
+  // Primero los que ya puede canjear, luego el resto (del más barato al más caro)
+  const orden = coach ? objetos : [...objetos].sort((a, b) => ((a.puntos > puntos) - (b.puntos > puntos)) || a.puntos - b.puntos);
+  const llega = objetos.filter((o) => o.puntos <= puntos).length;
+  $("nAlcanzables").textContent = coach ? "" : (llega ? `Puedes canjear ${llega}` : "");
+  for (const o of orden) {
     const li = document.createElement("li"); li.className = "item" + (o.imagen ? " con-foto" : "");
     if (o.imagen) {
       const im = Object.assign(document.createElement("img"), { className: "item-foto", src: o.imagen, alt: o.nombre, loading: "lazy" });
@@ -461,6 +535,83 @@ $("nuevo").addEventListener("submit", async (e) => {
     limpiar();
   } catch (err) { console.error(err); mensaje(err?.code === "permission-denied" ? "Solo la cuenta del coach puede añadir objetos." : "No se ha podido guardar.", true); }
 });
+
+// ---------- Cartera: puntos de hoy, ocultar y ranking de puntos (antes en la pestaña Puntos) ----------
+let oculto = false, dejarHistorial = null, historialDe = null, todos = [];
+$("ocultar").addEventListener("click", async () => {
+  if (!user) return;
+  $("ocultar").disabled = true;
+  try { await updateDoc(doc(db, "usuarios", user.uid), { ocultarPuntos: !oculto }); } catch (e) { console.error(e); }
+  $("ocultar").disabled = false;
+});
+function escucharHistorial(u) {
+  const quien = u?.uid || null;
+  if (quien === historialDe) return;
+  if (dejarHistorial) { dejarHistorial(); dejarHistorial = null; }
+  historialDe = quien;
+  if (!quien) return;
+  dejarHistorial = onSnapshot(query(collection(db, "usuarios", quien, "movimientos"), where("fecha", "==", hoy())), (s) => {
+    const cont = $("historial"); cont.replaceChildren();
+    if (s.empty) { cont.append(Object.assign(document.createElement("div"), { className: "vacio-caja", textContent: "Hoy aún no has sumado puntos. Sube tu resultado y suma los primeros." })); return; }
+    s.docs.map((d) => d.data()).sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).forEach((m) => {
+      const c = CLASES[m.clase] || CLASES.wod;
+      const fila = document.createElement("div"); fila.className = "mov";
+      const izq = document.createElement("div");
+      const t = document.createElement("div"); t.className = "t";
+      const dd = document.createElement("div"); dd.className = "d";
+      const dia = new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+      dd.textContent = dia;
+      if (m.tipo === "insignia") t.textContent = `🏅 Logro · ${m.nombre || ""}`;
+      else if (m.tipo === "canje") { t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`; if (m.estado === "pendiente") dd.textContent = `${dia} · pendiente de recoger`; }
+      else if (m.tipo === "evento") t.textContent = `🎉 Evento · ${m.nombre || ""}`;
+      else if (m.tipo === "registro") t.textContent = `${c.nombre} · ✅ Resultado registrado`;
+      else { t.textContent = `${c.nombre} · ${m.posicion <= 3 ? ["", "🥇", "🥈", "🥉"][m.posicion] + " " : ""}${m.posicion}º en ${m.categoria}`; dd.textContent = `${dia} · podio${m.resultado ? " · " + m.resultado : ""}`; }
+      izq.append(t, dd);
+      const p = document.createElement("div"); p.className = "p"; p.textContent = (m.puntos < 0 ? "−" : "+") + fmtPuntos(Math.abs(m.puntos));
+      fila.append(izq, p); cont.append(fila);
+    });
+  }, () => {});
+}
+onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(100)), (s) => {
+  todos = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
+  pintarRanking();
+}, () => { $("ranking").innerHTML = '<div class="vacio-caja">No se ha podido cargar el ranking.</div>'; });
+function pintarRanking() {
+  // Quien ha ocultado sus puntos no sale (el coach sí lo ve, con un candado)
+  const ranking = coach ? todos : todos.filter((u) => !u.ocultarPuntos);
+  const ol = $("ranking"); ol.replaceChildren();
+  if (!ranking.length) ol.append(Object.assign(document.createElement("div"), { className: "vacio-caja", textContent: "Todavía nadie tiene puntos. ¡Sé el primero!" }));
+  let puesto = 0, anterior = null, mio = "";
+  ranking.forEach((u, i) => {
+    if (u.puntos !== anterior) { puesto = i + 1; anterior = u.puntos; }
+    const li = document.createElement("li");
+    if (puesto <= 3) li.classList.add("p" + puesto);
+    if (user && u.uid === user.uid) { li.classList.add("yo"); mio = `Vas ${puesto}º de ${ranking.length} en el ranking de puntos.`; }
+    const a = Object.assign(document.createElement("span"), { className: "pos", textContent: puesto });
+    const b = Object.assign(document.createElement("span"), { className: "nom", textContent: u.nombre || "Socio" });
+    const top = insigniasDe(u)[0];
+    if (top) b.append(crearInsignia(top, 22));
+    if (u.ocultarPuntos) b.append(Object.assign(document.createElement("span"), { className: "candado", textContent: "🔒" }));
+    const c = Object.assign(document.createElement("span"), { className: "pts", textContent: fmtPuntos(u.puntos) });
+    c.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
+    li.append(a, b, c);
+    li.addEventListener("click", () => (location.href = "perfil.html?uid=" + encodeURIComponent(u.uid)));
+    ol.append(li);
+  });
+  $("carteraPuesto").textContent = mio || (oculto ? "" : "Aún no estás en el ranking. ¡Registra tu resultado!");
+}
+$("como").append(
+  Object.assign(document.createElement("b"), { textContent: "Cómo se ganan puntos: " }),
+  `${PUNTOS.registrar} por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
+  ["RX", "Scaled", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
+  ". También con logros y eventos."
+);
+
+const abrirRanking = () => $("dlgRanking").showModal();
+$("verRanking").addEventListener("click", abrirRanking);
+$("rankingCoach").addEventListener("click", abrirRanking);
+$("cerrarRanking").addEventListener("click", () => $("dlgRanking").close());
+$("dlgRanking").addEventListener("click", (e) => { if (e.target === $("dlgRanking")) $("dlgRanking").close(); });
 </script>
 </body>
 </html>

@@ -185,13 +185,13 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy } from "./comun.js";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
-$("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "puntos.html")));
+$("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "canjes.html")));
 
 const uid = new URLSearchParams(location.search).get("uid");
 let ficha = null, catalogo = [], ranking = [], yo = null, foto = null, dejarFoto = null, fotoNueva;
@@ -266,6 +266,11 @@ function pintar() {
     const d = document.createElement("div"); d.className = "medalla falta";
     const med = crearInsignia(l, 88); med.classList.add("bloqueada");
     d.append(med, Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: l.nombre }));
+    // Contador en los logros de clases: cuántas lleva y cuántas le faltan
+    if (esLogroDeClases(l) && umbralClases(l) > 0) {
+      const meta = umbralClases(l), n = ficha.clases || 0;
+      d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)} / ${meta} · faltan ${Math.max(0, meta - n)}` }));
+    }
     f.append(d);
   }
 }
