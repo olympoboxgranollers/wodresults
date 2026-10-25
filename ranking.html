@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025c">
+<link rel="stylesheet" href="estilos.css?v=20261025d">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -185,10 +185,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js?v=20261025c";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261025c";
-import { escucharCuenta } from "./cuenta.js?v=20261025c";
-import { insigniasDe, crearInsignia, fmtPuntos } from "./comun.js?v=20261025c";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js?v=20261025d";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261025d";
+import { escucharCuenta } from "./cuenta.js?v=20261025d";
+import { insigniasDe, crearInsignia, fmtPuntos } from "./comun.js?v=20261025d";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";

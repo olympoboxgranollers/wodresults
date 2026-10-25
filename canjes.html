@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025c">
+<link rel="stylesheet" href="estilos.css?v=20261025d">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -220,9 +220,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia } from "./comun.js?v=20261025c";
-import { escucharCuenta } from "./cuenta.js?v=20261025c";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261025c";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia } from "./comun.js?v=20261025d";
+import { escucharCuenta } from "./cuenta.js?v=20261025d";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261025d";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
