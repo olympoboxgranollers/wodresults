@@ -2,7 +2,7 @@ name: Clases desde AimHarder
 
 on:
   schedule:
-    - cron: "17 * * * *"   # cada hora (a y 17)
+    - cron: "17 */3 * * *"   # cada hora (a y 17)
   workflow_dispatch:
     inputs:
       prueba:
