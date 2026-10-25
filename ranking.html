@@ -58,6 +58,71 @@
   li.nuevo { animation: entra 1.6s ease-out; }
   @keyframes entra { 0% { background: var(--malva); } 100% { background: var(--panel); } }
   @media (prefers-reduced-motion: reduce) { li.nuevo { animation: none; } }
+  /* Vistas: hoy / general + buscador */
+  .vistas { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--panel); border: 1px solid var(--borde); }
+  .seg button { border: 0; background: none; color: var(--suave); font-weight: 600; font-size: 14px; padding: 7px 16px; border-radius: 999px; }
+  .seg button[aria-pressed="true"] { background: var(--lila); color: #1f2125; }
+  .buscar { position: relative; flex: 1; min-width: 0; }
+  .buscar input { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; padding: 9px 14px 9px 34px; font-size: 14px; color: var(--texto); outline: none; }
+  .buscar input:focus { border-color: var(--lila); }
+  .buscar::before { content: ""; position: absolute; left: 13px; top: 50%; width: 10px; height: 10px; border: 2px solid var(--suave); border-radius: 50%; transform: translateY(-62%); }
+  .buscar::after { content: ""; position: absolute; left: 23px; top: 58%; width: 6px; height: 2px; background: var(--suave); transform: rotate(45deg); }
+  .resultados-busqueda { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); background: #26282d; border: 1px solid var(--borde); border-radius: 14px; overflow: hidden; box-shadow: 0 14px 30px rgba(0,0,0,.45); max-height: 320px; overflow-y: auto; }
+  .resultados-busqueda a { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: var(--texto); text-decoration: none; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .resultados-busqueda a:hover, .resultados-busqueda a:focus { background: rgba(255,255,255,.05); }
+  .resultados-busqueda .ini { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: color-mix(in srgb, var(--lila) 20%, var(--panel)); color: var(--lila); flex: none; }
+  .resultados-busqueda .nada { padding: 12px 14px; color: var(--suave); font-size: 14px; }
+  /* Reacciones a cada resultado */
+  .reac { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .reac button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.04); color: var(--texto); border-radius: 999px; padding: 3px 9px; font-size: 13px; line-height: 1.2; }
+  .reac button b { font-size: 12px; font-weight: 600; color: var(--suave); }
+  .reac button.mia { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 18%, transparent); }
+  .reac button.mia b { color: var(--texto); }
+  .reac .mas { color: var(--suave); padding: 3px 8px; }
+  .elegir-reac { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: #26282d; border: 1px solid var(--borde); }
+  .elegir-reac button { border: 0 !important; background: none !important; font-size: 20px; padding: 2px 6px !important; }
+  /* Ranking general */
+  .general li { grid-template-columns: 34px 1fr auto; }
+  .general .pts { font-family: "Oswald", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .general .pts small { font-family: "Inter", sans-serif; font-size: 12px; color: var(--suave); margin-left: 3px; }
+  .general li { border-color: color-mix(in srgb, var(--lila) 45%, transparent) !important; background: var(--panel); }
+  .general li.p1 { border-color: var(--lila) !important; box-shadow: 0 0 0 1px var(--lila), 0 0 18px color-mix(in srgb, var(--lila) 30%, transparent); }
+  .general li.yo { background: color-mix(in srgb, var(--lila) 12%, var(--panel)); }
+  .general .nom { display: flex; align-items: center; gap: 6px; }
+  .general .nom .insignia { --t: 22px; }
+  .nota-general { color: var(--suave); font-size: 13px; line-height: 1.5; margin: -4px 0 12px; }
+  .recalcular { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 14px; font-size: 13px; margin-bottom: 12px; }
+  /* Chat */
+  /* Esfera de cristal */
+  .chat-boton { position: fixed; right: 16px; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 41; width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; overflow: visible;
+    color: #fff; border: 1px solid rgba(255,255,255,.28);
+    background:
+      radial-gradient(circle at 32% 24%, rgba(255,255,255,.55), rgba(255,255,255,0) 32%),
+      radial-gradient(circle at 70% 85%, color-mix(in srgb, var(--lila) 55%, transparent), transparent 60%),
+      radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--lila) 22%, rgba(30,32,36,.55)), rgba(30,32,36,.35));
+    -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,.45), inset 0 -6px 12px color-mix(in srgb, var(--lila) 30%, transparent), 0 8px 20px rgba(0,0,0,.35), 0 0 14px color-mix(in srgb, var(--lila) 35%, transparent); }
+  .chat-boton svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+  .chat-boton svg { width: 22px; height: 22px; position: relative; }
+  .chat-boton .no-leidos { position: absolute; top: 1px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--lila); color: #1f2125; font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+  .chat { margin: auto auto 0; width: min(560px, 100vw); max-width: 100vw; height: min(78dvh, 640px); padding: 0; border: 1px solid var(--borde); border-bottom: 0; border-radius: 22px 22px 0 0; background: #23252a; color: var(--texto); }
+  .chat[open] { display: flex; flex-direction: column; }
+  .chat::backdrop { background: rgba(0,0,0,.55); }
+  .chat-cab { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .chat-cab b { font-size: 17px; } .chat-cab small { display: block; color: var(--suave); font-size: 12px; font-weight: 400; }
+  .chat-cab button { background: none; border: 0; color: var(--suave); font-size: 20px; }
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; }
+  .msg-chat { max-width: 82%; align-self: flex-start; background: var(--panel); border-radius: 16px 16px 16px 4px; padding: 8px 12px; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+  .msg-chat .quien { display: block; font-size: 12px; font-weight: 700; color: var(--lila); margin-bottom: 2px; }
+  .msg-chat .hora { font-size: 10.5px; color: var(--suave); margin-left: 8px; }
+  .msg-chat.mio { align-self: flex-end; background: color-mix(in srgb, var(--lila) 26%, var(--panel)); border-radius: 16px 16px 4px 16px; }
+  .msg-chat .borrar-msg { background: none; border: 0; color: var(--suave); font-size: 11px; margin-left: 6px; padding: 0; }
+  .chat-vacio { color: var(--suave); text-align: center; margin: auto; font-size: 14px; }
+  .chat-form { display: flex; gap: 8px; padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255,255,255,.06); }
+  .chat-form input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 999px; padding: 11px 16px; font-size: 16px; color: var(--texto); outline: none; }
+  .chat-form input:focus { border-color: var(--lila); }
+  .chat-form button { flex: none; width: 46px; border: 0; border-radius: 50%; background: var(--lila); color: #1f2125; font-size: 18px; font-weight: 800; }
   .vacio { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 20px; text-align: center; }
 </style>
 </head>
@@ -71,7 +136,25 @@
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
   </header>
 
-  <div class="cuerpo">
+  <div class="vistas">
+    <div class="seg" role="tablist" aria-label="Ranking">
+      <button type="button" id="verHoy" aria-pressed="true">Hoy</button>
+      <button type="button" id="verGeneral" aria-pressed="false">General</button>
+    </div>
+    <div class="buscar">
+      <input id="buscar" type="search" placeholder="Buscar atleta…" autocomplete="off" aria-label="Buscar el perfil de un atleta">
+      <div class="resultados-busqueda" id="resBusqueda" hidden></div>
+    </div>
+  </div>
+
+  <section class="general" id="vistaGeneral" hidden>
+    <h2>Ranking general <small id="nGeneral"></small></h2>
+    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día. No cuentan logros, eventos ni canjes.</p>
+    <button type="button" class="recalcular" id="recalcular" hidden>Recalcular desde el historial</button>
+    <ol id="listaGeneral"></ol>
+  </section>
+
+  <div class="cuerpo" id="vistaHoy">
   <aside class="lateral">
     <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
   </aside>
@@ -89,11 +172,23 @@
 </main>
 <div class="fecha-hoy" id="fecha"></div>
 
+<button type="button" class="chat-boton" id="chatBoton" aria-label="Abrir el chat del box" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 4.5h13a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-4.5 3.5v-3.5h0a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/></svg><span class="no-leidos" id="noLeidos" hidden></span></button>
+<dialog class="chat" id="chat" aria-label="Chat del box">
+  <div class="chat-cab"><b>Chat del box<small>Los mensajes de hoy · se borran cada día</small></b><button type="button" id="chatCerrar" aria-label="Cerrar">✕</button></div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <form class="chat-form" id="chatForm" autocomplete="off">
+    <input id="chatTexto" maxlength="300" placeholder="Escribe un mensaje…" aria-label="Mensaje">
+    <button type="submit" aria-label="Enviar">➤</button>
+  </form>
+</dialog>
+
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
-import { doc, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js";
-import { montarMenu, abrirEditor } from "./menu.js";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js";
+import { escucharCuenta } from "./cuenta.js";
+import { insigniasDe, crearInsignia, fmtPuntos } from "./comun.js";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -101,7 +196,16 @@ $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long
 
 let clase = claseInicial();
 let esCoach = false;
-const menu = montarMenu({ actual: "ranking", cuenta: false, alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
+const menu = montarMenu({ actual: "ranking", cuenta: false });
+// Coach y entrenadores: tocar un resultado abre el editor
+escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; pintar(); });
+let esAdmin = false, yo = null, miNombre = "";
+escucharCuenta(({ user, ficha }) => {
+  yo = user; miNombre = ficha?.nombre || user?.displayName || "";
+  $("chatBoton").hidden = !user;
+  if (user) escucharChat();
+  pintar();
+});
 let wod = null;
 let todos = [];        // resultados de hoy de todas las clases
 let resultados = [];   // solo los de la clase elegida
@@ -148,6 +252,7 @@ function pintar() {
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
+    if (r.id && !r.id.startsWith("_")) li.append(filaReacciones(r));
     // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
     if (esCoach && r.id && !r.id.startsWith("_")) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }
     // Socios: tocar a alguien abre su perfil con sus logros
@@ -164,6 +269,166 @@ function pintar() {
   resultados.forEach((r) => vistos.add(r.id));
   if (cargado.res) primeraCarga = false;  // no resaltar como "nuevos" los que ya estaban al abrir
 }
+
+// ---------- Reacciones a los resultados ----------
+const EMOJIS = ["🔥", "💪", "👏", "😮", "😂"];
+let abiertoReac = null;
+function filaReacciones(r) {
+  const caja = document.createElement("div"); caja.className = "reac";
+  caja.addEventListener("click", (e) => e.stopPropagation());
+  const todas = r.reacciones || {};
+  const mia = yo ? todas[yo.uid] : null;
+  const cuenta = {};
+  for (const e of Object.values(todas)) if (EMOJIS.includes(e)) cuenta[e] = (cuenta[e] || 0) + 1;
+  for (const e of EMOJIS) if (cuenta[e]) {
+    const b = Object.assign(document.createElement("button"), { type: "button", className: mia === e ? "mia" : "" });
+    b.append(e, Object.assign(document.createElement("b"), { textContent: cuenta[e] }));
+    b.title = mia === e ? "Quitar tu reacción" : "Reaccionar";
+    b.addEventListener("click", () => reaccionar(r, mia === e ? null : e));
+    caja.append(b);
+  }
+  if (!yo) return caja;
+  if (abiertoReac === r.id) {
+    const sel = document.createElement("div"); sel.className = "elegir-reac";
+    for (const e of EMOJIS) { const b = Object.assign(document.createElement("button"), { type: "button", textContent: e }); b.addEventListener("click", () => { abiertoReac = null; reaccionar(r, mia === e ? null : e); }); sel.append(b); }
+    caja.append(sel);
+  } else {
+    const mas = Object.assign(document.createElement("button"), { type: "button", className: "mas", textContent: mia ? "Cambiar" : "＋ 🙂" });
+    mas.setAttribute("aria-label", "Reaccionar a este resultado");
+    mas.addEventListener("click", () => { abiertoReac = r.id; pintar(); });
+    caja.append(mas);
+  }
+  return caja;
+}
+async function reaccionar(r, emoji) {
+  if (!yo) return;
+  try { await updateDoc(doc(db, "resultados", r.id), { [`reacciones.${yo.uid}`]: emoji ? emoji : deleteField() }); }
+  catch (e) { console.warn("No se ha podido reaccionar", e); }
+}
+
+// ---------- Hoy / General ----------
+let vista = "hoy", dejarGeneral = null, generales = [];
+function verVista(v) {
+  vista = v;
+  $("verHoy").setAttribute("aria-pressed", String(v === "hoy")); $("verGeneral").setAttribute("aria-pressed", String(v === "general"));
+  $("vistaHoy").hidden = v !== "hoy"; $("vistaGeneral").hidden = v !== "general";
+  $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy";
+  if (v === "general" && !dejarGeneral) {
+    dejarGeneral = onSnapshot(query(collection(db, "usuarios"), orderBy("puntosRanking", "desc"), limit(100)), (s) => {
+      generales = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntosRanking || 0) > 0);
+      pintarGeneral();
+    }, () => { $("listaGeneral").innerHTML = '<div class="vacio">No se ha podido cargar el ranking.</div>'; });
+  }
+}
+$("verHoy").addEventListener("click", () => verVista("hoy"));
+$("verGeneral").addEventListener("click", () => verVista("general"));
+function pintarGeneral() {
+  const ol = $("listaGeneral"); ol.replaceChildren();
+  $("nGeneral").textContent = generales.length ? `${generales.length} atletas` : "";
+  if (!generales.length) { ol.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no hay puntos en el ranking general." })); return; }
+  let puesto = 0, ant = null;
+  generales.forEach((u, i) => {
+    if (u.puntosRanking !== ant) { puesto = i + 1; ant = u.puntosRanking; }
+    const li = document.createElement("li");
+    if (puesto <= 3) li.classList.add("p" + puesto);
+    if (yo && u.uid === yo.uid) li.classList.add("yo");
+    const nom = Object.assign(document.createElement("span"), { className: "nom", textContent: u.nombre || "Atleta" });
+    const top = insigniasDe(u)[0]; if (top) nom.append(crearInsignia(top, 22));
+    const pts = Object.assign(document.createElement("span"), { className: "pts", textContent: fmtPuntos(u.puntosRanking) });
+    pts.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
+    li.append(Object.assign(document.createElement("span"), { className: "pos", textContent: puesto }), nom, pts);
+    li.classList.add("con-perfil");
+    li.addEventListener("click", () => (location.href = "perfil.html?uid=" + encodeURIComponent(u.uid)));
+    ol.append(li);
+  });
+}
+// Coach: calcula el ranking general con el historial de puntos (registrar + podio) de cada socio
+$("recalcular").addEventListener("click", async () => {
+  const b = $("recalcular"); b.disabled = true; b.textContent = "Calculando…";
+  try {
+    const socios = (await getDocs(collection(db, "usuarios"))).docs;
+    let lote = writeBatch(db), n = 0;
+    for (const s of socios) {
+      const movs = await getDocs(collection(db, "usuarios", s.id, "movimientos"));
+      const total = movs.docs.map((d) => d.data()).filter((m) => m.tipo === "registro" || m.tipo === "podio").reduce((a, m) => a + (m.puntos || 0), 0);
+      lote.update(doc(db, "usuarios", s.id), { puntosRanking: total }); n++;
+      if (n % 400 === 0) { await lote.commit(); lote = writeBatch(db); }
+    }
+    await lote.commit();
+    b.textContent = `✓ Recalculado (${socios.length} atletas)`;
+  } catch (e) { console.error(e); b.textContent = "No se ha podido recalcular"; }
+  setTimeout(() => { b.disabled = false; b.textContent = "Recalcular desde el historial"; }, 4000);
+});
+
+// ---------- Buscar el perfil de un atleta ----------
+let todosAtletas = null;
+async function cargarAtletas() {
+  if (todosAtletas) return todosAtletas;
+  todosAtletas = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => u.nombre);
+  return todosAtletas;
+}
+const sinTildes = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+$("buscar").addEventListener("input", async () => {
+  const q = sinTildes($("buscar").value.trim()), caja = $("resBusqueda");
+  if (!q) { caja.hidden = true; return; }
+  const lista = (await cargarAtletas()).filter((u) => sinTildes(u.nombre).includes(q)).slice(0, 12);
+  caja.replaceChildren();
+  if (!lista.length) caja.append(Object.assign(document.createElement("div"), { className: "nada", textContent: "No hay ningún atleta con ese nombre." }));
+  for (const u of lista) {
+    const a = Object.assign(document.createElement("a"), { href: "perfil.html?uid=" + encodeURIComponent(u.uid) });
+    a.append(Object.assign(document.createElement("span"), { className: "ini", textContent: u.nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase() }), document.createTextNode(u.nombre));
+    caja.append(a);
+  }
+  caja.hidden = false;
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".buscar")) $("resBusqueda").hidden = true; });
+
+// ---------- Chat del box (mensajes del día) ----------
+let dejarChat = null, mensajes = [];
+const claveLeido = () => "chat-leido-" + hoy();
+function escucharChat() {
+  if (dejarChat) return;
+  dejarChat = onSnapshot(query(collection(db, "chat", hoy(), "mensajes"), orderBy("creado", "asc"), limit(200)), (s) => {
+    mensajes = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+    pintarChat();
+  }, () => {});
+}
+function pintarChat() {
+  const cont = $("chatMsgs"), abajo = cont.scrollHeight - cont.scrollTop - cont.clientHeight < 60;
+  cont.replaceChildren();
+  if (!mensajes.length) cont.append(Object.assign(document.createElement("div"), { className: "chat-vacio", textContent: "Todavía no hay mensajes hoy. ¡Escribe el primero!" }));
+  for (const m of mensajes) {
+    const d = document.createElement("div"); d.className = "msg-chat" + (yo && m.uid === yo.uid ? " mio" : "");
+    if (!(yo && m.uid === yo.uid)) d.append(Object.assign(document.createElement("span"), { className: "quien", textContent: m.nombre || "Atleta" }));
+    d.append(document.createTextNode(m.texto));
+    const h = m.creado?.seconds ? new Date(m.creado.seconds * 1000).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "";
+    d.append(Object.assign(document.createElement("span"), { className: "hora", textContent: h }));
+    if (yo && (m.uid === yo.uid || esCoach)) {
+      const b = Object.assign(document.createElement("button"), { type: "button", className: "borrar-msg", textContent: "✕" });
+      b.setAttribute("aria-label", "Borrar mensaje");
+      b.addEventListener("click", () => deleteDoc(doc(db, "chat", hoy(), "mensajes", m.id)).catch(() => {}));
+      d.append(b);
+    }
+    cont.append(d);
+  }
+  if (abajo || !$("chat").open) cont.scrollTop = cont.scrollHeight;
+  // Mensajes sin leer
+  let leido = 0; try { leido = Number(localStorage.getItem(claveLeido()) || 0); } catch {}
+  if ($("chat").open) { leido = mensajes.length; try { localStorage.setItem(claveLeido(), String(leido)); } catch {} }
+  const sin = Math.max(0, mensajes.length - leido);
+  $("noLeidos").hidden = !sin; $("noLeidos").textContent = sin > 9 ? "9+" : sin;
+}
+$("chatBoton").addEventListener("click", () => { $("chat").showModal(); pintarChat(); $("chatMsgs").scrollTop = $("chatMsgs").scrollHeight; setTimeout(() => $("chatTexto").focus(), 50); });
+$("chatCerrar").addEventListener("click", () => $("chat").close());
+$("chat").addEventListener("click", (e) => { if (e.target === $("chat")) $("chat").close(); });
+$("chatForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const texto = $("chatTexto").value.trim().replace(/\s+/g, " ").slice(0, 300);
+  if (!texto || !yo) return;
+  $("chatTexto").value = "";
+  try { await addDoc(collection(db, "chat", hoy(), "mensajes"), { uid: yo.uid, nombre: (miNombre || "Atleta").slice(0, 40), texto, creado: serverTimestamp() }); }
+  catch (err) { console.warn(err); $("chatTexto").value = texto; }
+});
 
 let dejarWod = null;
 function escucharWod() {

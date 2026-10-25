@@ -1,10 +1,31 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
-import { doc, updateDoc, getDoc, setDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe } from "./comun.js";
+import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { COACH_EMAIL } from "./config.js";
 
 export const esCuentaCoach = (user) => !!user && user.email?.toLowerCase() === COACH_EMAIL.toLowerCase();
+
+// ---------- Entrenadores: socios normales que además pueden publicar el WOD y corregir resultados ----------
+// La lista la gestiona solo el admin principal (publicar.html → Entrenadores) y se guarda en ajustes/entrenadores
+let entrenadores = [], escuchandoEntrenadores = false, usuarioRol = null;
+const oyentesRol = new Set();
+export const esEntrenador = (user) => !!user && !esCuentaCoach(user) && entrenadores.includes((user.email || "").toLowerCase());
+export const esStaff = (user) => esCuentaCoach(user) || esEntrenador(user);
+const rolDe = (user) => ({ user, coach: esCuentaCoach(user), entrenador: esEntrenador(user), staff: esStaff(user) });
+function arrancarEntrenadores() {
+  if (escuchandoEntrenadores) return;
+  escuchandoEntrenadores = true;
+  onSnapshot(doc(db, "ajustes", "entrenadores"), (s) => {
+    entrenadores = (s.exists() ? s.data().emails || [] : []).map((e) => String(e).toLowerCase());
+    for (const cb of oyentesRol) cb(rolDe(usuarioRol));
+  }, () => {});
+}
+// cb({ user, coach, entrenador, staff }) cada vez que cambia quién ha entrado o la lista de entrenadores
+export function escucharRol(cb) {
+  oyentesRol.add(cb);
+  escucharCuenta(({ user }) => { usuarioRol = user; if (user) arrancarEntrenadores(); cb(rolDe(user)); });
+}
 
 // Iconos de línea propios (mismo trazo en todos)
 const ICONOS = {
@@ -36,8 +57,8 @@ const PAGINAS = [
   { id: "logros",    href: "logros.html",   texto: "Logros", coach: true },   // los socios ven sus logros en su perfil
   { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
   { id: "perfil",    href: "perfil.html",   texto: "Perfil", socio: true },
-  { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },
-  { id: "publicar",  href: "publicar.html", texto: "Publicar", coach: true }
+  { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", staff: true },
+  { id: "publicar",  href: "publicar.html", texto: "Publicar", staff: true }
 ];
 
 // Pinta el menú. opciones: actual (id de la página), cuenta (mostrar botón Entrar/Salir), tv (versión pequeña para la TV),
@@ -74,6 +95,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     try { clase = localStorage.getItem("wod-clase") || ""; } catch {}
     for (const p of PAGINAS) {
       if (p.coach && !coach) continue;
+      if (p.staff && !esStaff(user)) continue;
       if (p.id === "resultado" && coach) continue;  // el coach no registra resultados
       if (p.socio && coach) continue;               // el coach no tiene perfil de atleta
       const a = document.createElement("a");
@@ -92,7 +114,13 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     }
   };
   pintar();
+  oyentesRol.add(() => pintar());
   escucharCuenta(({ user: u, ficha }) => {
+    if (u) arrancarEntrenadores();
+    usuarioRol = u;
+    // Socios: logros que ya le tocan, aviso de logro nuevo y aviso de evento nuevo
+    if (u && !esCuentaCoach(u) && ficha) { revisarLogros(u, ficha); avisarLogrosNuevos(u, ficha); }
+    if (u && !esCuentaCoach(u)) vigilarEventosNuevos(actual);
     // Sin perfil de atleta no se puede usar la app: se pide una vez (el coach no lo necesita)
     if (u && !esCuentaCoach(u) && ficha !== undefined && (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado)) pedirPerfil(u, ficha);
     else if (dlgPerfil?.open) dlgPerfil.close();
@@ -113,6 +141,120 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
   return { repintar: pintar };
+}
+
+// ---------- Logros: se dan solos al llegar a las clases y se avisan con una ventana ----------
+let catalogoLogros = null, escuchandoLogros = false, otorgando = false, ultimaFicha = null, ultimoUser = null;
+function revisarLogros(user, ficha) {
+  ultimaFicha = ficha; ultimoUser = user;
+  if (!escuchandoLogros) {
+    escuchandoLogros = true;
+    onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...d.data() })); if (ultimaFicha) revisarLogros(ultimoUser, ultimaFicha); }, () => {});
+  }
+  if (!catalogoLogros || otorgando) return;
+  const toca = catalogoLogros.filter((l) => l.clases > 0 && (ficha.clases || 0) >= l.clases && !ficha.insignias?.[l.id]).sort((a, b) => a.clases - b.clases);
+  if (!toca.length) return;
+  otorgando = true;
+  (async () => {
+    for (const l of toca) {
+      try {
+        const lote = writeBatch(db);
+        lote.update(doc(db, "usuarios", user.uid), { [`insignias.${l.id}`]: copiaInsignia(l), puntos: increment(l.puntos || 0), ultimoLogro: l.id });
+        lote.set(doc(db, "usuarios", user.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
+        await lote.commit();
+      } catch (e) { console.warn("No se ha podido dar el logro", l.id, e); }
+    }
+    otorgando = false;
+  })();
+}
+let dlgLogro = null, colaLogros = [];
+function avisarLogrosNuevos(user, ficha) {
+  const clave = "logros-vistos-" + user.uid;
+  const tiene = Object.keys(ficha.insignias || {});
+  let vistos = null;
+  try { vistos = JSON.parse(localStorage.getItem(clave) || "null"); } catch {}
+  // La primera vez solo se avisa de los conseguidos hoy
+  if (!Array.isArray(vistos)) vistos = tiene.filter((id) => ficha.insignias[id]?.fecha !== hoy());
+  const nuevos = tiene.filter((id) => !vistos.includes(id));
+  try { localStorage.setItem(clave, JSON.stringify([...new Set([...vistos, ...tiene])])); } catch {}
+  for (const id of nuevos) if (!colaLogros.some((x) => x.id === id)) colaLogros.push({ id, ...ficha.insignias[id] });
+  mostrarSiguienteLogro();
+}
+function mostrarSiguienteLogro() {
+  if (dlgLogro?.open || !colaLogros.length) return;
+  const l = colaLogros.shift();
+  if (!dlgLogro) {
+    dlgLogro = document.createElement("dialog"); dlgLogro.className = "dialogo-logro";
+    document.body.append(dlgLogro);
+    dlgLogro.addEventListener("close", () => setTimeout(mostrarSiguienteLogro, 250));
+  }
+  dlgLogro.replaceChildren();
+  const med = crearInsignia(l, 150); med.classList.add("logro-medalla");
+  const ok = Object.assign(document.createElement("button"), { type: "button", textContent: "¡Genial!" });
+  ok.addEventListener("click", () => dlgLogro.close());
+  dlgLogro.append(
+    Object.assign(document.createElement("div"), { className: "logro-etq", textContent: "Nuevo logro" }),
+    med,
+    Object.assign(document.createElement("h3"), { textContent: l.nombre }),
+    Object.assign(document.createElement("p"), { textContent: l.puntos ? `Has ganado ${fmtPuntos(l.puntos)} puntos. ¡Sigue así!` : "¡Enhorabuena, sigue así!" }),
+    ok);
+  dlgLogro.showModal();
+}
+
+// ---------- Avisos de eventos ----------
+// · Evento nuevo: se anuncia al entrar en la app hasta que el socio cierra el aviso.
+// · Recordatorio: cada 2 semanas mientras falte para el evento (a quien no se ha apuntado).
+// · Última semana: un último aviso cuando faltan 7 días o menos (también a los apuntados).
+// Solo sale un aviso a la vez y se guarda en el móvil de cada socio.
+let escuchandoEventos = false;
+const DIA = 86400000, CADA = 14 * DIA;
+function vigilarEventosNuevos(paginaActual) {
+  if (escuchandoEventos) return;
+  escuchandoEventos = true;
+  const clave = "eventos-avisos";
+  const leer = () => { try { return JSON.parse(localStorage.getItem(clave) || "{}"); } catch { return {}; } };
+  const guardar = (o) => { try { localStorage.setItem(clave, JSON.stringify(o)); } catch {} };
+  onSnapshot(collection(db, "eventos"), async (s) => {
+    const ahora = Date.now(), estado = leer();
+    const futuros = s.docs.map((d) => ({ id: d.id, ...d.data() })).filter((e) => e.fecha >= hoy()).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    // Limpia lo guardado de eventos que ya pasaron
+    for (const id of Object.keys(estado)) if (!futuros.some((e) => e.id === id)) delete estado[id];
+    // En la propia página de eventos ya se ven: cuenta como visto
+    if (paginaActual === "eventos") { for (const e of futuros) estado[e.id] = { ...(estado[e.id] || {}), visto: ahora }; guardar(estado); return; }
+    if (document.querySelector(".aviso-evento")) return;
+    for (const e of futuros) {
+      const st = estado[e.id] || {};
+      const dias = Math.round((new Date(e.fecha + "T12:00:00") - new Date(hoy() + "T12:00:00")) / DIA);
+      let tipo = null;
+      if (dias <= 7 && !st.final) tipo = "final";
+      else if (!st.visto) tipo = e.creado?.seconds && ahora - e.creado.seconds * 1000 < CADA ? "nuevo" : "recuerda";
+      else if (ahora - st.visto >= CADA && dias > 7) tipo = "recuerda";
+      if (!tipo) continue;
+      // Los que ya se han apuntado no necesitan los recordatorios de cada 2 semanas
+      let voy = false;
+      if (usuarioRol) { try { voy = (await getDoc(doc(db, "eventos", e.id, "asistentes", usuarioRol.uid))).exists(); } catch {} }
+      if (voy && tipo === "recuerda") { estado[e.id] = { ...st, visto: ahora }; guardar(estado); continue; }
+      mostrarAvisoEvento(e, tipo, dias, voy, () => {
+        const o = leer(); o[e.id] = { ...(o[e.id] || {}), visto: Date.now(), ...(tipo === "final" ? { final: true } : {}) }; guardar(o);
+      });
+      break;
+    }
+  }, () => {});
+}
+function mostrarAvisoEvento(e, tipo, dias, voy, marcar) {
+  const caja = document.createElement("div"); caja.className = "aviso-evento"; caja.setAttribute("role", "status");
+  const fecha = new Date(e.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+  const cuando = dias === 0 ? "es hoy" : dias === 1 ? "es mañana" : `faltan ${dias} días`;
+  const etiqueta = tipo === "nuevo" ? "🎉 Nuevo evento" : tipo === "final" ? (voy ? `✓ Te apuntaste · ${cuando}` : `⏰ ¡${cuando[0].toUpperCase() + cuando.slice(1)}!`) : `📅 Recuerda · ${cuando}`;
+  const txt = document.createElement("a"); txt.href = "eventos.html"; txt.className = "aviso-evento-txt";
+  txt.append(Object.assign(document.createElement("small"), { textContent: etiqueta }), Object.assign(document.createElement("b"), { textContent: e.titulo }),
+    Object.assign(document.createElement("span"), { textContent: fecha + (e.puntos && !voy ? ` · +${fmtPuntos(e.puntos)} pts si vienes` : "") }));
+  const cerrar = Object.assign(document.createElement("button"), { type: "button", className: "aviso-evento-x", textContent: "✕" });
+  cerrar.setAttribute("aria-label", "Cerrar aviso");
+  cerrar.addEventListener("click", () => { marcar(); caja.remove(); });
+  txt.addEventListener("click", marcar);
+  caja.append(txt, cerrar);
+  document.body.append(caja);
 }
 
 // ---------- Paneles plegables del coach (crear eventos, logros, productos…) ----------
@@ -149,15 +291,15 @@ function pedirPerfil(user, ficha) {
       <h3>${ficha?.atleta ? "Completa tu perfil" : "Crea tu perfil de atleta"}</h3>
       <p>Tu nombre saldrá en tus resultados, en el ranking y en tu perfil. Lo pones una vez y después lo puedes cambiar desde tu perfil.</p>
       <label>Nombre y apellido<input name="nombre" maxlength="40" required autocomplete="name"></label>
-      <label><span>Ejercicio favorito</span><input name="favorito" maxlength="40" placeholder="Ej. Thrusters" required></label>
-      <label><span>Ejercicio más odiado</span><input name="odiado" maxlength="40" placeholder="Ej. Burpees" required></label>
+      <label><span>Ejercicio favorito</span><select name="favorito" required></select></label>
+      <label><span>Ejercicio más odiado</span><select name="odiado" required></select></label>
       <div class="perfil-msg" role="status"></div>
       <button type="submit">Crear mi perfil</button>
     </form>`;
   const f = dlgPerfil.querySelector("form");
   f.nombre.value = (ficha?.nombre || user.displayName || "").slice(0, 40);
-  f.favorito.value = ficha?.favorito || "";
-  f.odiado.value = ficha?.odiado || "";
+  opcionesEjercicios(f.favorito, ficha?.favorito || "");
+  opcionesEjercicios(f.odiado, ficha?.odiado || "");
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
@@ -239,7 +381,7 @@ export function abrirEditor(r, tipo) {
         const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(claseDe(r), r.fecha));
         if ((await getDoc(regRef)).exists()) {
           lote.delete(regRef);
-          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1) });
+          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1), puntosRanking: increment(-PUNTOS.registrar) });
         }
       }
       await lote.commit();

@@ -4,7 +4,7 @@
 // cerrado, calcula el podio de cada clase y categoría y suma los puntos. Cada día y clase se cierra
 // una sola vez (si otro aparato ya lo ha hecho, las reglas de Firebase rechazan el segundo intento).
 import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS } from "./comun.js";
+import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia } from "./comun.js";
 
 let enMarcha = false;
 export async function cerrarDiasPendientes() {
@@ -43,7 +43,7 @@ export async function cerrarDiasPendientes() {
           fecha: g.fecha, clase: g.clase, tipo: "podio", categoria: f.categoria, posicion: f.posicion, puntos: podio,
           resultado: formatearValor(f.r.valor, f.r.tipo), wod: CLASES[g.clase]?.nombre || "WOD"
         });
-        if (sumar > 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar), ...(faltaRegistro ? { clases: increment(1) } : {}) }, { merge: true });
+        if (sumar > 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar), puntosRanking: increment(sumar), ...(faltaRegistro ? { clases: increment(1) } : {}) }, { merge: true });
       }
       lote.set(doc(db, "cierres", id), { fecha: g.fecha, clase: g.clase, cerrado: serverTimestamp(), socios: filas.length, puntosTotales: total, automatico: true });
       try { await lote.commit(); cerrados++; } catch (e) { console.warn("Cierre ya hecho o sin permiso", id, e); }
@@ -70,22 +70,28 @@ export async function limpiarDiasCerrados() {
     }
     const wods = await getDocs(query(collection(db, "wods"), where(documentId(), "<", hoy())));
     for (const d of wods.docs) if (!pendientes.has(d.id)) await deleteDoc(d.ref).catch(() => {});
+    // Chat del ranking: se borran los mensajes de los días anteriores (últimas 2 semanas)
+    for (let i = 1; i <= 14; i++) {
+      const dia = new Date(Date.now() - i * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
+      const msgs = await getDocs(collection(db, "chat", dia, "mensajes")).catch(() => null);
+      if (msgs) for (const m of msgs.docs) await deleteDoc(m.ref).catch(() => {});
+    }
   } catch (e) { console.warn("No se han podido borrar los días anteriores", e); }
 }
 
 // Logros de clases: a quien ya ha llegado a 100, 250… clases y aún no lo tiene, se lo da con sus puntos
 export async function darLogrosDeClases() {
   try {
-    const logros = (await getDocs(collection(db, "logros"))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => l.clases > 0);
+    const logros = (await getDocs(collection(db, "logros"))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => umbralLogro(l) > 0);
     if (!logros.length) return 0;
     const socios = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...d.data() }));
     let lote = writeBatch(db), ops = 0, dados = 0;
     for (const s of socios) {
-      const nuevos = logros.filter((l) => (s.clases || 0) >= l.clases && !s.insignias?.[l.id]);
+      const nuevos = logros.filter((l) => (s.clases || 0) >= umbralLogro(l) && !s.insignias?.[l.id]);
       if (!nuevos.length) continue;
       const cambios = {}; let suma = 0;
       for (const l of nuevos) {
-        cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: l.puntos || 0, fecha: hoy() };
+        cambios[`insignias.${l.id}`] = copiaInsignia(l);
         suma += l.puntos || 0;
         lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
         ops++; dados++;

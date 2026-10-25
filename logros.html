@@ -84,6 +84,12 @@
   .sync b { color: var(--texto); font-weight: 600; margin-right: 4px; }
   .sync.ok b::before { content: "● "; color: #3ddc84; } .sync.mal b::before { content: "● "; color: var(--error); } .sync.off b::before { content: "● "; color: var(--suave); }
   .sync details { margin-top: 6px; } .sync summary { cursor: pointer; color: var(--lila); }
+  .etq { display: block; font-size: 12px; color: var(--suave); margin-bottom: 8px; }
+  .selector-medallas { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .selector-medallas button { display: grid; justify-items: center; gap: 4px; padding: 8px 4px 6px; border-radius: 12px; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); font-size: 10px; line-height: 1.2; cursor: pointer; }
+  .selector-medallas button img { width: 54px; height: 54px; object-fit: contain; }
+  .selector-medallas button .sin { width: 54px; height: 54px; display: grid; place-items: center; font-size: 22px; }
+  .selector-medallas button[aria-pressed="true"] { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 14%, var(--fondo)); color: var(--texto); }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
 </style>
 </head>
@@ -152,6 +158,7 @@
         <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
         <label>Dificultad<select id="nNivel"><option value="bronce">Bronce</option><option value="plata">Plata</option><option value="oro">Oro</option><option value="diamante">Diamante</option><option value="olimpo">Olimpo (el más difícil)</option><option value="">Lila (sin nivel)</option></select></label>
         <label>Automático al llegar a… clases<input id="nClases" inputmode="numeric" placeholder="Vacío = lo das tú"></label>
+        <div class="ancho"><span class="etq">Medalla</span><div class="selector-medallas" id="nMedallas"></div></div>
         <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
       </div>
       <div class="fila">
@@ -168,7 +175,7 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases } from "./comun.js";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, rutaMedalla } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js";
 
@@ -215,6 +222,7 @@ escucharCuenta(({ user, ficha: f }) => {
     ? "Crea logros y dáselos a los socios. Cada logro suma sus puntos a la cartera del socio."
     : "Medallas por tu constancia en el box. Cada logro suma puntos a tu cartera.";
   if (coach && !dejarSync) dejarSync = escucharSync();
+  rellenarClases();
   if (coach && !dejarSocios) {
     dejarSocios = onSnapshot(query(collection(db, "usuarios"), orderBy("nombre", "asc")), (s) => {
       socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre);
@@ -238,6 +246,7 @@ escucharCuenta(({ user, ficha: f }) => {
 
 onSnapshot(query(collection(db, "logros"), orderBy("orden", "asc")), (s) => {
   logros = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  rellenarClases();
   const sel = $("dLogro"), antes = sel.value;
   sel.replaceChildren(...logros.map((l) => new Option(l.nombre, l.id)));
   if (antes) sel.value = antes;
@@ -262,9 +271,9 @@ function pintar() {
   const mias = ficha?.insignias || {};
   $("nTotal").textContent = logros.length;
   $("nConseguidos").textContent = logros.filter((l) => mias[l.id]).length;
-  const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || l.nivel !== i.nivel || !("clases" in l); });
+  const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || l.nivel !== i.nivel || !(l.clases > 0) || !l.imagen; });
   $("nIniciales").hidden = !coach || !faltan.length;
-  $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner los niveles nuevos a los de clases (100 bronce · 250 plata · 500 oro · 750 diamante · 1000 olimpo)" : "Crear los de 100 a 1000 clases";
+  $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner las medallas nuevas a los de clases (100 bronce · 250 plata · 500 oro · 750 diamante · 1000 olimpo)" : "Crear los de 100 a 1000 clases";
   if (!logros.length) {
     r.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: coach ? "Aún no hay logros. Crea los de 100 a 1000 clases con el botón de arriba o añade uno nuevo." : "Pronto habrá logros para conseguir." }));
     return;
@@ -355,17 +364,18 @@ $("dQuitar").addEventListener("click", async () => {
 const normal = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 // Prepara los cambios de un socio: nuevo total de clases + logros automáticos que le tocan
 function cambiosClases(s, n) {
-  const nuevos = logros.filter((l) => l.clases > 0 && n >= l.clases && !s.insignias?.[l.id]);
+  const nuevos = logros.filter((l) => umbralLogro(l) > 0 && n >= umbralLogro(l) && !s.insignias?.[l.id]);
   return { s, n, nuevos };
 }
 async function aplicarClases(lista) {
   // Lotes pequeños para no pasar el límite de Firebase (500 escrituras por lote)
   let lote = writeBatch(db), ops = 0, logrosDados = 0;
   for (const { s, n, nuevos } of lista) {
-    const cambios = { clases: n };
+    // Si sus clases vienen de AimHarder, se guarda la diferencia para que la sincronización siga contando desde aquí
+    const cambios = { clases: n, clasesAjuste: (s.clasesAjuste || 0) + (n - (s.clases || 0)) };
     let suma = 0;
     for (const l of nuevos) {
-      cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: l.puntos || 0, fecha: hoy() };
+      cambios[`insignias.${l.id}`] = copiaInsignia(l);
       suma += l.puntos || 0;
       lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
       ops++; logrosDados++;
@@ -440,18 +450,63 @@ $("dDar").addEventListener("click", async () => {
   $("dDar").disabled = true;
   try {
     const lote = writeBatch(db);
-    lote.update(doc(db, "usuarios", s.uid), {
-      [`insignias.${l.id}`]: { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: pts, fecha: hoy() },
-      puntos: increment(pts)
-    });
+    const cambios = { [`insignias.${l.id}`]: copiaInsignia(l, pts), puntos: increment(pts) };
     lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: pts });
+    // Logro de clases: el contador sigue desde ahí (si tenía menos, pasa a tener esas clases)
+    // y se le dan también los logros de clases de menos que aún no tenía
+    let extra = "";
+    const meta = umbralLogro(l);
+    if (meta > 0 && (s.clases || 0) < meta) {
+      cambios.clases = meta;
+      cambios.clasesAjuste = (s.clasesAjuste || 0) + (meta - (s.clases || 0));
+      extra = ` Ahora lleva ${meta} clases.`;
+    }
+    if (meta > 0) {
+      const menores = logros.filter((x) => x.id !== l.id && umbralLogro(x) > 0 && umbralLogro(x) <= meta && !s.insignias?.[x.id]);
+      let suma = 0;
+      for (const x of menores) {
+        cambios[`insignias.${x.id}`] = copiaInsignia(x); suma += x.puntos || 0;
+        lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${x.id}`), { fecha: hoy(), tipo: "insignia", nombre: x.nombre, puntos: x.puntos || 0 });
+      }
+      if (suma) cambios.puntos = increment(pts + suma);
+      if (menores.length) extra += ` También: ${menores.map((x) => x.nombre).join(", ")}.`;
+    }
+    lote.update(doc(db, "usuarios", s.uid), cambios);
     await lote.commit();
-    m.className = "msg ok"; m.textContent = `✓ ${s.nombre} ha conseguido "${l.nombre}" (+${fmtPuntos(pts)} pts).`;
+    m.className = "msg ok"; m.textContent = `✓ ${s.nombre} ha conseguido "${l.nombre}" (+${fmtPuntos(pts)} pts).${extra}`;
   } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido dar el logro."; }
   vista();
 });
 
 // ---------- Crear y editar logros ----------
+// Los logros con "clases" en el nombre necesitan el número de clases guardado para darse solos
+let rellenando = false;
+function rellenarClases() {
+  if (!coach || rellenando) return;
+  const faltan = logros.filter((l) => esLogroDeClases(l) && !(l.clases > 0) && umbralLogro(l) > 0);
+  if (!faltan.length) return;
+  rellenando = true;
+  Promise.all(faltan.map((l) => updateDoc(doc(db, "logros", l.id), { clases: umbralLogro(l) }).catch(() => {}))).finally(() => { rellenando = false; });
+}
+// ---------- Elegir la medalla ilustrada del logro ----------
+let medallaElegida = "";
+function pintarSelector() {
+  const caja = $("nMedallas"); caja.replaceChildren();
+  const opcion = (id, txt, contenido) => {
+    const b = Object.assign(document.createElement("button"), { type: "button" });
+    b.setAttribute("aria-pressed", String(medallaElegida === id));
+    b.append(contenido, document.createTextNode(txt));
+    b.addEventListener("click", () => {
+      medallaElegida = id; pintarSelector();
+      // Las de nivel ponen también su nivel
+      if (MEDALLAS[id]?.nivel) $("nNivel").value = MEDALLAS[id].nivel;
+    });
+    caja.append(b);
+  };
+  opcion("", "Cristal (sin dibujo)", Object.assign(document.createElement("span"), { className: "sin", textContent: "◇" }));
+  for (const [id, m] of Object.entries(MEDALLAS)) opcion(id, m.nombre.split(" · ")[0], Object.assign(document.createElement("img"), { src: rutaMedalla(id), alt: "" }));
+}
+pintarSelector();
 function msgN(t, err = false) { $("nMsg").className = "msg " + (err ? "error" : "ok"); $("nMsg").textContent = t; }
 function editar(l) {
   editando = l.id;
@@ -459,10 +514,11 @@ function editar(l) {
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
   $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || "";
+  medallaElegida = l.imagen || ""; pintarSelector();
   $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
   window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
 }
-function limpiar() { editando = null; $("nuevo").reset(); $("nTitulo").textContent = "Nuevo logro"; $("nGuardar").textContent = "Añadir logro"; $("nCancelar").hidden = true; }
+function limpiar() { editando = null; medallaElegida = ""; pintarSelector(); $("nuevo").reset(); $("nTitulo").textContent = "Nuevo logro"; $("nGuardar").textContent = "Añadir logro"; $("nCancelar").hidden = true; }
 $("nCancelar").addEventListener("click", () => { limpiar(); msgN(""); });
 $("nuevo").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -473,7 +529,7 @@ $("nuevo").addEventListener("submit", async (e) => {
   if (!nombre) return msgN("Escribe el nombre.", true);
   if (!(puntos >= 0)) return msgN("Revisa los puntos.", true);
   const clases = parseInt($("nClases").value || "0", 10);
-  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden, nivel: $("nNivel").value, clases: clases > 0 ? clases : 0 };
+  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden, nivel: $("nNivel").value, clases: clases > 0 ? clases : (umbralLogro({ nombre }) || 0), imagen: medallaElegida };
   const id = editando || nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 30) || ("logro" + Date.now());
   try {
     if (editando) await updateDoc(doc(db, "logros", id), datos);
@@ -486,7 +542,7 @@ $("nIniciales").addEventListener("click", async () => {
     const lote = writeBatch(db);
     for (const { id, ...datos } of LOGROS_INICIALES) {
       const ya = logros.find((x) => x.id === id);
-      if (ya) lote.update(doc(db, "logros", id), { nivel: datos.nivel, clases: "clases" in ya ? ya.clases : datos.clases });
+      if (ya) lote.update(doc(db, "logros", id), { nivel: datos.nivel, clases: ya.clases > 0 ? ya.clases : datos.clases, imagen: ya.imagen || datos.imagen });
       else lote.set(doc(db, "logros", id), datos);
     }
     await lote.commit();

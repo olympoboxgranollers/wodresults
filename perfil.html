@@ -40,12 +40,25 @@
   .hero .editar-perfil:hover { color: var(--lila); }
   .sobre { margin-top: 12px; padding: 18px; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); }
   .sobre-titulo { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); font-weight: 600; }
-  .bio { margin-top: 10px; font-size: 15px; line-height: 1.55; color: var(--texto); }
+  .bio { margin-top: 10px; font-size: 15px; line-height: 1.55; color: var(--texto); font-weight: 700; }
+  .proximo { display: block; margin-top: 12px; padding: 18px; border-radius: 18px; background: rgba(28, 30, 34, .78); border: 1px solid rgba(255,255,255,.07); color: var(--texto); text-decoration: none; }
+  .prox-fila { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+  .prox-dia { flex: none; width: 54px; height: 58px; border-radius: 14px; display: grid; place-content: center; text-align: center; background: color-mix(in srgb, var(--lila) 14%, transparent); border: 1px solid color-mix(in srgb, var(--lila) 35%, transparent); }
+  .prox-dia b { font-size: 22px; line-height: 1; color: var(--lila); }
+  .prox-dia span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin-top: 3px; }
+  .prox-info { min-width: 0; display: grid; gap: 2px; }
+  .prox-info b { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .prox-info span { font-size: 13px; color: var(--suave); }
+  .cuenta-atras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .cuenta-atras div { text-align: center; padding: 8px 0; border-radius: 12px; background: rgba(255,255,255,.04); }
+  .cuenta-atras b { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cuenta-atras span { font-size: 10.5px; color: var(--suave); text-transform: uppercase; letter-spacing: .08em; }
   .ficha-filas { margin-top: 12px; display: grid; gap: 10px; }
   .ficha-fila { display: grid; gap: 2px; }
   .ficha-fila span { font-size: 14px; font-weight: 700; color: var(--texto); }
   .ficha-fila b { font-size: 15px; font-weight: 400; color: var(--suave); }
   .ficha-fila.vacia b { color: var(--suave); font-weight: 400; font-style: italic; }
+  .perfil-form select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
   .perfil-form textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: var(--texto); resize: vertical; outline: none; }
   .perfil-form textarea:focus { border-color: var(--lila); }
   .cabeza { display: flex; align-items: center; gap: 16px; margin-top: 18px; }
@@ -151,7 +164,6 @@
     <div class="aro" id="aro"><div class="avatar grande" id="avatar">·</div></div>
     <h1 id="nombre">Cargando…</h1>
     <div class="hero-sub" id="heroSub"></div>
-    <div class="chips" id="chips"></div>
     <button type="button" class="editar-perfil" id="editarPerfil" hidden>✎ Editar perfil</button>
   </section>
 
@@ -164,6 +176,15 @@
     </div>
   </section>
 
+  <a class="proximo" id="proximo" href="eventos.html" hidden>
+    <div class="sobre-titulo">Próximo evento</div>
+    <div class="prox-fila">
+      <div class="prox-dia"><b id="proxDia"></b><span id="proxMes"></span></div>
+      <div class="prox-info"><b id="proxTitulo"></b><span id="proxCuando"></span></div>
+    </div>
+    <div class="cuenta-atras" id="cuentaAtras"></div>
+  </a>
+
   <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
     <div class="foto-fila">
       <div class="avatar" id="pVista">·</div>
@@ -173,8 +194,8 @@
     </div>
     <label>Nombre y apellido<input type="text" id="pNombre" maxlength="40" required></label>
     <label>Sobre mí <small style="opacity:.7">(opcional, una frase)</small><textarea id="pBio" maxlength="160" rows="2" placeholder="Ej. Madrugador, fan de la halterofilia y de los WOD largos."></textarea></label>
-    <label>Ejercicio favorito<input type="text" id="pFav" maxlength="40" placeholder="Ej. Thrusters" required></label>
-    <label>Ejercicio más odiado<input type="text" id="pOdio" maxlength="40" placeholder="Ej. Burpees" required></label>
+    <label>Ejercicio favorito<select id="pFav" required></select></label>
+    <label>Ejercicio más odiado<select id="pOdio" required></select></label>
     <label class="interruptor"><span>Ocultar mis puntos<small>Los demás no verán tus puntos ni saldrás en el ranking de puntos</small></span><input type="checkbox" id="pOcultar"></label>
     <div class="rm-acc"><button type="submit" class="rm-guardar" id="pGuardar">Guardar</button><button type="button" class="rm-cancelar" id="pCancelar">Cancelar</button><span class="rm-msg" id="pMsg"></span></div>
   </form>
@@ -213,8 +234,8 @@
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases , NIVELES, nivelDe } from "./comun.js";
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
 
@@ -270,7 +291,7 @@ function pintar() {
   ranking.filter((u) => !u.ocultarPuntos).forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
   $("dPuesto").textContent = puesto;
   // Nivel y texto actuales del catálogo (por si el coach los ha cambiado después de darlo)
-  const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad } : m; });
+  const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, corto: c.corto || m.corto, unidad: c.unidad ?? m.unidad, imagen: c.imagen || m.imagen || "" } : m; });
   $("dLogros").textContent = mias.length;
   $("dClases").textContent = ficha.clases || 0;
 
@@ -311,17 +332,12 @@ function pintarCabecera(esYo) {
   else { hero.style.removeProperty("--nc"); hero.style.removeProperty("--tcl"); }
   const desde = ficha.alta ? new Date(ficha.alta + "T12:00:00").toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : "";
   $("heroSub").textContent = (esYo ? "Tu perfil" : "Atleta") + " de Olympo Box" + (desde ? ` · desde ${desde}` : "");
-  const chips = $("chips"); chips.replaceChildren();
-  const chip = (txt, cls = "") => chips.append(Object.assign(document.createElement("span"), { className: "chip " + cls, textContent: txt }));
-  if (mejor) chip(`🏅 Nivel ${NIVELES[mejor].nombre}`, "nivel");
-  const top = marcasDe(ficha).sort((a, b) => b.kg - a.kg)[0];
-  if (top) chip(`🏋️ ${nombreMarca(top.nombre)} ${String(top.kg).replace(".", ",")} kg`);
   // Sobre mí: su frase y sus ejercicios contados como parte de la descripción
   const nombrePila = (ficha.nombre || "").split(" ")[0];
   $("sobreTitulo").textContent = esYo ? "Sobre mí" : `Sobre ${nombrePila}`;
   $("bio").hidden = !ficha.bio; $("bio").textContent = ficha.bio || "";
   const pon = (fila, el, v) => { $(fila).classList.toggle("vacia", !v); $(el).textContent = v || (esYo ? "Sin rellenar · pulsa Editar perfil" : "—"); };
-  pon("filaFav", "fFav", ficha.favorito); pon("filaOdio", "fOdio", ficha.odiado);
+  pon("filaFav", "fFav", formatoEjercicio(ficha.favorito)); pon("filaOdio", "fOdio", formatoEjercicio(ficha.odiado));
   $("sobre").hidden = false;
   // Fecha de alta: se guarda la primera vez que el socio abre su perfil
   if (esYo && !ficha.alta && !ficha.nueva && !guardandoAlta) {
@@ -331,6 +347,44 @@ function pintarCabecera(esYo) {
   }
 }
 let guardandoAlta = false;
+
+// ---------- Próximo evento con cuenta atrás ----------
+let proximo = null;
+onSnapshot(query(collection(db, "eventos"), where("fecha", ">=", hoy()), orderBy("fecha", "asc"), limit(6)), (s) => {
+  const ahora = Date.now();
+  proximo = s.docs.map((d) => ({ id: d.id, ...d.data() })).find((e) => inicioEvento(e) > ahora - 3 * 3600 * 1000) || null;
+  pintarProximo();
+}, () => {});
+function inicioEvento(e) {
+  const [y, m, d] = e.fecha.split("-").map(Number);
+  const [h, mi] = (e.hora || "00:00").split(":").map(Number);
+  return new Date(y, m - 1, d, h || 0, mi || 0).getTime();
+}
+function pintarProximo() {
+  $("proximo").hidden = !proximo;
+  if (!proximo) return;
+  const f = new Date(proximo.fecha + "T12:00:00");
+  $("proxDia").textContent = f.getDate();
+  $("proxMes").textContent = f.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+  $("proxTitulo").textContent = proximo.titulo;
+  $("proxCuando").textContent = f.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }) + (proximo.hora ? ` · ${proximo.hora}` : (proximo.momento ? ` · ${proximo.momento.toLowerCase()}` : "")) + (proximo.porConfirmar ? " · por confirmar" : "");
+  tic();
+}
+function tic() {
+  if (!proximo) return;
+  let falta = Math.max(0, inicioEvento(proximo) - Date.now());
+  const d = Math.floor(falta / 86400000); falta -= d * 86400000;
+  const h = Math.floor(falta / 3600000); falta -= h * 3600000;
+  const m = Math.floor(falta / 60000); falta -= m * 60000;
+  const sg = Math.floor(falta / 1000);
+  const caja = $("cuentaAtras"); caja.replaceChildren();
+  for (const [n, t] of [[d, "días"], [h, "horas"], [m, "min"], [sg, "seg"]]) {
+    const c = document.createElement("div");
+    c.append(Object.assign(document.createElement("b"), { textContent: String(n).padStart(2, "0") }), Object.assign(document.createElement("span"), { textContent: t }));
+    caja.append(c);
+  }
+}
+setInterval(tic, 1000);
 
 // Avatar: la foto si la hay, si no las iniciales
 function ponerAvatar(el, nombre, img) {
@@ -344,7 +398,7 @@ $("zoomFoto").addEventListener("click", () => $("zoomFoto").close());
 
 // ---------- Editar mi perfil: foto, nombre, ejercicios y ocultar puntos ----------
 $("editarPerfil").addEventListener("click", () => {
-  $("pNombre").value = ficha.nombre || ""; $("pFav").value = ficha.favorito || ""; $("pOdio").value = ficha.odiado || ""; $("pBio").value = ficha.bio || "";
+  $("pNombre").value = ficha.nombre || ""; opcionesEjercicios($("pFav"), ficha.favorito || ""); opcionesEjercicios($("pOdio"), ficha.odiado || ""); $("pBio").value = ficha.bio || "";
   $("pOcultar").checked = !!ficha.ocultarPuntos;
   fotoNueva = undefined; vistaFoto();
   $("pMsg").textContent = ""; $("perfilForm").hidden = false; $("editarPerfil").hidden = true;

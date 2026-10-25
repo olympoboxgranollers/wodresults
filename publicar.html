@@ -69,6 +69,15 @@
   .editor .btns .borrar { color: var(--error); border-color: color-mix(in srgb, var(--error) 50%, transparent); }
   .editor .ayuda { grid-column: 1 / -1; color: var(--suave); font-size: 12px; }
   .cerrado-ok { margin-top: 12px; color: #3ddc84; font-weight: 600; }
+  .entrenadores { margin-top: 16px; }
+  .lista-ent { list-style: none; margin-top: 12px; display: grid; gap: 6px; }
+  .lista-ent li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--fondo); border: 1px solid var(--borde); font-size: 14px; }
+  .lista-ent li span { overflow: hidden; text-overflow: ellipsis; }
+  .lista-ent li button { background: none; border: 1px solid var(--borde); color: var(--error); border-radius: 999px; padding: 5px 12px; font-size: 12px; }
+  .lista-ent .vacio-ent { color: var(--suave); justify-content: center; }
+  .form-ent { display: flex; gap: 8px; margin-top: 12px; }
+  .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
+  .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -80,10 +89,12 @@
   </header>
 
   <div class="cuenta-barra" id="barraCuenta" hidden style="margin-top:18px">
-    <span class="quien">Coach: <b id="quienNombre"></b></span>
+    <span class="quien"><span id="rolTxt">Coach</span>: <b id="quienNombre"></b></span>
     <button type="button" class="salir" id="salir">Salir</button>
   </div>
   <div id="acceso" hidden style="margin-top:18px"></div>
+
+  <div class="panel" id="sinPermiso" hidden style="margin-top:18px">Esta página es solo para el coach y los entrenadores. Si eres entrenador, pide al coach que te añada.</div>
 
   <div id="zonaCoach" hidden>
   <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
@@ -113,6 +124,17 @@
     <div class="msg" id="msgCierre" role="status"></div>
   </section>
 
+  <section class="panel entrenadores" id="entrenadores" hidden>
+    <div class="cierre-titulo" id="entTitulo">Entrenadores</div>
+    <p class="cierre-texto">Los entrenadores tienen su perfil de socio normal y además pueden publicar el WOD del día y corregir, validar o borrar resultados. Escribe el email con el que entran en la app.</p>
+    <ul class="lista-ent" id="listaEntrenadores"></ul>
+    <form class="form-ent" id="formEnt" autocomplete="off">
+      <input id="emailEnt" type="email" placeholder="email@ejemplo.com" aria-label="Email del entrenador">
+      <button type="submit">Añadir</button>
+    </form>
+    <div class="msg" id="msgEnt" role="status"></div>
+  </section>
+
   <div class="resumen" id="resumen"></div>
 
   <div class="enlaces">
@@ -126,7 +148,7 @@
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro } from "./comun.js";
-import { montarMenu , plegable } from "./menu.js";
+import { montarMenu, plegable, escucharRol } from "./menu.js";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
@@ -139,14 +161,54 @@ $("fecha").textContent = "Entrenamientos de hoy · " + new Date().toLocaleDateSt
 let clase = claseInicial();
 
 // Solo el coach puede publicar y cerrar el día (lo comprueban las reglas de Firebase)
-montarAcceso($("acceso"), { titulo: "Entra con la cuenta del coach", texto: "Solo la cuenta del coach puede publicar los entrenamientos y repartir los puntos." });
+montarAcceso($("acceso"), { titulo: "Entra con tu cuenta de coach o entrenador", texto: "Solo el coach y los entrenadores pueden publicar los entrenamientos y corregir resultados." });
 $("salir").addEventListener("click", () => salir());
-escucharCuenta(({ user }) => {
+escucharRol(({ user, coach, staff }) => {
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
-  $("zonaCoach").hidden = !user;
+  $("zonaCoach").hidden = !staff;
+  $("sinPermiso").hidden = !user || staff;
+  $("entrenadores").hidden = !coach;
+  $("rolTxt").textContent = coach ? "Coach" : "Entrenador";
   if (user) { $("quienNombre").textContent = user.email; }
+  if (coach) escucharEntrenadores();
 });
+
+// ---------- Gestión de entrenadores (solo el admin principal) ----------
+let listaEntrenadores = [], escuchando = false;
+function escucharEntrenadores() {
+  if (escuchando) return; escuchando = true;
+  onSnapshot(doc(db, "ajustes", "entrenadores"), (s) => { listaEntrenadores = s.exists() ? (s.data().emails || []) : []; pintarEntrenadores(); }, () => {});
+}
+function pintarEntrenadores() {
+  const ul = $("listaEntrenadores"); ul.replaceChildren();
+  if (!listaEntrenadores.length) ul.append(Object.assign(document.createElement("li"), { className: "vacio-ent", textContent: "Todavía no hay entrenadores." }));
+  for (const email of listaEntrenadores) {
+    const li = document.createElement("li");
+    li.append(Object.assign(document.createElement("span"), { textContent: email }));
+    const q = Object.assign(document.createElement("button"), { type: "button", textContent: "Quitar" });
+    let seguro = false;
+    q.addEventListener("click", async () => {
+      if (!seguro) { seguro = true; q.textContent = "¿Seguro?"; setTimeout(() => { seguro = false; q.textContent = "Quitar"; }, 3500); return; }
+      await guardarEntrenadores(listaEntrenadores.filter((e) => e !== email));
+    });
+    li.append(q); ul.append(li);
+  }
+}
+async function guardarEntrenadores(emails) {
+  const m = $("msgEnt");
+  try { await setDoc(doc(db, "ajustes", "entrenadores"), { emails }); m.className = "msg ok"; m.textContent = "✓ Guardado"; }
+  catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido guardar."; }
+}
+$("formEnt").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("emailEnt").value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("msgEnt").className = "msg error"; $("msgEnt").textContent = "Escribe un email válido."; return; }
+  if (listaEntrenadores.includes(email)) { $("msgEnt").className = "msg error"; $("msgEnt").textContent = "Ya está en la lista."; return; }
+  await guardarEntrenadores([...listaEntrenadores, email]);
+  $("emailEnt").value = "";
+});
+plegable($("entrenadores"), $("entTitulo"), "publicar-entrenadores");
 const publicados = {};   // WOD guardado de cada clase
 let editado = false;     // si hay cambios sin publicar en la clase actual
 
@@ -316,7 +378,7 @@ function editor(r, tipo) {
       const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(clase));
       if ((await getDoc(regRef)).exists()) {
         lote.delete(regRef);
-        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1) });
+        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1), puntosRanking: increment(-PUNTOS.registrar) });
       }
       await lote.commit();
       abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado y sus ${PUNTOS.registrar} puntos de registrar descontados.`;

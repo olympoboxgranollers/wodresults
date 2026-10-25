@@ -273,12 +273,28 @@ export const titulo = (t) => String(t || "").replace(/\bWOD\b/g, (m, i) => (i ==
 // El catálogo está en Firebase (colección "logros") y el coach lo va ampliando.
 // Estos son los primeros, que el coach puede crear de golpe con un botón.
 export const LOGROS_INICIALES = [
-  { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100,  nivel: "bronce",   clases: 100 },
-  { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250,  nivel: "plata",    clases: 250 },
-  { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500,  nivel: "oro",      clases: 500 },
-  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750,  nivel: "diamante", clases: 750 },
-  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000, nivel: "olimpo",   clases: 1000 }
+  { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100,  nivel: "bronce",   clases: 100,  imagen: "bronce" },
+  { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250,  nivel: "plata",    clases: 250,  imagen: "plata" },
+  { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500,  nivel: "oro",      clases: 500,  imagen: "oro" },
+  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750,  nivel: "diamante", clases: 750,  imagen: "diamante" },
+  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000, nivel: "olimpo",   clases: 1000, imagen: "olimpo" }
 ];
+// Medallas ilustradas que se pueden elegir al crear un logro (carpeta medallas/)
+export const MEDALLAS = {
+  bronce:        { nombre: "Bronce · casco espartano", nivel: "bronce",   numero: true },
+  plata:         { nombre: "Plata · Zeus",             nivel: "plata",    numero: true },
+  oro:           { nombre: "Oro · Partenón",           nivel: "oro",      numero: true },
+  diamante:      { nombre: "Diamante · Pegaso",        nivel: "diamante", numero: true },
+  olimpo:        { nombre: "Olimpo · monte Olimpo",    nivel: "olimpo",   numero: true },
+  deadlift:      { nombre: "Deadlift",       color: "#d98a4e" },
+  backsquat:     { nombre: "Back squat",     color: "#a98ad9" },
+  frontsquat:    { nombre: "Front squat",    color: "#4fb07a" },
+  shoulderpress: { nombre: "Shoulder press", color: "#e8b83a" },
+  cleanjerk:     { nombre: "Clean & jerk",   color: "#4f9be8" },
+  snatch:        { nombre: "Snatch",         color: "#b05ce8" },
+  benchpress:    { nombre: "Bench press",    color: "#e85454" }
+};
+export const rutaMedalla = (id) => `medallas/${id}.webp`;
 // Niveles de dificultad de los logros: cuanto más difícil, más exótica la medalla
 export const NIVELES = {
   bronce:   { nombre: "Bronce",   texto: "#ffc89a", color: "#c47a45" },
@@ -364,6 +380,19 @@ let nInsignia = 0;
 // Bronce = gema redonda de 12 caras · Plata = estrella de 6 puntas · Oro = estrella de 5 puntas con laurel ·
 // Diamante = gema octogonal con laurel largo y rayos · Olimpo = doble estrella de 8 puntas, corona de laurel completa y luz que gira.
 export function crearInsignia(ins, tam = 56) {
+  // Medalla ilustrada (imagen elegida al crear el logro)
+  if (ins.imagen && MEDALLAS[ins.imagen]) {
+    const m = MEDALLAS[ins.imagen];
+    const d = document.createElement("span");
+    d.className = "insignia insignia-img" + (m.nivel ? " nivel-" + m.nivel : "");
+    d.style.setProperty("--t", tam + "px");
+    d.style.setProperty("--nc", m.nivel ? NIVELES[m.nivel].color : m.color);
+    d.title = ins.nombre || m.nombre;
+    d.append(Object.assign(document.createElement("img"), { src: rutaMedalla(ins.imagen), alt: "", loading: "lazy", draggable: false }));
+    // En las de nivel se pone el número (100, 250…) en una plaquita abajo
+    if (m.numero && ins.corto && ins.corto !== "★" && tam >= 40) d.append(Object.assign(document.createElement("span"), { className: "insignia-placa", textContent: ins.corto }));
+    return d;
+  }
   const d = document.createElement("span");
   const nivel = nivelDe(ins.nivel);
   d.className = "insignia" + (nivel ? " nivel-" + nivel : "");
@@ -425,6 +454,21 @@ export function crearInsignia(ins, tam = 56) {
 // ---------- Logros de clases ----------
 // Solo los que llevan la palabra "clases" en el nombre muestran el contador
 export const esLogroDeClases = (l) => /clases/i.test(l?.nombre || "");
+// Ejercicios para elegir el favorito y el más odiado
+export const EJERCICIOS = ["Assault Bike / Echo Bike", "Back Squat", "Box Jump Over", "Box Jumps", "Burpee Box Jump Over", "Burpee Over Bar", "Burpees", "Butterfly Pull-ups", "Chest to Bar", "Clean", "Clean and Jerk", "Cluster", "Crossover Double Unders", "Db Clean and Jerk", "Db Overhead Walking Lunge", "Db Snatch", "Db Thruster", "Deadlift", "Deficit Handstand Push-up", "Devil Press", "Double Unders", "Farmers Carry", "Front Squat", "GHD Sit-ups", "Handstand Push-up", "Handstand Walk", "Hang Clean", "Hang Snatch", "Hollow Hold / Hollow Rock", "Jerk", "Jumping Lunges", "Kettlebell Snatch", "Kettlebell Swing", "Muscle-up", "Overhead Squat", "Pistol Squat", "Power Clean", "Power Snatch", "Pull-ups", "Push Jerk", "Push Press", "Rope Climb", "Rowing", "Run", "Sandbag Bear Hug Carry", "Sandbag Clean", "Shuttle Run", "Single Unders", "SkiErg", "Sled Pull", "Sled Push", "Snatch", "Split Jerk", "Squat Clean", "Squat Snatch", "Strict Handstand Push-up", "Strict Press", "Strict Pull-ups", "Sumo Deadlift High Pull", "Thruster", "Toes to Bar", "Turkish Get-Up", "V-Ups", "Walking Lunges", "Wall Walk", "Wallballs"];
+// Se ven en minúscula con la primera letra en mayúscula: "Back squat"
+export const formatoEjercicio = (t) => { const x = String(t || "").trim().replace(/\s+/g, " ").toLowerCase(); return x ? x[0].toUpperCase() + x.slice(1) : ""; };
+// Rellena un <select> con los ejercicios (y deja elegido el que ya tenía, aunque no esté en la lista)
+export function opcionesEjercicios(sel, actual = "") {
+  sel.replaceChildren(new Option("Elige un ejercicio…", ""));
+  const lista = [...EJERCICIOS];
+  if (actual && !lista.some((e) => e.toLowerCase() === actual.toLowerCase())) lista.unshift(actual);
+  for (const e of lista) sel.append(new Option(formatoEjercicio(e), e, false, !!actual && e.toLowerCase() === actual.toLowerCase()));
+}
+// Lo que se guarda en la ficha del socio cuando consigue un logro
+export const copiaInsignia = (l, puntos = l.puntos || 0, fecha = hoy()) => ({ nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", imagen: l.imagen || "", puntos, fecha });
+// Clases necesarias para un logro de clases (las del modo automático o el número del nombre)
+export const umbralLogro = (l) => (l?.clases > 0 ? l.clases : (esLogroDeClases(l) ? parseInt(String(l.nombre).match(/\d+/)?.[0] || "0", 10) : 0));
 export const umbralClases = (l) => (l?.clases > 0 ? l.clases : parseInt(String(l?.nombre || "").match(/\d+/)?.[0] || "0", 10));
 // El siguiente logro de clases que aún no tiene (el de menos clases)
 export function siguienteLogroClases(logros, ficha) {

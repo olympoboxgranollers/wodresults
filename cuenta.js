@@ -155,7 +155,8 @@ export async function sumarRegistro(user, clase, ficha) {
   lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
   // Cada resultado subido cuenta como una clase hecha (para los logros de 100, 250… clases),
   // salvo si sus clases ya vienen de AimHarder (entonces manda AimHarder)
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid, ...(ficha?.aimharder ? {} : { clases: increment(1) }) });
+  // puntosRanking: solo registrar y podio (para el ranking general)
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ultimoRegistro: mid, ...(ficha?.aimharder ? {} : { clases: increment(1) }) });
   await lote.commit();
   return true;
 }

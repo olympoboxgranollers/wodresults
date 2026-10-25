@@ -279,8 +279,8 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .dialogo-perfil p { color: var(--suave); font-size: 14px; line-height: 1.5; margin-top: 8px; }
 .dialogo-perfil label { display: grid; gap: 6px; margin-top: 14px; font-size: 13px; color: var(--suave); }
 .dialogo-perfil label small { font-size: 12px; opacity: .7; }
-.dialogo-perfil input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 13px; font-size: 16px; color: var(--texto); outline: none; }
-.dialogo-perfil input:focus { border-color: var(--lila); }
+.dialogo-perfil input, .dialogo-perfil select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 13px; font-size: 16px; color: var(--texto); outline: none; }
+.dialogo-perfil input:focus, .dialogo-perfil select:focus { border-color: var(--lila); }
 .dialogo-perfil button { width: 100%; margin-top: 18px; background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 14px; font-weight: 700; font-size: 16px; }
 .dialogo-perfil button:disabled { opacity: .5; }
 .dialogo-perfil .perfil-msg { color: var(--error); font-size: 14px; margin-top: 10px; min-height: 1em; }
@@ -300,3 +300,36 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .plegable.plegado > :not(.plegable-cab) { display: none !important; }
 .plegable.plegado { padding-bottom: 16px !important; }
 .plegable.plegado > .plegable-cab { margin-bottom: 0 !important; }
+
+/* ---------- Medallas ilustradas ---------- */
+.insignia.insignia-img { filter: drop-shadow(0 0 calc(var(--t) * .06) color-mix(in srgb, var(--nc) 45%, transparent)); }
+.insignia.insignia-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.insignia-placa { position: absolute; left: 50%; bottom: 2%; transform: translateX(-50%); padding: 1px calc(var(--t) * .07); border-radius: 999px;
+  font-size: calc(var(--t) * .13); font-weight: 800; line-height: 1.35; color: #fff; background: rgba(15, 16, 20, .82);
+  border: 1px solid color-mix(in srgb, var(--nc) 70%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--nc) 45%, transparent); white-space: nowrap; }
+.insignia.insignia-img.bloqueada { filter: grayscale(1) !important; opacity: .4; }
+
+/* ---------- Ventana de logro nuevo ---------- */
+.dialogo-logro { margin: auto; width: min(340px, calc(100vw - 40px)); padding: 26px 22px 22px; border-radius: 24px; text-align: center; color: var(--texto);
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--lila) 22%, #24262b), #1d1f23 70%); border: 1px solid color-mix(in srgb, var(--lila) 40%, transparent); }
+.dialogo-logro::backdrop { background: rgba(10, 10, 12, .78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.dialogo-logro[open] { animation: logro-entra .45s cubic-bezier(.2, 1.4, .4, 1); }
+.dialogo-logro .logro-etq { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--lila); font-weight: 700; }
+.dialogo-logro .logro-medalla { margin: 14px auto 6px; animation: logro-medalla 2.6s ease-in-out infinite; }
+.dialogo-logro h3 { font-size: 22px; font-weight: 800; margin-top: 6px; }
+.dialogo-logro p { color: var(--suave); font-size: 14px; margin-top: 6px; line-height: 1.45; }
+.dialogo-logro button { margin-top: 18px; width: 100%; padding: 13px; border: 0; border-radius: 999px; background: var(--lila); color: #1f2125; font-weight: 800; font-size: 16px; }
+@keyframes logro-entra { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes logro-medalla { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@media (prefers-reduced-motion: reduce) { .dialogo-logro[open], .dialogo-logro .logro-medalla { animation: none; } }
+
+/* ---------- Aviso de evento nuevo ---------- */
+.aviso-evento { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 45;
+  width: min(440px, calc(100vw - 24px)); display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-radius: 18px;
+  background: rgba(30, 32, 36, .96); border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent); box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: aviso-sube .4s ease; }
+.aviso-evento-txt { flex: 1; min-width: 0; display: grid; gap: 1px; text-decoration: none; color: var(--texto); }
+.aviso-evento-txt small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--lila); font-weight: 700; }
+.aviso-evento-txt b { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aviso-evento-txt span { font-size: 12.5px; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aviso-evento-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.07); color: var(--suave); font-size: 15px; }
+@keyframes aviso-sube { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
