@@ -92,8 +92,13 @@ export function hayQueRevisar(est, cliente, hoy) {
 export const normalEmail = (e) => String(e || "").trim().toLowerCase();
 
 // ---------- Logros de clases que le tocan a un socio ----------
+// Clases que pide un logro: las de su modo automático o, si lleva "clases" en el nombre, el número del nombre
+export function umbralLogro(l) {
+  if (l?.clases > 0) return l.clases;
+  return /clases/i.test(l?.nombre || "") ? parseInt(String(l.nombre).match(/\d+/)?.[0] || "0", 10) : 0;
+}
 export function logrosNuevos(usuario, clases, logros) {
-  return logros.filter((l) => l.clases > 0 && clases >= l.clases && !usuario?.insignias?.[l.id]);
+  return logros.filter((l) => umbralLogro(l) > 0 && clases >= umbralLogro(l) && !usuario?.insignias?.[l.id]);
 }
 
 // ---------- Una ejecución completa ----------
@@ -143,9 +148,11 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     const usuario = usuarios.get(uid);
     if (!prueba && !hayQueRevisar(est, cliente, hoy)) {
       // Nada nuevo en AimHarder: solo se corrige el número si en la app no coincide (sin gastar peticiones)
-      const nuevos = logrosNuevos(usuario, est.total, logros);
-      if (usuario.clases !== est.total || nuevos.length || !usuario.aimharder) {
-        await almacen.actualizarUsuario(uid, { clases: est.total, aimharder: true }, nuevos, hoy);
+      // Las clases de la app = las asistidas en AimHarder + el ajuste del coach (si le dio un logro de clases a mano)
+      const totalApp = est.total + (usuario.clasesAjuste || 0);
+      const nuevos = logrosNuevos(usuario, totalApp, logros);
+      if (usuario.clases !== totalApp || nuevos.length || !usuario.aimharder) {
+        await almacen.actualizarUsuario(uid, { clases: totalApp, aimharder: true }, nuevos, hoy);
         res.actualizados++; res.logros += nuevos.length;
       }
       continue;
@@ -162,9 +169,10 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     const r = contarReservas(reservas, est, hoy);
     if (prueba) { res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes }); continue; }
     estados[cliente.id] = { uid, ...r.estado, total: r.total, pendientes: r.pendientes, proximoDia: r.proximoDia, ultimaReserva: cliente.class_data?.reservation_date || null, revisado: ahora.toISOString() };
-    const nuevos = logrosNuevos(usuario, r.total, logros);
-    if (usuario.clases !== r.total || nuevos.length || !usuario.aimharder) {
-      await almacen.actualizarUsuario(uid, { clases: r.total, aimharder: true }, nuevos, hoy);
+    const totalApp = r.total + (usuario.clasesAjuste || 0);
+    const nuevos = logrosNuevos(usuario, totalApp, logros);
+    if (usuario.clases !== totalApp || nuevos.length || !usuario.aimharder) {
+      await almacen.actualizarUsuario(uid, { clases: totalApp, aimharder: true }, nuevos, hoy);
       res.actualizados++; res.logros += nuevos.length;
     }
   }
@@ -175,7 +183,7 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     ultima: ahora.toISOString(), ok: true, prueba, vinculados: res.vinculados, revisados: res.revisados, actualizados: res.actualizados, logros: res.logros,
     clientesAim: res.clientesAim, sinVincular, detenidoPorCupo: res.detenidoPorCupo, restanteDia: aim.cupo.dia, refreshCaduca: t.caduca || null, mensaje: ""
   });
-  log(`Revisados: ${res.revisados} · actualizados: ${res.actualizados} · logros dados: ${res.logros} · peticiones: ${aim.cupo.peticiones} · cupo restante hoy: ${aim.cupo.dia ?? "?"}${res.detenidoPorCupo ? " · parado para no pasar el límite (sigue en la próxima hora)" : ""}`);
+  log(`Revisados: ${res.revisados} · actualizados: ${res.actualizados} · logros dados: ${res.logros} · peticiones: ${aim.cupo.peticiones} · cupo restante hoy: ${aim.cupo.dia ?? "?"}${res.detenidoPorCupo ? " · parado para no pasar el límite (sigue en la próxima sincronización)" : ""}`);
   if (prueba) res.muestras.forEach((m, i) => log(`Prueba · socio ${i + 1}: ${m.reservasLeidas} reservas leídas → ${m.clasesAsistidas} clases asistidas (${m.pendientes} por venir)`));
   return res;
 }

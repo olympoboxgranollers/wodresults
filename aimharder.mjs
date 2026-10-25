@@ -1,4 +1,4 @@
-// Se ejecuta en GitHub Actions cada hora (ver .github/workflows/aimharder.yml).
+// Se ejecuta en GitHub Actions cada 3 horas (ver .github/workflows/aimharder.yml).
 // Lee las clases asistidas en AimHarder y las pone en la app (Firestore) con la cuenta de servicio de Firebase.
 import { createHash } from "node:crypto";
 import { initializeApp, cert } from "firebase-admin/app";
@@ -46,7 +46,7 @@ const almacen = {
     const cambios = { ...datos };
     let suma = 0;
     for (const l of nuevos) {
-      cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: l.puntos || 0, fecha: hoy };
+      cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", imagen: l.imagen || "", puntos: l.puntos || 0, fecha: hoy };
       suma += l.puntos || 0;
       lote.set(db.doc(`usuarios/${uid}/movimientos/logro_${l.id}`), { fecha: hoy, tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
     }
@@ -68,7 +68,7 @@ try {
   const msg = String(e?.message || e);
   const humano = e?.status === 401 || e?.status === 403 || e?.status === 400
     ? "AimHarder no acepta el token. Genera uno nuevo en AimHarder (Configuración → API) y pégalo en el secreto AIMHARDER_REFRESH_TOKEN de GitHub."
-    : e?.sinCupo ? "Se ha llegado al límite de peticiones de AimHarder; se seguirá en la próxima hora."
+    : e?.sinCupo ? "Se ha llegado al límite de peticiones de AimHarder; se seguirá en la próxima sincronización."
     : msg.startsWith("FALTA_TOKEN") ? "Falta el token de AimHarder en los secretos de GitHub."
     : "Error en la sincronización: " + msg;
   console.error("✗ " + humano);
