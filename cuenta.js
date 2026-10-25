@@ -147,14 +147,15 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
 
 // Suma al momento los puntos por registrar (una sola vez por clase y día).
 // Devuelve true si los ha sumado ahora y false si ya estaban sumados.
-export async function sumarRegistro(user, clase) {
+export async function sumarRegistro(user, clase, ficha) {
   const mid = idRegistro(clase);
   const ref = doc(db, "usuarios", user.uid, "movimientos", mid);
   if ((await getDoc(ref)).exists()) return false;
   const lote = writeBatch(db);
   lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
-  // Cada resultado subido cuenta como una clase hecha (para los logros de 100, 250… clases)
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid, clases: increment(1) });
+  // Cada resultado subido cuenta como una clase hecha (para los logros de 100, 250… clases),
+  // salvo si sus clases ya vienen de AimHarder (entonces manda AimHarder)
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid, ...(ficha?.aimharder ? {} : { clases: increment(1) }) });
   await lote.commit();
   return true;
 }

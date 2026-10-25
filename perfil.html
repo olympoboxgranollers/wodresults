@@ -269,7 +269,7 @@ function pintar() {
     // Contador en los logros de clases: cuántas lleva y cuántas le faltan
     if (esLogroDeClases(l) && umbralClases(l) > 0) {
       const meta = umbralClases(l), n = ficha.clases || 0;
-      d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)} / ${meta} · faltan ${Math.max(0, meta - n)}` }));
+      d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)} / ${meta}` }));
     }
     f.append(d);
   }
