@@ -51,6 +51,21 @@
   .boton { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
   .boton:disabled { opacity: .5; }
   .boton.sec { background: none; color: var(--lila); border: 1px solid color-mix(in srgb, var(--lila) 50%, transparent); }
+  .campos textarea { width: 100%; min-height: 110px; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 14px; color: var(--texto); resize: vertical; }
+  .boton.peligro { background: none; color: var(--error); border: 1px solid color-mix(in srgb, var(--error) 50%, transparent); }
+  .check { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 8px !important; font-size: 13px !important; }
+  .check input { width: auto !important; }
+  .check[hidden] { display: none !important; }
+  .previa { margin-top: 12px; font-size: 13px; color: var(--suave); line-height: 1.6; max-height: 220px; overflow: auto; }
+  .previa b { color: var(--texto); font-weight: 600; }
+  .previa .nueva { color: var(--lila); }
+  .previa .falla { color: var(--error); }
+  .clases-mias { margin-top: 14px; }
+  .clases-mias .txt { display: flex; justify-content: space-between; font-size: 13px; color: var(--suave); }
+  .clases-mias .txt b { color: var(--texto); font-weight: 600; }
+  .clases-mias .barra { height: 6px; border-radius: 999px; background: var(--panel); margin-top: 8px; overflow: hidden; }
+  .clases-mias .barra i { display: block; height: 100%; background: var(--lila); border-radius: inherit; }
+  .logro-nivel { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
 </style>
 </head>
@@ -67,6 +82,11 @@
     <b><span id="nConseguidos">0</span> <small>de <span id="nTotal">0</span></small></b>
   </div>
 
+  <div class="clases-mias" id="clasesMias" hidden>
+    <div class="txt"><span id="clasesTxt"></span><b id="clasesNum"></b></div>
+    <div class="barra"><i id="clasesBarra"></i></div>
+  </div>
+
   <!-- Solo el coach -->
   <section class="coach" id="coach" hidden>
     <div class="caja">
@@ -78,7 +98,28 @@
         <label>Puntos<input id="dPuntos" inputmode="numeric"></label>
       </div>
       <div class="fila" id="dVista"></div>
-      <div class="fila"><button type="button" class="boton" id="dDar">Dar logro</button><span class="msg" id="dMsg" role="status"></span></div>
+      <div class="fila">
+        <button type="button" class="boton" id="dDar">Dar logro</button>
+        <button type="button" class="boton peligro" id="dQuitar" hidden>Quitar logro</button>
+        <label class="check" id="dRestarCaja" hidden><input type="checkbox" id="dRestar" checked> Restar los puntos que le dio</label>
+      </div>
+      <div class="fila"><span class="msg" id="dMsg" role="status"></span></div>
+    </div>
+
+    <div class="caja">
+      <h2>Clases realizadas</h2>
+      <p>Cada resultado que sube un socio cuenta como una clase hecha. Cuando llega a 100, 250, 500… recibe el logro y sus puntos automáticamente (al momento si estás en esta página; si no, con el reparto de las 00:00). Aquí puedes corregir el número a mano.</p>
+      <div class="campos">
+        <label class="ancho">Socio<select id="cSocio"></select></label>
+        <label>Clases hechas<input id="cNum" inputmode="numeric" placeholder="0"></label>
+        <div style="display:flex;align-items:end"><button type="button" class="boton" id="cGuardar" style="width:100%">Guardar</button></div>
+      </div>
+      <p style="margin-top:16px">Si quieres poner las clases reales de AimHarder, exporta la asistencia y pega aquí una línea por socio con su nombre y el total de clases (por ejemplo <b>Ana García; 102</b>). También vale pegar las columnas copiadas de Excel.</p>
+      <div class="campos">
+        <label class="ancho">Lista de AimHarder<textarea id="cLista" placeholder="Ana García; 102&#10;Bea López; 57"></textarea></label>
+      </div>
+      <div class="previa" id="cPrevia"></div>
+      <div class="fila"><button type="button" class="boton" id="cImportar" disabled>Actualizar clases</button><span class="msg" id="cMsg" role="status"></span></div>
     </div>
 
     <form class="caja" id="nuevo" autocomplete="off">
@@ -90,6 +131,8 @@
         <label>Debajo<input id="nUnidad" maxlength="10" placeholder="clases"></label>
         <label class="ancho">Descripción<input id="nDesc" maxlength="100" placeholder="Has entrenado 100 clases con nosotros."></label>
         <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
+        <label>Dificultad<select id="nNivel"><option value="bronce">Bronce</option><option value="plata">Plata</option><option value="oro">Oro</option><option value="diamante">Diamante</option><option value="">Lila (sin nivel)</option></select></label>
+        <label>Automático al llegar a… clases<input id="nClases" inputmode="numeric" placeholder="Vacío = lo das tú"></label>
         <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
       </div>
       <div class="fila">
@@ -105,15 +148,15 @@
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES } from "./comun.js";
+import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu, esCuentaCoach } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
 
-let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null;
+let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null, dando = false;
 
 escucharCuenta(({ user, ficha: f }) => {
   coach = esCuentaCoach(user);
@@ -129,7 +172,16 @@ escucharCuenta(({ user, ficha: f }) => {
       const sel = $("dSocio"), antes = sel.value;
       sel.replaceChildren(new Option("Elige el socio…", ""), ...socios.map((x) => new Option(x.nombre, x.uid)));
       sel.value = antes;
-      vista();
+      const cs = $("cSocio"), antesC = cs.value;
+      cs.replaceChildren(new Option("Elige el socio…", ""), ...socios.map((x) => new Option(`${x.nombre} · ${x.clases || 0} clases`, x.uid)));
+      cs.value = antesC;
+      vista(); previa();
+      // Si alguien ya ha llegado a 100, 250… clases y aún no tiene el logro, se le da ahora
+      const auto = logros.filter((l) => l.clases > 0);
+      if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
+        dando = true;
+        import("./cierre.js").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+      }
     }, () => {});
   }
   pintar();
@@ -146,10 +198,24 @@ onSnapshot(query(collection(db, "logros"), orderBy("orden", "asc")), (s) => {
 
 function pintar() {
   const r = $("rejilla"); r.replaceChildren();
+  // Contador de clases del socio y lo que le falta para el siguiente logro automático
+  const auto = logros.filter((l) => l.clases > 0).sort((a, b) => a.clases - b.clases);
+  const n = ficha?.clases || 0;
+  $("clasesMias").hidden = coach || !auto.length;
+  if (!coach && auto.length) {
+    const sig = auto.find((l) => l.clases > n);
+    const prev = [...auto].reverse().find((l) => l.clases <= n);
+    $("clasesNum").textContent = `${n} clases`;
+    $("clasesTxt").textContent = sig ? `Te faltan ${sig.clases - n} para «${sig.nombre}»` : "¡Has conseguido todos los logros de clases!";
+    const desde = prev ? prev.clases : 0;
+    $("clasesBarra").style.width = (sig ? Math.min(100, ((n - desde) / (sig.clases - desde)) * 100) : 100) + "%";
+  }
   const mias = ficha?.insignias || {};
   $("nTotal").textContent = logros.length;
   $("nConseguidos").textContent = logros.filter((l) => mias[l.id]).length;
-  $("nIniciales").hidden = !coach || logros.length > 0;
+  const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || !("nivel" in l) || !("clases" in l); });
+  $("nIniciales").hidden = !coach || !faltan.length;
+  $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner niveles y modo automático a los de clases" : "Crear los de 100 a 1000 clases";
   if (!logros.length) {
     r.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: coach ? "Aún no hay logros. Crea los de 100 a 1000 clases con el botón de arriba o añade uno nuevo." : "Pronto habrá logros para conseguir." }));
     return;
@@ -162,6 +228,11 @@ function pintar() {
     const med = crearInsignia(l, 72);
     if (!mio && !coach) med.classList.add("bloqueada");
     c.append(med, Object.assign(document.createElement("div"), { className: "logro-nombre", textContent: l.nombre }));
+    if (NIVELES[l.nivel]) {
+      const nv = Object.assign(document.createElement("div"), { className: "logro-nivel", textContent: NIVELES[l.nivel].nombre + (l.clases ? " · automático" : "") });
+      nv.style.color = mio || coach ? NIVELES[l.nivel].texto : "var(--suave)";
+      c.append(nv);
+    }
     if (l.descripcion) c.append(Object.assign(document.createElement("div"), { className: "logro-desc", textContent: l.descripcion }));
     c.append(Object.assign(document.createElement("div"), { className: "logro-pts", textContent: `+${fmtPuntos(l.puntos)} pts` }));
     if (mio) c.append(Object.assign(document.createElement("div"), { className: "logro-fecha", textContent: "Conseguido el " + new Date(mio.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }) }));
@@ -191,7 +262,111 @@ function vista() {
   const ya = s && s.insignias && l && s.insignias[l.id];
   $("dVista").replaceChildren(...(l ? [crearInsignia(l, 52), document.createTextNode(ya ? `${s.nombre} ya tiene este logro.` : l.nombre)] : []));
   $("dDar").disabled = !l || !s || !!ya;
+  $("dDar").hidden = !!ya;
+  $("dQuitar").hidden = !ya;
+  $("dRestarCaja").hidden = !ya;
+  if (ya) $("dRestarCaja").lastChild.textContent = ` Restar los ${fmtPuntos(ya.puntos || 0)} pts que le dio`;
 }
+// Quitar un logro a un socio (y, si se marca, restarle los puntos que le dio)
+let seguroQuitar = false;
+$("dQuitar").addEventListener("click", async () => {
+  const l = logros.find((x) => x.id === $("dLogro").value);
+  const s = socios.find((x) => x.uid === $("dSocio").value);
+  const m = $("dMsg");
+  if (!l || !s || !s.insignias?.[l.id]) return;
+  if (!seguroQuitar) { seguroQuitar = true; $("dQuitar").textContent = "¿Seguro? Pulsa otra vez"; setTimeout(() => { seguroQuitar = false; $("dQuitar").textContent = "Quitar logro"; }, 4000); return; }
+  seguroQuitar = false; $("dQuitar").textContent = "Quitar logro";
+  const pts = $("dRestar").checked ? (s.insignias[l.id].puntos || 0) : 0;
+  try {
+    const lote = writeBatch(db);
+    const cambios = { [`insignias.${l.id}`]: deleteField() };
+    if (pts) cambios.puntos = increment(-pts);
+    lote.update(doc(db, "usuarios", s.uid), cambios);
+    lote.delete(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`));
+    await lote.commit();
+    m.className = "msg ok"; m.textContent = `✓ Quitado "${l.nombre}" a ${s.nombre}${pts ? ` (−${fmtPuntos(pts)} pts)` : ""}.`;
+  } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido quitar el logro."; }
+});
+
+// ---------- Clases realizadas: a mano o pegando la lista de AimHarder ----------
+const normal = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+// Prepara los cambios de un socio: nuevo total de clases + logros automáticos que le tocan
+function cambiosClases(s, n) {
+  const nuevos = logros.filter((l) => l.clases > 0 && n >= l.clases && !s.insignias?.[l.id]);
+  return { s, n, nuevos };
+}
+async function aplicarClases(lista) {
+  // Lotes pequeños para no pasar el límite de Firebase (500 escrituras por lote)
+  let lote = writeBatch(db), ops = 0, logrosDados = 0;
+  for (const { s, n, nuevos } of lista) {
+    const cambios = { clases: n };
+    let suma = 0;
+    for (const l of nuevos) {
+      cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: l.puntos || 0, fecha: hoy() };
+      suma += l.puntos || 0;
+      lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
+      ops++; logrosDados++;
+    }
+    if (suma) cambios.puntos = increment(suma);
+    lote.update(doc(db, "usuarios", s.uid), cambios); ops++;
+    if (ops >= 400) { await lote.commit(); lote = writeBatch(db); ops = 0; }
+  }
+  if (ops) await lote.commit();
+  return logrosDados;
+}
+$("cSocio").addEventListener("change", () => { const s = socios.find((x) => x.uid === $("cSocio").value); $("cNum").value = s ? (s.clases || 0) : ""; });
+$("cGuardar").addEventListener("click", async () => {
+  const s = socios.find((x) => x.uid === $("cSocio").value);
+  const n = parseInt($("cNum").value, 10);
+  const m = $("cMsg");
+  if (!s) { m.className = "msg error"; m.textContent = "Elige un socio."; return; }
+  if (!(n >= 0) || n > 100000) { m.className = "msg error"; m.textContent = "Revisa el número de clases."; return; }
+  try {
+    const c = cambiosClases(s, n);
+    await aplicarClases([c]);
+    m.className = "msg ok"; m.textContent = `✓ ${s.nombre}: ${n} clases` + (c.nuevos.length ? ` · nuevo logro: ${c.nuevos.map((l) => l.nombre).join(", ")}` : "");
+  } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido guardar."; }
+});
+// Lee las líneas pegadas: "Nombre; 102", "Nombre,102", "Nombre<TAB>102" o "Nombre 102"
+function leerLista() {
+  const filas = [];
+  for (const linea of $("cLista").value.split(/\r?\n/)) {
+    const t = linea.trim(); if (!t) continue;
+    const m = t.match(/^(.*?)[\s;,\t]+(\d{1,5})\s*$/);
+    if (!m) { filas.push({ linea: t, error: true }); continue; }
+    filas.push({ linea: t, nombre: m[1].replace(/[;,\t]+$/, "").trim(), n: parseInt(m[2], 10) });
+  }
+  return filas;
+}
+let preparados = [];
+function previa() {
+  const caja = $("cPrevia"); caja.replaceChildren(); preparados = [];
+  const filas = leerLista();
+  const porNombre = new Map(socios.map((x) => [normal(x.nombre), x]));
+  for (const f of filas) {
+    const d = document.createElement("div");
+    const s = f.error ? null : porNombre.get(normal(f.nombre));
+    if (!s) { d.className = "falla"; d.textContent = f.error ? `✕ No entiendo: ${f.linea}` : `✕ ${f.nombre}: no hay ningún socio con ese nombre en la app`; caja.append(d); continue; }
+    const c = cambiosClases(s, f.n);
+    preparados.push(c);
+    d.append(Object.assign(document.createElement("b"), { textContent: s.nombre }), document.createTextNode(` · ${s.clases || 0} → ${f.n} clases`));
+    if (c.nuevos.length) d.append(Object.assign(document.createElement("span"), { className: "nueva", textContent: `  🏅 ${c.nuevos.map((l) => l.nombre).join(", ")}` }));
+    caja.append(d);
+  }
+  $("cImportar").disabled = !preparados.length;
+  $("cImportar").textContent = preparados.length ? `Actualizar ${preparados.length} socio${preparados.length > 1 ? "s" : ""}` : "Actualizar clases";
+}
+$("cLista").addEventListener("input", previa);
+$("cImportar").addEventListener("click", async () => {
+  const m = $("cMsg");
+  if (!preparados.length) return;
+  $("cImportar").disabled = true;
+  try {
+    const dados = await aplicarClases(preparados);
+    m.className = "msg ok"; m.textContent = `✓ Clases actualizadas de ${preparados.length} socios` + (dados ? ` · ${dados} logros nuevos repartidos` : "");
+    $("cLista").value = ""; previa();
+  } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido actualizar."; $("cImportar").disabled = false; }
+});
 $("dDar").addEventListener("click", async () => {
   const l = logros.find((x) => x.id === $("dLogro").value);
   const s = socios.find((x) => x.uid === $("dSocio").value);
@@ -203,7 +378,7 @@ $("dDar").addEventListener("click", async () => {
   try {
     const lote = writeBatch(db);
     lote.update(doc(db, "usuarios", s.uid), {
-      [`insignias.${l.id}`]: { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, puntos: pts, fecha: hoy() },
+      [`insignias.${l.id}`]: { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: pts, fecha: hoy() },
       puntos: increment(pts)
     });
     lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: pts });
@@ -219,6 +394,7 @@ function editar(l) {
   editando = l.id;
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
+  $("nNivel").value = l.nivel || ""; $("nClases").value = l.clases || "";
   $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
   window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
 }
@@ -232,7 +408,8 @@ $("nuevo").addEventListener("submit", async (e) => {
   const orden = parseInt($("nOrden").value || "0", 10);
   if (!nombre) return msgN("Escribe el nombre.", true);
   if (!(puntos >= 0)) return msgN("Revisa los puntos.", true);
-  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden };
+  const clases = parseInt($("nClases").value || "0", 10);
+  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden, nivel: $("nNivel").value, clases: clases > 0 ? clases : 0 };
   const id = editando || nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 30) || ("logro" + Date.now());
   try {
     if (editando) await updateDoc(doc(db, "logros", id), datos);
@@ -243,9 +420,13 @@ $("nuevo").addEventListener("submit", async (e) => {
 $("nIniciales").addEventListener("click", async () => {
   try {
     const lote = writeBatch(db);
-    for (const { id, ...datos } of LOGROS_INICIALES) lote.set(doc(db, "logros", id), datos);
+    for (const { id, ...datos } of LOGROS_INICIALES) {
+      const ya = logros.find((x) => x.id === id);
+      if (ya) lote.update(doc(db, "logros", id), { nivel: "nivel" in ya ? ya.nivel : datos.nivel, clases: "clases" in ya ? ya.clases : datos.clases });
+      else lote.set(doc(db, "logros", id), datos);
+    }
     await lote.commit();
-    msgN("✓ Creados los logros de 100, 250, 500, 750 y 1000 clases.");
+    msgN("✓ Creados los logros de 100 (bronce), 250 (plata), 500 y 750 (oro) y 1000 clases (diamante).");
   } catch (e) { console.error(e); msgN("No se han podido crear.", true); }
 });
 </script>

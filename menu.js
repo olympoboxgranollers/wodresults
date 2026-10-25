@@ -1,5 +1,5 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
-import { doc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, updateDoc, getDoc, setDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { COACH_EMAIL } from "./config.js";
@@ -16,6 +16,7 @@ const ICONOS = {
   entrar: '<path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M9.5 16.5L14 12 9.5 7.5"/><path d="M14 12H3.5"/>',
   canjes: '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 12.5h17"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8 0-4.5-.6-4.5-2.6 0-1.3 1-2 2-2 2 0 2.5 2.6 2.5 4.6z"/><path d="M12 8.5c1.8 0 4.5-.6 4.5-2.6 0-1.3-1-2-2-2-2 0-2.5 2.6-2.5 4.6z"/>',
   logros: '<circle cx="12" cy="9" r="5.5"/><path d="M8.6 13.4L7 21l5-2.6 5 2.6-1.6-7.6"/><path d="M12 6.6l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>',
+  eventos: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h2"/><path d="M14 14h2"/><path d="M8 17h2"/>',
   salir: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'
 };
 const icono = (n) => {
@@ -33,6 +34,7 @@ const PAGINAS = [
   { id: "puntos",    href: "puntos.html",   texto: "Puntos" },
   { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
   { id: "logros",    href: "logros.html",   texto: "Logros" },
+  { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },
   { id: "publicar",  href: "publicar.html", texto: "Publicar", coach: true }
 ];
@@ -88,7 +90,10 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     }
   };
   pintar();
-  escucharCuenta(({ user: u }) => {
+  escucharCuenta(({ user: u, ficha }) => {
+    // Sin perfil de atleta no se puede usar la app: se pide una vez (el coach no lo necesita)
+    if (u && !esCuentaCoach(u) && ficha !== undefined && (!ficha || !ficha.atleta)) pedirPerfil(u, ficha);
+    else if (dlgPerfil?.open) dlgPerfil.close();
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
       location.replace("index.html?volver=" + encodeURIComponent(volver));
@@ -100,11 +105,73 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     user = u;
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
+    // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
+    if (cambio && esCuentaCoach(u)) import("./cierre.js").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
   return { repintar: pintar };
 }
+
+// ---------- Perfil de atleta obligatorio ----------
+let dlgPerfil = null;
+function pedirPerfil(user, ficha) {
+  if (dlgPerfil?.open) return;
+  if (!dlgPerfil) {
+    dlgPerfil = document.createElement("dialog");
+    dlgPerfil.className = "dialogo-perfil";
+    dlgPerfil.addEventListener("cancel", (e) => e.preventDefault());  // no se puede cerrar sin crearlo
+    document.body.append(dlgPerfil);
+  }
+  dlgPerfil.innerHTML = `
+    <form method="dialog" autocomplete="off">
+      <div class="perfil-marca">Olympo Box</div>
+      <h3>Crea tu perfil de atleta</h3>
+      <p>Tu nombre saldrá en tus resultados, en el ranking y en tu perfil. Lo pones una vez y después lo puedes cambiar desde tu perfil.</p>
+      <label>Nombre y apellido<input name="nombre" maxlength="40" required autocomplete="name"></label>
+      <label><span>Ejercicio favorito <small>(opcional)</small></span><input name="favorito" maxlength="40" placeholder="Ej. Thrusters"></label>
+      <label><span>Ejercicio más odiado <small>(opcional)</small></span><input name="odiado" maxlength="40" placeholder="Ej. Burpees"></label>
+      <div class="perfil-msg" role="status"></div>
+      <button type="submit">Crear mi perfil</button>
+    </form>`;
+  const f = dlgPerfil.querySelector("form");
+  f.nombre.value = (ficha?.nombre || user.displayName || "").slice(0, 40);
+  f.favorito.value = ficha?.favorito || "";
+  f.odiado.value = ficha?.odiado || "";
+  f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
+    const nombre = limpio(f.nombre.value), favorito = limpio(f.favorito.value), odiado = limpio(f.odiado.value);
+    const msg = f.querySelector(".perfil-msg");
+    if (nombre.length < 2) { msg.textContent = "Escribe tu nombre y apellido."; return; }
+    f.querySelector("button").disabled = true;
+    try {
+      const ref = doc(db, "usuarios", user.uid);
+      const actual = await getDoc(ref);
+      if (actual.exists()) await updateDoc(ref, { nombre, favorito, odiado, atleta: true });
+      else await setDoc(ref, { nombre, puntos: 0, favorito, odiado, atleta: true });
+      dlgPerfil.close();
+    } catch (err) { console.error(err); msg.textContent = "No se ha podido guardar. Inténtalo de nuevo."; f.querySelector("button").disabled = false; }
+  });
+  dlgPerfil.showModal();
+  setTimeout(() => f.nombre.focus(), 50);
+}
+
+// ---------- Protección: no se puede copiar texto, guardar imágenes ni abrir el menú del botón derecho ----------
+(function protegerCopia() {
+  const editable = (el) => el && (el.closest?.("input, textarea, select, [contenteditable]"));
+  document.documentElement.classList.add("sin-copia");
+  addEventListener("contextmenu", (e) => { if (!editable(e.target)) e.preventDefault(); });
+  addEventListener("copy", (e) => { if (!editable(e.target)) e.preventDefault(); });
+  addEventListener("cut", (e) => { if (!editable(e.target)) e.preventDefault(); });
+  addEventListener("dragstart", (e) => { if (e.target?.tagName === "IMG") e.preventDefault(); });
+  addEventListener("keydown", (e) => {
+    const k = e.key?.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && ["s", "u", "p"].includes(k)) e.preventDefault();
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ["i", "j", "c"].includes(k)) e.preventDefault();
+    if (k === "f12") e.preventDefault();
+  });
+})();
 
 // ---------- Editor de un resultado (solo coach) ----------
 let dlg = null;
@@ -151,7 +218,7 @@ export function abrirEditor(r, tipo) {
         const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(claseDe(r), r.fecha));
         if ((await getDoc(regRef)).exists()) {
           lote.delete(regRef);
-          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar) });
+          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1) });
         }
       }
       await lote.commit();

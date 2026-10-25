@@ -126,7 +126,6 @@
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro } from "./comun.js";
-import { cerrarDiasPendientes } from "./cierre.js";
 import { montarMenu } from "./menu.js";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
@@ -145,7 +144,7 @@ escucharCuenta(({ user }) => {
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
   $("zonaCoach").hidden = !user;
-  if (user) { $("quienNombre").textContent = user.email; cerrarDiasPendientes(); }
+  if (user) { $("quienNombre").textContent = user.email; }
 });
 const publicados = {};   // WOD guardado de cada clase
 let editado = false;     // si hay cambios sin publicar en la clase actual
@@ -316,7 +315,7 @@ function editor(r, tipo) {
       const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(clase));
       if ((await getDoc(regRef)).exists()) {
         lote.delete(regRef);
-        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar) });
+        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1) });
       }
       await lote.commit();
       abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado y sus ${PUNTOS.registrar} puntos de registrar descontados.`;

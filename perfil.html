@@ -51,6 +51,33 @@
   .rm-cancelar { background: none; border: 0; color: var(--suave); font-size: 14px; }
   .rm-msg { font-size: 14px; color: var(--error); }
   .rm-fecha { color: var(--suave); font-size: 12px; margin-top: 8px; }
+  .avatar { position: relative; overflow: hidden; }
+  .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .avatar.grande { width: 84px; height: 84px; font-size: 32px; }
+  .avatar.con-foto { cursor: zoom-in; }
+  .gustos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+  .gusto { background: var(--panel); border-radius: 16px; padding: 14px 16px; }
+  .gusto span { display: block; color: var(--suave); font-size: 12px; }
+  .gusto b { display: block; font-size: 17px; font-weight: 600; margin-top: 4px; overflow-wrap: anywhere; }
+  .gusto.fav b { color: #7ee2a8; } .gusto.odio b { color: #ff8f8f; }
+  .editar-perfil { margin-top: 14px; background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 7px 16px; font-size: 13px; font-weight: 500; }
+  .perfil-form { margin-top: 16px; border: 1px solid var(--borde); border-radius: 18px; padding: 18px; display: grid; gap: 12px; }
+  .perfil-form label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
+  .perfil-form input[type=text] { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
+  .perfil-form input[type=text]:focus { border-color: var(--lila); }
+  .foto-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .foto-fila .boton-foto { border: 1px dashed var(--borde); border-radius: 12px; padding: 10px 14px; font-size: 14px; color: var(--texto); cursor: pointer; }
+  .foto-fila .quitar { background: none; border: 0; color: var(--error); font-size: 13px; }
+  .interruptor { display: flex !important; grid-template-columns: none !important; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 0; border-top: 1px solid var(--borde); font-size: 14px !important; color: var(--texto) !important; }
+  .interruptor small { display: block; color: var(--suave); font-size: 12px; margin-top: 2px; }
+  .interruptor input { appearance: none; width: 46px; height: 28px; border-radius: 999px; background: var(--borde); position: relative; flex: none; cursor: pointer; transition: background .2s; }
+  .interruptor input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .interruptor input:checked { background: var(--lila); }
+  .interruptor input:checked::after { transform: translateX(18px); }
+  .oculto-txt { font-size: 15px !important; }
+  .zoom-foto { margin: auto; padding: 0; border: 0; background: none; max-width: min(92vw, 520px); }
+  .zoom-foto::backdrop { background: rgba(0,0,0,.85); }
+  .zoom-foto img { display: block; width: 100%; border-radius: 20px; }
   .vacio { color: var(--suave); padding: 24px 0; text-align: center; font-size: 15px; grid-column: 1 / -1; }
 </style>
 </head>
@@ -62,11 +89,31 @@
   <button type="button" class="volver" id="volver">← Volver</button>
 
   <div class="cabeza">
-    <div class="avatar" id="avatar">·</div>
+    <div class="avatar grande" id="avatar">·</div>
     <div>
       <h1 id="nombre">Cargando…</h1>
       <div class="yo" id="yo" hidden>Este es tu perfil</div>
     </div>
+  </div>
+  <button type="button" class="editar-perfil" id="editarPerfil" hidden>Editar perfil</button>
+
+  <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
+    <div class="foto-fila">
+      <div class="avatar" id="pVista">·</div>
+      <label class="boton-foto" for="pFoto"><span id="pFotoTxt">Poner foto</span></label>
+      <input type="file" id="pFoto" accept="image/*" hidden>
+      <button type="button" class="quitar" id="pQuitar" hidden>Quitar foto</button>
+    </div>
+    <label>Nombre y apellido<input type="text" id="pNombre" maxlength="40" required></label>
+    <label>Ejercicio favorito<input type="text" id="pFav" maxlength="40" placeholder="Ej. Thrusters"></label>
+    <label>Ejercicio más odiado<input type="text" id="pOdio" maxlength="40" placeholder="Ej. Burpees"></label>
+    <label class="interruptor"><span>Ocultar mis puntos<small>Los demás no verán tus puntos ni saldrás en el ranking de puntos</small></span><input type="checkbox" id="pOcultar"></label>
+    <div class="rm-acc"><button type="submit" class="rm-guardar" id="pGuardar">Guardar</button><button type="button" class="rm-cancelar" id="pCancelar">Cancelar</button><span class="rm-msg" id="pMsg"></span></div>
+  </form>
+
+  <div class="gustos" id="gustos" hidden>
+    <div class="gusto fav"><span>💚 Ejercicio favorito</span><b id="gFav">–</b></div>
+    <div class="gusto odio"><span>💀 Ejercicio más odiado</span><b id="gOdio">–</b></div>
   </div>
 
   <div class="datos">
@@ -74,6 +121,8 @@
     <div class="dato"><b id="dPuesto">–</b><span>en el ranking</span></div>
     <div class="dato"><b id="dLogros">–</b><span>logros</span></div>
   </div>
+
+  <dialog class="zoom-foto" id="zoomFoto"><img id="zoomImg" alt=""></dialog>
 
   <h2 class="rm-titulo">Marcas personales <button type="button" class="rm-editar" id="rmEditar" hidden>Editar</button></h2>
   <div class="rm">
@@ -95,7 +144,7 @@
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, fmtPuntos, crearInsignia, insigniasDe, hoy } from "./comun.js";
 import { escucharCuenta } from "./cuenta.js";
 import { montarMenu } from "./menu.js";
@@ -105,7 +154,7 @@ montarMenu({ actual: "", cuenta: false });
 $("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "puntos.html")));
 
 const uid = new URLSearchParams(location.search).get("uid");
-let ficha = null, catalogo = [], ranking = [], yo = null;
+let ficha = null, catalogo = [], ranking = [], yo = null, foto = null, dejarFoto = null, fotoNueva;
 
 escucharCuenta(({ user }) => {
   yo = user;
@@ -120,6 +169,9 @@ if (uid) escucharFicha(uid);
 
 function escucharFicha(id) {
   if (dejar) dejar();
+  if (dejarFoto) dejarFoto();
+  // La foto va aparte para no cargarla en cada ranking
+  dejarFoto = onSnapshot(doc(db, "fotos", id), (s) => { foto = s.exists() ? s.data().img : null; pintar(); }, () => {});
   dejar = onSnapshot(doc(db, "usuarios", id), (s) => {
     if (s.exists()) ficha = { uid: s.id, ...s.data() };
     // Mi perfil aunque aún no haya registrado nada: se crea la ficha al guardar
@@ -137,11 +189,19 @@ function pintar() {
   const nombre = ficha.nombre || "Socio";
   $("nombre").textContent = nombre;
   document.title = `${nombre} · Olympo`;
-  $("avatar").textContent = nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-  $("dPuntos").textContent = fmtPuntos(ficha.puntos || 0);
+  ponerAvatar($("avatar"), nombre, foto);
+  const esYo = !!yo && yo.uid === ficha.uid;
+  const oculto = !!ficha.ocultarPuntos && !esYo;
+  $("dPuntos").textContent = oculto ? "🔒" : fmtPuntos(ficha.puntos || 0);
+  $("dPuntos").classList.toggle("oculto-txt", oculto);
+  $("dPuntos").title = oculto ? "Ha ocultado sus puntos" : (ficha.ocultarPuntos ? "Tus puntos están ocultos para los demás" : "");
+  $("gustos").hidden = !ficha.favorito && !ficha.odiado;
+  $("gFav").textContent = ficha.favorito || "–";
+  $("gOdio").textContent = ficha.odiado || "–";
+  $("editarPerfil").hidden = !esYo || !$("perfilForm").hidden;
   // Puesto en el ranking de puntos (empates comparten puesto)
   let puesto = "–", p = 0, ant = null;
-  ranking.forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
+  ranking.filter((u) => !u.ocultarPuntos).forEach((u, i) => { if (u.puntos !== ant) { p = i + 1; ant = u.puntos; } if (u.uid === ficha.uid) puesto = p + "º"; });
   $("dPuesto").textContent = puesto;
   const mias = insigniasDe(ficha);
   $("dLogros").textContent = mias.length;
@@ -152,7 +212,6 @@ function pintar() {
   $("rmSnatch").innerHTML = kg(rm.snatch);
   $("rmCj").innerHTML = kg(rm.cleanJerk);
   $("rmFecha").textContent = rm.fecha ? "Actualizado el " + new Date(rm.fecha + "T12:00:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
-  const esYo = !!yo && yo.uid === ficha.uid;
   $("rmEditar").hidden = !esYo || !$("rmForm").hidden;
 
   const c = $("conseguidos"); c.replaceChildren();
@@ -174,6 +233,65 @@ function pintar() {
     f.append(d);
   }
 }
+
+// Avatar: la foto si la hay, si no las iniciales
+function ponerAvatar(el, nombre, img) {
+  el.replaceChildren();
+  el.classList.toggle("con-foto", !!img);
+  if (img) el.append(Object.assign(document.createElement("img"), { src: img, alt: nombre }));
+  else el.textContent = (nombre || "·").trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+}
+$("avatar").addEventListener("click", () => { if (!foto) return; $("zoomImg").src = foto; $("zoomFoto").showModal(); });
+$("zoomFoto").addEventListener("click", () => $("zoomFoto").close());
+
+// ---------- Editar mi perfil: foto, nombre, ejercicios y ocultar puntos ----------
+$("editarPerfil").addEventListener("click", () => {
+  $("pNombre").value = ficha.nombre || ""; $("pFav").value = ficha.favorito || ""; $("pOdio").value = ficha.odiado || "";
+  $("pOcultar").checked = !!ficha.ocultarPuntos;
+  fotoNueva = undefined; vistaFoto();
+  $("pMsg").textContent = ""; $("perfilForm").hidden = false; $("editarPerfil").hidden = true;
+});
+function vistaFoto() {
+  const img = fotoNueva === undefined ? foto : fotoNueva;
+  ponerAvatar($("pVista"), $("pNombre").value || ficha?.nombre, img);
+  $("pQuitar").hidden = !img;
+  $("pFotoTxt").textContent = img ? "Cambiar foto" : "Poner foto";
+}
+$("pNombre").addEventListener("input", vistaFoto);
+$("pQuitar").addEventListener("click", () => { fotoNueva = null; vistaFoto(); });
+$("pCancelar").addEventListener("click", () => { $("perfilForm").hidden = true; pintar(); });
+// Recorta la foto en cuadrado y la reduce (para que ocupe poco)
+$("pFoto").addEventListener("change", async () => {
+  const f = $("pFoto").files[0]; $("pFoto").value = "";
+  if (!f) return;
+  try {
+    const url = URL.createObjectURL(f);
+    const im = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = url; });
+    const lado = Math.min(im.naturalWidth, im.naturalHeight), T = 320;
+    const c = document.createElement("canvas"); c.width = c.height = T;
+    c.getContext("2d").drawImage(im, (im.naturalWidth - lado) / 2, (im.naturalHeight - lado) / 2, lado, lado, 0, 0, T, T);
+    URL.revokeObjectURL(url);
+    let q = .85, dato = c.toDataURL("image/jpeg", q);
+    while (dato.length > 90000 && q > .4) { q -= .1; dato = c.toDataURL("image/jpeg", q); }
+    fotoNueva = dato; vistaFoto();
+  } catch (e) { console.error(e); $("pMsg").textContent = "No se ha podido leer la foto."; }
+});
+$("perfilForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
+  const nombre = limpio($("pNombre").value);
+  if (nombre.length < 2) { $("pMsg").textContent = "Escribe tu nombre y apellido."; return; }
+  $("pGuardar").disabled = true;
+  try {
+    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), ocultarPuntos: $("pOcultar").checked, atleta: true };
+    if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre, puntos: 0 });
+    await updateDoc(doc(db, "usuarios", yo.uid), datos);
+    if (fotoNueva === null) await deleteDoc(doc(db, "fotos", yo.uid));
+    else if (fotoNueva) await setDoc(doc(db, "fotos", yo.uid), { img: fotoNueva });
+    $("perfilForm").hidden = true; pintar();
+  } catch (err) { console.error(err); $("pMsg").textContent = "No se ha podido guardar."; }
+  $("pGuardar").disabled = false;
+});
 
 // ---------- Editar mis RM (solo en mi propio perfil) ----------
 $("rmEditar").addEventListener("click", () => {

@@ -119,6 +119,9 @@
   .ir-cartera b { font-family: "Oswald", sans-serif; font-size: 30px; color: var(--lila); line-height: 1.1; }
   .ir-cartera-flecha { font-weight: 800; font-size: 15px; white-space: nowrap; }
   .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
+  .atleta-fijo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); }
+  .atleta-fijo b { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+  .atleta-fijo a { color: var(--suave); font-size: 13px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -155,8 +158,8 @@
 
     <div class="ya-registrado" id="yaRegistrado" hidden></div>
 
-    <label for="nombre">Nombre</label>
-    <input class="campo" id="nombre" maxlength="40" placeholder="Nombre y apellido" required>
+    <label>Atleta</label>
+    <div class="atleta-fijo"><b id="nombre">…</b><a href="perfil.html">Cambiar en tu perfil</a></div>
 
     <label>Categoría</label>
     <div class="segmentado tres" id="categoria">
@@ -308,7 +311,7 @@ escucharCuenta((c) => {
   $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
   $("carteraTotal").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
-  if (!$("nombre").value || cambioUsuario) $("nombre").value = ficha?.nombre || user.displayName || "";
+  $("nombre").textContent = ficha?.nombre || user.displayName || "—";
   if (cambioUsuario) escucharMiResultado();
 });
 
@@ -481,8 +484,8 @@ $("formulario").addEventListener("submit", async (e) => {
   $("error").textContent = "";
   if (!user) return ($("error").textContent = "Entra en tu cuenta para subir el resultado.");
   if (diaCerrado) return ($("error").textContent = "El día ya está cerrado.");
-  const nombre = $("nombre").value.trim().replace(/\s+/g, " ");
-  if (!nombre) return ($("error").textContent = "Escribe tu nombre.");
+  const nombre = (ficha?.nombre || user.displayName || "").trim().replace(/\s+/g, " ").slice(0, 40);
+  if (!nombre) return ($("error").textContent = "Primero crea tu perfil de atleta.");
   if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
 
   let valor;
@@ -514,7 +517,7 @@ $("formulario").addEventListener("submit", async (e) => {
 
   $("enviar").disabled = true;
   try {
-    await guardarNombre(user, ficha, nombre);
+    if (!ficha) await guardarNombre(user, ficha, nombre);
     const id = idResultado(clase, user.uid);
     await setDoc(doc(db, "resultados", id), {
       uid: user.uid, nombre, clase, categoria, tipo, valor, fecha: hoy(),

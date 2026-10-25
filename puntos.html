@@ -62,6 +62,9 @@
   .pc-dar { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
   .pc-dar:disabled { opacity: .5; }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+  .ocultar { margin-top: 12px; margin-left: 14px; background: none; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); color: inherit; opacity: .8; border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 500; }
+  .oculto-aviso { font-size: 13px; margin-top: 6px; opacity: .8; }
+  li .candado { font-size: 13px; margin-left: 4px; }
   li .nom { display: flex; align-items: center; gap: 6px; }
   li .nom .insignia { --t: 22px; }
 </style>
@@ -82,12 +85,13 @@
     <div class="cartera-nombre" id="carteraNombre"></div>
     <div class="cartera-total"><span id="carteraTotal">0</span><small>pts</small></div>
     <div class="cartera-puesto" id="carteraPuesto"></div>
-    <a class="ver-perfil" href="perfil.html">Ver mi perfil →</a>
+    <div class="oculto-aviso" id="ocultoAviso" hidden>🔒 Tus puntos están ocultos: los demás no los ven y no sales en el ranking.</div>
+    <a class="ver-perfil" href="perfil.html">Ver mi perfil →</a><button type="button" class="ocultar" id="ocultar">Ocultar mis puntos</button>
   </section>
 
 
   <section id="zonaHistorial" hidden>
-    <h2>Tus últimos puntos</h2>
+    <h2>Tus puntos de hoy</h2>
     <div class="historial" id="historial"></div>
   </section>
 
@@ -98,8 +102,8 @@
 </main>
 
 <script type="module">
-import { collection, query, orderBy, limit, onSnapshot, doc, writeBatch, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, CLASES, PUNTOS, fmtPuntos, insigniasDe, crearInsignia } from "./comun.js";
+import { collection, query, where, orderBy, limit, onSnapshot, doc, writeBatch, increment, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, CLASES, PUNTOS, fmtPuntos, insigniasDe, crearInsignia, hoy } from "./comun.js";
 import { escucharCuenta, montarAcceso, salir } from "./cuenta.js";
 import { montarMenu, esCuentaCoach } from "./menu.js";
 montarMenu({ actual: "puntos", cuenta: false });
@@ -122,7 +126,14 @@ let yo = null;
 let ranking = [];
 let dejarHistorial = null;
 
-let soyCoach = false;
+let soyCoach = false, oculto = false;
+$("ocultar").addEventListener("click", async () => {
+  if (!yo) return;
+  $("ocultar").disabled = true;
+  try { await updateDoc(doc(db, "usuarios", yo.uid), { ocultarPuntos: !oculto }); }
+  catch (e) { console.error(e); }
+  $("ocultar").disabled = false;
+});
 escucharCuenta(({ user, ficha }) => {
   yo = user;
   soyCoach = esCuentaCoach(user);
@@ -134,11 +145,14 @@ escucharCuenta(({ user, ficha }) => {
   if (!user) { pintarRanking(); return; }
   $("carteraNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("carteraTotal").textContent = fmtPuntos(ficha?.puntos || 0);
-  dejarHistorial = onSnapshot(query(collection(db, "usuarios", user.uid, "movimientos"), orderBy("fecha", "desc"), limit(20)), (s) => {
+  oculto = !!ficha?.ocultarPuntos;
+  $("ocultoAviso").hidden = !oculto;
+  $("ocultar").textContent = oculto ? "Mostrar mis puntos" : "Ocultar mis puntos";
+  // Solo los puntos de hoy: cada día empieza vacío
+  dejarHistorial = onSnapshot(query(collection(db, "usuarios", user.uid, "movimientos"), where("fecha", "==", hoy())), (s) => {
     const cont = $("historial"); cont.replaceChildren();
-    if (s.empty) { const v = document.createElement("div"); v.className = "vacio"; v.textContent = "Aún no tienes puntos. Sube tu resultado hoy y suma los primeros."; cont.append(v); return; }
-    s.forEach((d) => {
-      const m = d.data();
+    if (s.empty) { const v = document.createElement("div"); v.className = "vacio"; v.textContent = "Hoy aún no has sumado puntos. Sube tu resultado y suma los primeros."; cont.append(v); return; }
+    s.docs.map((d) => d.data()).sort((a, b) => (b.puntos || 0) - (a.puntos || 0)).forEach((m) => {
       const c = CLASES[m.clase] || CLASES.wod;
       const fila = document.createElement("div"); fila.className = "mov"; fila.style.setProperty("--c", c.color);
       const izq = document.createElement("div");
@@ -151,6 +165,9 @@ escucharCuenta(({ user, ficha }) => {
       } else if (m.tipo === "canje") {
         t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`;
         dd.textContent = m.estado === "pendiente" ? `${dia} · pendiente de recoger` : dia;
+      } else if (m.tipo === "evento") {
+        t.textContent = `🎉 Evento · ${m.nombre || ""}`;
+        dd.textContent = dia;
       } else if (m.tipo === "registro") {
         t.textContent = `${c.nombre} · ✅ Resultado registrado`;
         dd.textContent = dia;
@@ -167,11 +184,14 @@ escucharCuenta(({ user, ficha }) => {
 });
 
 onSnapshot(query(collection(db, "usuarios"), orderBy("puntos", "desc"), limit(100)), (s) => {
-  ranking = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
+  // Quien ha ocultado sus puntos no sale en el ranking (el coach sí lo ve, con un candado)
+  todos = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntos || 0) > 0);
   pintarRanking();
 }, () => { $("ranking").innerHTML = '<div class="vacio">No se ha podido cargar el ranking.</div>'; });
 
+let todos = [];
 function pintarRanking() {
+  ranking = soyCoach ? todos : todos.filter((u) => !u.ocultarPuntos);
   const ol = $("ranking"); ol.replaceChildren();
   if (!ranking.length) { const v = document.createElement("div"); v.className = "vacio"; v.textContent = "Todavía nadie tiene puntos. ¡Sé el primero!"; ol.append(v); }
   // Puestos con empates compartidos
@@ -185,6 +205,7 @@ function pintarRanking() {
     const b = document.createElement("span"); b.className = "nom"; b.textContent = u.nombre || "Socio";
     const top = insigniasDe(u)[0];
     if (top) b.append(crearInsignia(top, 22));
+    if (u.ocultarPuntos) b.append(Object.assign(document.createElement("span"), { className: "candado", textContent: "🔒", title: "Ha ocultado sus puntos" }));
     const c = document.createElement("span"); c.className = "pts"; c.textContent = fmtPuntos(u.puntos);
     c.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
     li.append(a, b, c);
@@ -194,7 +215,7 @@ function pintarRanking() {
     ol.append(li);
     if (yo && u.uid === yo.uid) $("carteraPuesto").textContent = `Vas ${puesto}º de ${ranking.length} en el ranking de puntos.`;
   });
-  if (yo && !ranking.some((u) => u.uid === yo.uid)) $("carteraPuesto").textContent = "Aún no estás en el ranking. ¡Registra tu resultado!";
+  if (yo && !ranking.some((u) => u.uid === yo.uid)) $("carteraPuesto").textContent = oculto ? "" : "Aún no estás en el ranking. ¡Registra tu resultado!";
 }
 
 </script>

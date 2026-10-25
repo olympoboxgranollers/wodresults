@@ -240,3 +240,41 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .insignia-txt.largo b { font-size: calc(var(--t) * .22); }
 .insignia-txt small { font-size: calc(var(--t) * .15); font-weight: 500; margin-top: 1px; color: var(--suave); }
 .insignia.bloqueada { opacity: .35; filter: grayscale(1); }
+.insignia[style*="--tc"] .insignia-txt { color: var(--tc); }
+.insignia.nivel-oro { filter: drop-shadow(0 0 calc(var(--t) * .06) rgba(255, 205, 60, .35)); }
+.insignia.nivel-diamante { filter: drop-shadow(0 0 calc(var(--t) * .1) rgba(127, 227, 255, .45)); }
+.insignia.nivel-diamante svg { animation: brillo-diamante 6s linear infinite; }
+.insignia.nivel-diamante .destello { transform-origin: 47px 8px; animation: destello 2.4s ease-in-out infinite; }
+.insignia.nivel-diamante .insignia-txt b { background: linear-gradient(120deg, #e6fbff, #7fe3ff, #ff9ad5, #e6fbff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.insignia.bloqueada.nivel-oro, .insignia.bloqueada.nivel-diamante { filter: grayscale(1); }
+.insignia.bloqueada svg, .insignia.bloqueada .destello { animation: none; }
+@keyframes brillo-diamante { 0%, 100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg); } }
+@keyframes destello { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .insignia svg, .insignia .destello { animation: none !important; } }
+
+/* ---------- Protección contra copiar ---------- */
+.sin-copia body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.sin-copia input, .sin-copia textarea, .sin-copia select { -webkit-user-select: text; user-select: text; }
+.sin-copia img { -webkit-user-drag: none; }
+@media print { body { display: none !important; } }
+
+/* ---------- Crear perfil de atleta ---------- */
+.dialogo-perfil { margin: auto; width: min(420px, calc(100vw - 32px)); background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 20px; padding: 26px 22px; }
+.dialogo-perfil::backdrop { background: rgba(20, 21, 24, .92); }
+.dialogo-perfil .perfil-marca { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); }
+.dialogo-perfil h3 { font-size: 24px; font-weight: 700; color: var(--lila); margin-top: 8px; }
+.dialogo-perfil p { color: var(--suave); font-size: 14px; line-height: 1.5; margin-top: 8px; }
+.dialogo-perfil label { display: grid; gap: 6px; margin-top: 14px; font-size: 13px; color: var(--suave); }
+.dialogo-perfil label small { font-size: 12px; opacity: .7; }
+.dialogo-perfil input { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 13px; font-size: 16px; color: var(--texto); outline: none; }
+.dialogo-perfil input:focus { border-color: var(--lila); }
+.dialogo-perfil button { width: 100%; margin-top: 18px; background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 14px; font-weight: 700; font-size: 16px; }
+.dialogo-perfil button:disabled { opacity: .5; }
+.dialogo-perfil .perfil-msg { color: var(--error); font-size: 14px; margin-top: 10px; min-height: 1em; }
+
+/* Menú en móviles estrechos: los botones se reparten el ancho para que quepan todos */
+@media (max-width: 480px) {
+  .menu:not(.menu-tv) { width: calc(100vw - 16px); max-width: calc(100vw - 16px); }
+  .menu:not(.menu-tv) .menu-item { flex: 1 1 0; min-width: 0 !important; padding: 7px 2px 6px !important; }
+  .menu:not(.menu-tv) .menu-texto { font-size: 9.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+}

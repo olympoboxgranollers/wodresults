@@ -44,6 +44,7 @@ service cloud.firestore {
         && (!('sensacion' in d) || d.sensacion in ['duro', 'bien', 'sobrado', 'muerto', 'fuego', 'molestia'])
         && pesosValidos(d);
     }
+    function textoCorto(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 40); }
     function cerrado(fecha, clase) {
       return exists(/databases/$(database)/documents/cierres/$(fecha + '_' + clase));
     }
@@ -51,7 +52,7 @@ service cloud.firestore {
     // ---------- Resultados ----------
     // Uno por socio, clase y día: el id es "fecha_clase_uid". El socio lo puede editar hasta que el coach cierra el día.
     match /resultados/{id} {
-      allow read: if true;
+      allow read: if conCuenta();
       allow create: if conCuenta() && !esCoach()
         && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.fecha + '_' + request.resource.data.clase + '_' + request.auth.uid
@@ -102,15 +103,19 @@ service cloud.firestore {
 
     // ---------- Fichas de socio (nombre y puntos) ----------
     match /usuarios/{uid} {
-      allow read: if true;
-      // El socio crea su ficha con 0 puntos; luego solo puede cambiar su nombre. Los puntos solo los toca el coach.
+      allow read: if conCuenta();
+      // El socio crea su perfil de atleta con 0 puntos; luego solo puede cambiar sus datos de perfil. Los puntos solo los toca el coach.
       allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['nombre', 'puntos'])
+        && request.resource.data.keys().hasOnly(['nombre', 'puntos', 'atleta', 'favorito', 'odiado'])
         && request.resource.data.puntos == 0
-        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40);
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado'));
       allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre'])
-        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos'])
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado')
+        && (!('ocultarPuntos' in request.resource.data) || request.resource.data.ocultarPuntos is bool)
+        && (!('atleta' in request.resource.data) || request.resource.data.atleta is bool))
         // Sus marcas personales (RM de snatch y clean & jerk), que verán los demás en su perfil
         || (conCuenta() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rm'])
@@ -119,8 +124,9 @@ service cloud.firestore {
         && request.resource.data.rm.cleanJerk is number && request.resource.data.rm.cleanJerk >= 0 && request.resource.data.rm.cleanJerk <= 400)
         // +10 al momento por registrar: solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
         || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro', 'clases'])
         && request.resource.data.puntos == resource.data.puntos + 10
+        && request.resource.data.get('clases', 0) == resource.data.get('clases', 0) + 1
         && request.resource.data.ultimoRegistro is string
         && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
         && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)))
@@ -136,7 +142,7 @@ service cloud.firestore {
 
       // Historial de puntos de cada socio
       match /movimientos/{mid} {
-        allow read: if true;
+        allow read: if conCuenta();
         // El socio crea su "registro" (+10) una sola vez por clase y día, y solo si tiene su resultado de hoy
         allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['fecha', 'clase', 'tipo', 'puntos'])
@@ -165,10 +171,43 @@ service cloud.firestore {
     // ---------- Cierres del día: se reparten los puntos una sola vez por clase y día ----------
     // (lo hace automáticamente un aparato con la sesión del coach abierta: la pantalla a las 00:00 o publicar.html)
     match /cierres/{id} {
-      allow read: if true;
+      allow read: if conCuenta();
       allow create: if esCoach();
       allow update: if false;
       allow delete: if esCoach();
+    }
+
+    // ---------- Fotos de perfil (aparte, para no cargarlas en cada ranking) ----------
+    match /fotos/{uid} {
+      allow read: if conCuenta();
+      allow create, update: if conCuenta() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['img'])
+        && request.resource.data.img is string && request.resource.data.img.size() <= 150000
+        && request.resource.data.img.matches('^data:image/(jpeg|png|webp);base64,.*');
+      allow delete: if esCoach() || (conCuenta() && request.auth.uid == uid);
+    }
+
+    // ---------- Eventos del box: los crea el coach; los socios se apuntan ("Asistiré") ----------
+    match /eventos/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['titulo', 'fecha', 'hora', 'fin', 'lugar', 'descripcion', 'puntos', 'creado', 'momento', 'porConfirmar', 'nuevo'])
+        && request.resource.data.titulo is string && request.resource.data.titulo.size() > 0 && request.resource.data.titulo.size() <= 60
+        && request.resource.data.fecha is string && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.puntos is number && request.resource.data.puntos >= 0;
+      allow delete: if esCoach();
+
+      // Cada socio solo se apunta o se borra a sí mismo; pasar lista (confirmado) solo lo hace el coach
+      match /asistentes/{uid} {
+        allow read: if conCuenta();
+        allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['nombre', 'creado'])
+          && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+          && request.resource.data.creado == request.time
+          && exists(/databases/$(database)/documents/eventos/$(id)));
+        allow update: if esCoach();
+        allow delete: if esCoach() || (conCuenta() && request.auth.uid == uid && !resource.data.get('confirmado', false));
+      }
     }
 
     // ---------- Canjes pendientes de entregar (el socio canjea, el coach entrega) ----------
@@ -192,7 +231,9 @@ service cloud.firestore {
     match /logros/{id} {
       allow read: if conCuenta();
       allow create, update: if esCoach()
-        && request.resource.data.keys().hasOnly(['nombre', 'corto', 'unidad', 'descripcion', 'puntos', 'orden'])
+        && request.resource.data.keys().hasOnly(['nombre', 'corto', 'unidad', 'descripcion', 'puntos', 'orden', 'nivel', 'clases'])
+        && (!('nivel' in request.resource.data) || request.resource.data.nivel in ['', 'bronce', 'plata', 'oro', 'diamante'])
+        && (!('clases' in request.resource.data) || (request.resource.data.clases is int && request.resource.data.clases >= 0))
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
         && request.resource.data.corto is string && request.resource.data.corto.size() <= 5
         && request.resource.data.puntos is number && request.resource.data.puntos >= 0;
@@ -215,7 +256,7 @@ service cloud.firestore {
 
     // ---------- WOD del día de cada clase (lo publica el coach). Id: "2026-10-23_hyrox" ----------
     match /wods/{id} {
-      allow read: if true;
+      allow read: if conCuenta();
       allow create, update: if esCoach()
         && id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional)$')
         && request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])

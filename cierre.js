@@ -3,7 +3,7 @@
 // o publicar.html / la pantalla en cuanto se abran): busca los días ya terminados que aún no se han
 // cerrado, calcula el podio de cada clase y categoría y suma los puntos. Cada día y clase se cierra
 // una sola vez (si otro aparato ya lo ha hecho, las reglas de Firebase rechazan el segundo intento).
-import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS } from "./comun.js";
 
 let enMarcha = false;
@@ -43,7 +43,7 @@ export async function cerrarDiasPendientes() {
           fecha: g.fecha, clase: g.clase, tipo: "podio", categoria: f.categoria, posicion: f.posicion, puntos: podio,
           resultado: formatearValor(f.r.valor, f.r.tipo), wod: CLASES[g.clase]?.nombre || "WOD"
         });
-        if (sumar > 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar) }, { merge: true });
+        if (sumar > 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar), ...(faltaRegistro ? { clases: increment(1) } : {}) }, { merge: true });
       }
       lote.set(doc(db, "cierres", id), { fecha: g.fecha, clase: g.clase, cerrado: serverTimestamp(), socios: filas.length, puntosTotales: total, automatico: true });
       try { await lote.commit(); cerrados++; } catch (e) { console.warn("Cierre ya hecho o sin permiso", id, e); }
@@ -52,4 +52,56 @@ export async function cerrarDiasPendientes() {
     console.warn("No se han podido cerrar los días pendientes", e);
   } finally { enMarcha = false; }
   return cerrados;
+}
+
+// Borra los resultados y WODs de días anteriores, pero SOLO de los días y clases que ya están cerrados
+// (con los puntos repartidos). Así nunca se borra nada antes de dar los puntos del podio.
+export async function limpiarDiasCerrados() {
+  try {
+    const cerrado = {};
+    const estaCerrado = async (id) => (cerrado[id] ??= (await getDoc(doc(db, "cierres", id))).exists());
+    const viejos = await getDocs(query(collection(db, "resultados"), where("fecha", "<", hoy())));
+    const pendientes = new Set();
+    for (const d of viejos.docs) {
+      const r = d.data();
+      const id = idCierre(claseDe(r), r.fecha);
+      if (!r.uid || await estaCerrado(id)) await deleteDoc(d.ref).catch(() => {});
+      else pendientes.add(id);
+    }
+    const wods = await getDocs(query(collection(db, "wods"), where(documentId(), "<", hoy())));
+    for (const d of wods.docs) if (!pendientes.has(d.id)) await deleteDoc(d.ref).catch(() => {});
+  } catch (e) { console.warn("No se han podido borrar los días anteriores", e); }
+}
+
+// Logros de clases: a quien ya ha llegado a 100, 250… clases y aún no lo tiene, se lo da con sus puntos
+export async function darLogrosDeClases() {
+  try {
+    const logros = (await getDocs(collection(db, "logros"))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => l.clases > 0);
+    if (!logros.length) return 0;
+    const socios = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...d.data() }));
+    let lote = writeBatch(db), ops = 0, dados = 0;
+    for (const s of socios) {
+      const nuevos = logros.filter((l) => (s.clases || 0) >= l.clases && !s.insignias?.[l.id]);
+      if (!nuevos.length) continue;
+      const cambios = {}; let suma = 0;
+      for (const l of nuevos) {
+        cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", puntos: l.puntos || 0, fecha: hoy() };
+        suma += l.puntos || 0;
+        lote.set(doc(db, "usuarios", s.uid, "movimientos", `logro_${l.id}`), { fecha: hoy(), tipo: "insignia", nombre: l.nombre, puntos: l.puntos || 0 });
+        ops++; dados++;
+      }
+      if (suma) cambios.puntos = increment(suma);
+      lote.update(doc(db, "usuarios", s.uid), cambios); ops++;
+      if (ops >= 400) { await lote.commit(); lote = writeBatch(db); ops = 0; }
+    }
+    if (ops) await lote.commit();
+    return dados;
+  } catch (e) { console.warn("No se han podido dar los logros de clases", e); return 0; }
+}
+
+// Primero reparte los puntos, después da los logros de clases y al final limpia
+export async function cerrarYLimpiar() {
+  await cerrarDiasPendientes();
+  await darLogrosDeClases();
+  await limpiarDiasCerrados();
 }

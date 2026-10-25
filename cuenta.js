@@ -153,7 +153,8 @@ export async function sumarRegistro(user, clase) {
   if ((await getDoc(ref)).exists()) return false;
   const lote = writeBatch(db);
   lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid });
+  // Cada resultado subido cuenta como una clase hecha (para los logros de 100, 250… clases)
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), ultimoRegistro: mid, clases: increment(1) });
   await lote.commit();
   return true;
 }

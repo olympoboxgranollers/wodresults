@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="es" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
+<title>Eventos Olympo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
+  main { width: 100%; max-width: 560px; }
+  header .marca { color: #fff; font-size: 13px; }
+  h1 { font-size: 34px; margin-top: 14px; color: var(--lila); }
+  .sub { color: var(--suave); margin-top: 6px; font-size: 15px; line-height: 1.5; }
+  .anios { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .anios button { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 500; }
+  .anios button[aria-pressed="true"] { border-color: var(--lila); color: #1f2125; background: var(--lila); }
+
+  .mes { margin-top: 28px; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); font-weight: 600; }
+  .evento { margin-top: 12px; border: 1px solid var(--borde); border-radius: 18px; padding: 16px; display: grid; grid-template-columns: 58px 1fr; gap: 4px 14px; }
+  .evento.pasado { opacity: .7; }
+  .evento.voy { border-color: color-mix(in srgb, var(--lila) 55%, transparent); }
+  .dia { grid-row: 1 / 4; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: var(--panel); height: 62px; }
+  .dia b { font-size: 24px; font-weight: 700; line-height: 1; color: var(--lila); }
+  .dia span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin-top: 3px; }
+  .ev-titulo { font-weight: 700; font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
+  .ev-info { color: var(--suave); font-size: 13px; line-height: 1.5; }
+  .ev-desc { grid-column: 1 / -1; color: var(--texto); font-size: 14px; line-height: 1.5; margin-top: 8px; white-space: pre-line; }
+  .ev-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .nuevo-badge { flex: none; border: 2px solid #f5c518; color: #f5c518; border-radius: 999px; padding: 1px 9px; font-size: 11px; font-weight: 700; letter-spacing: .12em; margin-top: 2px; }
+  .por-confirmar { color: #f5c518; font-weight: 600; }
+  .dia.pc b { font-size: 20px; }
+  .cargar { margin-top: 18px; border: 1px dashed color-mix(in srgb, var(--lila) 60%, transparent); border-radius: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .cargar p { color: var(--suave); font-size: 14px; line-height: 1.45; flex: 1 1 220px; }
+  .cargar p b { color: var(--texto); }
+  .campos select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); font-family: inherit; }
+  .marca-check { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 8px !important; font-size: 14px !important; color: var(--texto) !important; }
+  .marca-check input { width: 18px !important; height: 18px; accent-color: var(--lila); }
+  .ev-pts { display: inline-block; margin-top: 2px; font-size: 12px; font-weight: 700; color: var(--lila); }
+  .ev-acc { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .ev-acc button { background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 9px 16px; font-size: 14px; font-weight: 500; font-family: inherit; }
+  .ev-acc .asistire { background: var(--lila); border-color: var(--lila); color: #1f2125; font-weight: 700; }
+  .ev-acc .asistire.si { background: color-mix(in srgb, var(--lila) 18%, transparent); color: var(--lila); opacity: 1; cursor: default; }
+  .ev-acc .borrar { color: var(--error); }
+  .ev-acc .lista-btn { color: var(--suave); }
+  .calendarios { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--panel); align-items: center; font-size: 13px; color: var(--suave); }
+  .calendarios a, .calendarios button { background: var(--fondo); border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 8px 14px; font-size: 13px; text-decoration: none; font-family: inherit; }
+  .asistentes { grid-column: 1 / -1; margin-top: 12px; border-top: 1px solid var(--borde); padding-top: 10px; }
+  .asistentes-titulo { font-size: 13px; color: var(--suave); display: flex; justify-content: space-between; }
+  .persona { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid color-mix(in srgb, var(--borde) 60%, transparent); font-size: 15px; }
+  .persona:last-child { border-bottom: 0; }
+  .persona .ok { color: #3ddc84; font-size: 12px; font-weight: 600; }
+  .persona label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--suave); }
+  .persona input { width: 20px; height: 20px; accent-color: var(--lila); }
+  .anadir { display: flex; gap: 8px; margin-top: 10px; }
+  .anadir select { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 10px; font-size: 14px; color: var(--texto); }
+  .anadir button { background: none; border: 1px solid var(--borde); color: var(--lila); border-radius: 999px; padding: 8px 14px; font-size: 13px; }
+  .nota-lista { font-size: 12px; color: var(--suave); margin-top: 8px; line-height: 1.5; }
+  .vacio { color: var(--suave); padding: 36px 0; text-align: center; font-size: 15px; }
+
+  .nuevo { margin-top: 24px; border: 1px solid var(--borde); border-radius: 18px; padding: 18px; }
+  .nuevo h2 { font-size: 18px; }
+  .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .campos .ancho { grid-column: 1 / -1; }
+  .campos label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
+  .campos input, .campos textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); font-family: inherit; outline: none; }
+  .campos textarea { min-height: 80px; resize: vertical; }
+  .campos input:focus, .campos textarea:focus { border-color: var(--lila); }
+  .fila { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .boton { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
+  .boton.sec { background: none; color: var(--suave); }
+  .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca">Olympo Box</div>
+    <h1 id="titulo">Eventos 2027</h1>
+    <p class="sub" id="sub">Apúntate a los eventos del box. Si vienes, te llevas puntos extra cuando el coach pase lista.</p>
+  </header>
+
+  <!-- Solo el coach -->
+  <form class="nuevo" id="nuevo" hidden autocomplete="off">
+    <h2 id="nTitulo">Nuevo evento</h2>
+    <div class="campos">
+      <label class="ancho">Nombre del evento<input id="fTitulo" maxlength="60" placeholder="Ej. Olympo Games" required></label>
+      <label class="ancho">Fecha<input id="fFecha" type="date" required></label>
+      <label>Empieza<input id="fHora" type="time"></label>
+      <label>Termina<input id="fFin" type="time"></label>
+      <label class="ancho">Momento del día (si aún no hay hora)<select id="fMomento"><option value="">—</option><option>Primera hora</option><option>Mañana</option><option>Mediodía</option><option>Tarde</option><option>Noche</option></select></label>
+      <label class="marca-check ancho"><input type="checkbox" id="fConfirmar"> Fecha por confirmar</label>
+      <label class="marca-check ancho"><input type="checkbox" id="fNuevo"> Evento nuevo este año (sale la etiqueta NUEVO)</label>
+      <label class="ancho">Lugar<input id="fLugar" maxlength="80" placeholder="Olympo Box Granollers"></label>
+      <label class="ancho">Descripción<textarea id="fDesc" maxlength="500" placeholder="Qué haremos, qué traer…"></textarea></label>
+      <label>Puntos por asistir<input id="fPuntos" inputmode="numeric" value="100"></label>
+    </div>
+    <div class="fila">
+      <button type="submit" class="boton" id="fGuardar">Añadir evento</button>
+      <button type="button" class="boton sec" id="fCancelar" hidden>Cancelar</button>
+      <span class="msg" id="fMsg" role="status"></span>
+    </div>
+  </form>
+
+  <div class="cargar" id="cargar" hidden>
+    <p><b>Calendario 2027 de Olympo Box</b><br>Carga de golpe los 12 eventos del calendario (Trae a un amigo, Carnaval, Friday Night Lights, Sant Jordi, Murph…). Luego puedes editar cualquiera.</p>
+    <button type="button" class="boton" id="cargarBtn">Cargar calendario</button>
+  </div>
+
+  <nav class="anios" id="anios" aria-label="Año"></nav>
+  <div id="lista"><div class="vacio">Cargando…</div></div>
+</main>
+
+<script type="module">
+import { collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, fmtPuntos } from "./comun.js";
+import { escucharCuenta } from "./cuenta.js";
+import { montarMenu, esCuentaCoach } from "./menu.js";
+import { ZONA_HORARIA } from "./config.js";
+
+const $ = (id) => document.getElementById(id);
+montarMenu({ actual: "eventos", cuenta: false });
+
+const AÑO_INICIAL = 2027;
+let user = null, coach = false, miNombre = "", eventos = [], anio = AÑO_INICIAL, editando = null;
+const asistentes = {};        // id evento -> [{uid, nombre, confirmado}]
+const escuchas = {};          // id evento -> función para dejar de escuchar
+const abiertos = new Set();   // eventos con la lista desplegada
+const calendario = new Set(); // eventos con las opciones de calendario a la vista
+let socios = [], dejarSocios = null;
+
+escucharCuenta(({ user: u, ficha }) => {
+  user = u; coach = esCuentaCoach(u); miNombre = ficha?.nombre || u?.displayName || "";
+  $("nuevo").hidden = !coach;
+  $("sub").textContent = coach
+    ? "Crea los eventos del año. El día del evento, abre la lista y marca quién ha venido: se le suman los puntos al momento."
+    : "Apúntate a los eventos del box. Si vienes, te llevas puntos extra cuando el coach pase lista.";
+  if (coach && !dejarSocios) {
+    dejarSocios = onSnapshot(query(collection(db, "usuarios"), orderBy("nombre", "asc")), (s) => {
+      socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre); pintar();
+    }, () => {});
+  }
+  pintar();
+});
+
+onSnapshot(query(collection(db, "eventos"), orderBy("fecha", "asc")), (s) => {
+  eventos = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Escucha la lista de asistentes de cada evento
+  for (const e of eventos) if (!escuchas[e.id]) {
+    escuchas[e.id] = onSnapshot(collection(db, "eventos", e.id, "asistentes"), (a) => {
+      asistentes[e.id] = a.docs.map((d) => ({ uid: d.id, ...d.data() })).sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), "es"));
+      pintar();
+    }, () => {});
+  }
+  for (const id of Object.keys(escuchas)) if (!eventos.find((e) => e.id === id)) { escuchas[id](); delete escuchas[id]; delete asistentes[id]; }
+  pintar();
+}, () => { $("lista").innerHTML = '<div class="vacio">No se han podido cargar los eventos.</div>'; });
+
+const fechaLarga = (f) => new Date(f + "T12:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+
+function pintar() {
+  // Años con eventos (siempre está 2027)
+  const anios = [...new Set([AÑO_INICIAL, ...eventos.map((e) => +e.fecha.slice(0, 4))])].sort();
+  const nav = $("anios"); nav.replaceChildren();
+  nav.hidden = anios.length < 2;
+  for (const a of anios) {
+    const b = Object.assign(document.createElement("button"), { type: "button", textContent: a });
+    b.setAttribute("aria-pressed", String(a === anio));
+    b.addEventListener("click", () => { anio = a; pintar(); });
+    nav.append(b);
+  }
+  $("titulo").textContent = `Eventos ${anio}`;
+  pintarCargar();
+
+  const lista = $("lista"); lista.replaceChildren();
+  const delAnio = eventos.filter((e) => e.fecha.startsWith(String(anio)));
+  if (!delAnio.length) {
+    lista.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: coach ? `Aún no hay eventos en ${anio}. Añade el primero arriba.` : `Pronto publicaremos los eventos de ${anio}.` }));
+    return;
+  }
+  let mesAnterior = "";
+  for (const e of delAnio) {
+    const mes = new Date(e.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "long" });
+    if (mes !== mesAnterior) { lista.append(Object.assign(document.createElement("div"), { className: "mes", textContent: mes })); mesAnterior = mes; }
+    lista.append(tarjeta(e));
+  }
+}
+
+function tarjeta(e) {
+  const gente = asistentes[e.id] || [];
+  const yo = user && gente.find((x) => x.uid === user.uid);
+  const pasado = e.fecha < hoy();
+  const card = document.createElement("article");
+  card.className = "evento" + (pasado ? " pasado" : "") + (yo ? " voy" : "");
+  const dia = document.createElement("div"); dia.className = "dia";
+  const fd = new Date(e.fecha + "T12:00:00");
+  dia.append(Object.assign(document.createElement("b"), { textContent: fd.getDate() }), Object.assign(document.createElement("span"), { textContent: fd.toLocaleDateString("es-ES", { month: "short" }).replace(".", "") }));
+  if (e.porConfirmar) dia.classList.add("pc");
+  const cab = document.createElement("div"); cab.className = "ev-cab";
+  cab.append(Object.assign(document.createElement("div"), { className: "ev-titulo", textContent: e.titulo }));
+  if (e.nuevo) cab.append(Object.assign(document.createElement("span"), { className: "nuevo-badge", textContent: "NUEVO" }));
+  card.append(dia, cab);
+  const horas = e.hora ? ` · ${e.hora}${e.fin ? "–" + e.fin : ""}` : (e.momento ? ` · ${e.momento.toLowerCase()}` : "");
+  const info = Object.assign(document.createElement("div"), { className: "ev-info" });
+  if (e.porConfirmar) info.append(Object.assign(document.createElement("span"), { className: "por-confirmar", textContent: "Fecha por confirmar" }), document.createTextNode(" · "));
+  info.append(document.createTextNode((e.porConfirmar ? "previsto el " : "") + fechaLarga(e.fecha) + horas + (e.lugar ? ` · ${e.lugar}` : "")));
+  card.append(info);
+  const pts = Object.assign(document.createElement("div"), { className: "ev-info" });
+  pts.append(Object.assign(document.createElement("span"), { className: "ev-pts", textContent: `+${fmtPuntos(e.puntos || 0)} pts si vienes` }), document.createTextNode(` · ${gente.length} ${gente.length === 1 ? "persona" : "personas"}`));
+  card.append(pts);
+  if (e.descripcion) card.append(Object.assign(document.createElement("div"), { className: "ev-desc", textContent: e.descripcion }));
+
+  const acc = document.createElement("div"); acc.className = "ev-acc";
+  if (!coach && user) {
+    if (yo?.confirmado) {
+      acc.append(Object.assign(document.createElement("button"), { type: "button", className: "asistire si", textContent: `✓ Asististe · +${fmtPuntos(e.puntos || 0)} pts`, disabled: true }));
+    } else if (!pasado) {
+      if (yo) {
+        acc.append(Object.assign(document.createElement("button"), { type: "button", className: "asistire si", textContent: "✓ Asistirás", disabled: true }));
+        const no = Object.assign(document.createElement("button"), { type: "button", className: "lista-btn", textContent: "No podré ir" });
+        no.addEventListener("click", () => apuntarme(e, false, no));
+        acc.append(no);
+      } else {
+        const b = Object.assign(document.createElement("button"), { type: "button", className: "asistire", textContent: "Asistiré" });
+        b.addEventListener("click", () => apuntarme(e, true, b));
+        acc.append(b);
+      }
+      const cal = Object.assign(document.createElement("button"), { type: "button", textContent: "📅 Añadir al calendario" });
+      cal.addEventListener("click", () => { calendario.has(e.id) ? calendario.delete(e.id) : calendario.add(e.id); pintar(); });
+      acc.append(cal);
+    }
+  }
+  const verLista = Object.assign(document.createElement("button"), { type: "button", className: "lista-btn", textContent: abiertos.has(e.id) ? "Ocultar lista" : (coach ? "Pasar lista" : "Quién va") });
+  verLista.addEventListener("click", () => { abiertos.has(e.id) ? abiertos.delete(e.id) : abiertos.add(e.id); pintar(); });
+  acc.append(verLista);
+  if (coach) {
+    const ed = Object.assign(document.createElement("button"), { type: "button", textContent: "Editar" });
+    ed.addEventListener("click", () => editar(e));
+    const bo = Object.assign(document.createElement("button"), { type: "button", className: "borrar", textContent: "Borrar" });
+    let seguro = false;
+    bo.addEventListener("click", async () => {
+      if (!seguro) { seguro = true; bo.textContent = "¿Seguro?"; setTimeout(() => { seguro = false; bo.textContent = "Borrar"; }, 4000); return; }
+      try {
+        const lote = writeBatch(db);
+        for (const a of gente) if (!a.confirmado) lote.delete(doc(db, "eventos", e.id, "asistentes", a.uid));
+        lote.delete(doc(db, "eventos", e.id));
+        await lote.commit();
+      } catch (err) { console.error(err); }
+    });
+    acc.append(ed, bo);
+  }
+  card.append(acc);
+
+  if (calendario.has(e.id) && !coach) card.append(opcionesCalendario(e));
+  if (abiertos.has(e.id)) card.append(listaAsistentes(e, gente, pasado));
+  return card;
+}
+
+// ---------- Asistiré (y al apuntarse, ofrecer añadirlo al calendario) ----------
+async function apuntarme(e, voy, boton) {
+  boton.disabled = true;
+  try {
+    const ref = doc(db, "eventos", e.id, "asistentes", user.uid);
+    if (voy) { await setDoc(ref, { nombre: (miNombre || "Socio").slice(0, 40), creado: serverTimestamp() }); calendario.add(e.id); }
+    else { await deleteDoc(ref); calendario.delete(e.id); }
+  } catch (err) { console.error(err); boton.disabled = false; alertaEnTarjeta(boton, "No se ha podido guardar."); }
+}
+function alertaEnTarjeta(el, t) { const m = Object.assign(document.createElement("span"), { className: "msg error", textContent: t }); el.after(m); }
+
+// Hora local de Madrid → instante UTC en formato de calendario (20270314T090000Z)
+function aUTC(fecha, hora) {
+  const [y, mo, d] = fecha.split("-").map(Number), [h, mi] = hora.split(":").map(Number);
+  const supuesto = Date.UTC(y, mo - 1, d, h, mi);
+  const enMadrid = new Date(new Date(supuesto).toLocaleString("en-US", { timeZone: ZONA_HORARIA }));
+  const enUTC = new Date(new Date(supuesto).toLocaleString("en-US", { timeZone: "UTC" }));
+  const t = new Date(supuesto - (enMadrid - enUTC));
+  return t.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+const sinGuiones = (f) => f.replace(/-/g, "");
+const diaSiguiente = (f) => { const d = new Date(f + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+function franja(e) {
+  if (!e.hora) return { todoElDia: true, ini: sinGuiones(e.fecha), fin: sinGuiones(diaSiguiente(e.fecha)) };
+  let fin = e.fin;
+  if (!fin) { const [h, m] = e.hora.split(":").map(Number); fin = `${String(Math.min(23, h + 2)).padStart(2, "0")}:${String(m).padStart(2, "0")}`; }
+  return { todoElDia: false, ini: aUTC(e.fecha, e.hora), fin: aUTC(e.fecha, fin) };
+}
+function opcionesCalendario(e) {
+  const box = document.createElement("div"); box.className = "calendarios";
+  box.append(document.createTextNode("Añádelo a tu calendario:"));
+  const f = franja(e);
+  const g = new URL("https://calendar.google.com/calendar/render");
+  g.searchParams.set("action", "TEMPLATE");
+  g.searchParams.set("text", `${e.titulo} · Olympo Box`);
+  g.searchParams.set("dates", `${f.ini}/${f.fin}`);
+  if (e.descripcion) g.searchParams.set("details", e.descripcion);
+  g.searchParams.set("location", e.lugar || "Olympo Box Granollers");
+  const ga = Object.assign(document.createElement("a"), { href: g.toString(), target: "_blank", rel: "noopener", textContent: "Google Calendar" });
+  const ics = Object.assign(document.createElement("button"), { type: "button", textContent: "Apple / Android / Outlook" });
+  ics.addEventListener("click", () => descargarICS(e));
+  box.append(ga, ics);
+  return box;
+}
+function descargarICS(e) {
+  const f = franja(e);
+  const esc = (t) => String(t || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  const ahora = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const lineas = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Olympo Box//Eventos//ES", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${e.id}@olympobox`,
+    `DTSTAMP:${ahora}`,
+    f.todoElDia ? `DTSTART;VALUE=DATE:${f.ini}` : `DTSTART:${f.ini}`,
+    f.todoElDia ? `DTEND;VALUE=DATE:${f.fin}` : `DTEND:${f.fin}`,
+    `SUMMARY:${esc(e.titulo + " · Olympo Box")}`,
+    `LOCATION:${esc(e.lugar || "Olympo Box Granollers")}`,
+    e.descripcion ? `DESCRIPTION:${esc(e.descripcion)}` : "",
+    "BEGIN:VALARM", "TRIGGER:-P1D", "ACTION:DISPLAY", `DESCRIPTION:${esc("Mañana: " + e.titulo)}`, "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR"
+  ].filter(Boolean);
+  const blob = new Blob([lineas.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `${e.titulo.replace(/[^\w\- ]+/g, "").trim() || "evento"}.ics` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+
+// ---------- Lista de asistentes (el coach pasa lista y da los puntos) ----------
+function listaAsistentes(e, gente, pasado) {
+  const box = document.createElement("div"); box.className = "asistentes";
+  const vinieron = gente.filter((x) => x.confirmado).length;
+  const tit = document.createElement("div"); tit.className = "asistentes-titulo";
+  tit.append(Object.assign(document.createElement("span"), { textContent: `${gente.length} apuntados` }), Object.assign(document.createElement("span"), { textContent: vinieron ? `${vinieron} han venido` : "" }));
+  box.append(tit);
+  if (!gente.length) box.append(Object.assign(document.createElement("div"), { className: "nota-lista", textContent: "Todavía no se ha apuntado nadie." }));
+  const puedePasar = coach && e.fecha <= hoy();
+  for (const a of gente) {
+    const fila = document.createElement("div"); fila.className = "persona";
+    fila.append(Object.assign(document.createElement("span"), { textContent: a.nombre || "Socio" }));
+    if (puedePasar) {
+      const lab = document.createElement("label");
+      const ch = Object.assign(document.createElement("input"), { type: "checkbox", checked: !!a.confirmado });
+      ch.addEventListener("change", () => confirmar(e, a, ch.checked, ch));
+      lab.append(ch, document.createTextNode(a.confirmado ? `Ha venido · +${fmtPuntos(e.puntos || 0)}` : "Ha venido"));
+      fila.append(lab);
+    } else if (a.confirmado) fila.append(Object.assign(document.createElement("span"), { className: "ok", textContent: "✓ Vino" }));
+    box.append(fila);
+  }
+  if (coach && !puedePasar) box.append(Object.assign(document.createElement("div"), { className: "nota-lista", textContent: "Podrás pasar lista a partir del día del evento." }));
+  if (puedePasar) {
+    // Alguien vino sin haber pulsado "Asistiré"
+    const fuera = socios.filter((s) => !gente.find((x) => x.uid === s.uid));
+    if (fuera.length) {
+      const an = document.createElement("div"); an.className = "anadir";
+      const sel = document.createElement("select");
+      sel.append(new Option("¿Vino alguien más? Elige al socio…", ""), ...fuera.map((s) => new Option(s.nombre, s.uid)));
+      const b = Object.assign(document.createElement("button"), { type: "button", textContent: "Añadir y dar puntos" });
+      b.addEventListener("click", () => {
+        const s = fuera.find((x) => x.uid === sel.value);
+        if (s) confirmar(e, { uid: s.uid, nombre: s.nombre, nuevo: true }, true, b);
+      });
+      an.append(sel, b); box.append(an);
+    }
+    box.append(Object.assign(document.createElement("div"), { className: "nota-lista", textContent: `Al marcar a alguien se le suman ${fmtPuntos(e.puntos || 0)} pts. Si lo desmarcas, se le quitan.` }));
+  }
+  return box;
+}
+async function confirmar(e, a, vino, control) {
+  control.disabled = true;
+  // Al desmarcar se quitan exactamente los puntos que se dieron (aunque luego se cambiara el evento)
+  const pts = vino ? (e.puntos || 0) : (a.puntos ?? e.puntos ?? 0);
+  try {
+    const lote = writeBatch(db);
+    const ref = doc(db, "eventos", e.id, "asistentes", a.uid);
+    if (a.nuevo) lote.set(ref, { nombre: a.nombre, creado: serverTimestamp(), confirmado: true, puntos: pts });
+    else lote.update(ref, { confirmado: vino, puntos: vino ? pts : 0 });
+    lote.update(doc(db, "usuarios", a.uid), { puntos: increment(vino ? pts : -pts) });
+    const mov = doc(db, "usuarios", a.uid, "movimientos", `evento_${e.id}`);
+    if (vino) lote.set(mov, { fecha: hoy(), tipo: "evento", nombre: e.titulo, puntos: pts });
+    else lote.delete(mov);
+    await lote.commit();
+  } catch (err) { console.error(err); control.disabled = false; if (control.type === "checkbox") control.checked = !vino; }
+}
+
+// ---------- Calendario 2027 (el que preparamos para el box) ----------
+const CALENDARIO_2027 = [
+  { id: "2027-trae-un-amigo", titulo: "Trae a un amigo", fecha: "2027-01-16", momento: "", nuevo: true, descripcion: "WOD por parejas: cada socio trae a alguien. Aprovechamos los propósitos de año nuevo." },
+  { id: "2027-carnaval", titulo: "Carnaval", fecha: "2027-02-06", momento: "Mañana", descripcion: "WOD disfrazados en el fin de semana de Carnaval." },
+  { id: "2027-friday-night-lights", titulo: "Friday Night Lights", fecha: "2027-03-05", momento: "Noche", nuevo: true, porConfirmar: true, descripcion: "Workouts del CrossFit Open con jueces, música y público. Los viernes del Open; fechas oficiales por confirmar." },
+  { id: "2027-wod-sant-jordi", titulo: "WOD Sant Jordi", fecha: "2027-04-23", momento: "Tarde", nuevo: true, descripcion: "WOD temático e intercambio de libros y rosas después de entrenar." },
+  { id: "2027-murph", titulo: "Murph", fecha: "2027-05-29", momento: "Primera hora", descripcion: "El clásico del Memorial Day. Temprano para evitar el calor." },
+  { id: "2027-wod-playa", titulo: "WOD Playa", fecha: "2027-06-19", momento: "", descripcion: "Entrenamos en la playa antes del puente de Sant Joan." },
+  { id: "2027-cena-verano", titulo: "Cena de verano", fecha: "2027-07-03", momento: "Noche", descripcion: "Cena de todo el box antes de las vacaciones." },
+  { id: "2027-hybrid-race", titulo: "Hybrid Race", fecha: "2027-09-18", momento: "", descripcion: "Carrera híbrida para empezar el curso con todo el mundo de vuelta." },
+  { id: "2027-halloween", titulo: "Halloween", fecha: "2027-10-28", momento: "Tarde", descripcion: "WOD de Halloween en horario de clase." },
+  { id: "2027-aniversario", titulo: "Aniversario Nuevo Olympo", fecha: "2027-11-13", momento: "", descripcion: "Celebramos el aniversario del nuevo Olympo." },
+  { id: "2027-cena-navidad", titulo: "Cena de Navidad", fecha: "2027-12-02", momento: "Noche", descripcion: "Cena de Navidad del box, antes del megapuente." },
+  { id: "2027-wod-fin-de-ano", titulo: "WOD fin de año", fecha: "2027-12-31", momento: "Mañana", nuevo: true, descripcion: "Despedimos el año entrenando juntos." }
+];
+function pintarCargar() {
+  const faltan = CALENDARIO_2027.filter((c) => !eventos.find((e) => e.id === c.id));
+  $("cargar").hidden = !coach || !faltan.length;
+  $("cargarBtn").textContent = faltan.length === CALENDARIO_2027.length ? "Cargar calendario" : `Añadir los ${faltan.length} que faltan`;
+}
+$("cargarBtn").addEventListener("click", async () => {
+  $("cargarBtn").disabled = true;
+  try {
+    const lote = writeBatch(db);
+    for (const { id, ...c } of CALENDARIO_2027) {
+      if (eventos.find((e) => e.id === id)) continue;
+      lote.set(doc(db, "eventos", id), { titulo: c.titulo, fecha: c.fecha, hora: "", fin: "", lugar: "Olympo Box Granollers", descripcion: c.descripcion, puntos: 100,
+        momento: c.momento || "", porConfirmar: !!c.porConfirmar, nuevo: !!c.nuevo, creado: serverTimestamp() });
+    }
+    await lote.commit();
+    anio = 2027; msg("✓ Calendario 2027 cargado. Puedes editar la hora o el lugar de cada evento.");
+  } catch (err) { console.error(err); msg("No se ha podido cargar el calendario.", true); }
+  $("cargarBtn").disabled = false;
+});
+
+// ---------- Crear y editar eventos (coach) ----------
+function msg(t, err = false) { $("fMsg").className = "msg " + (err ? "error" : "ok"); $("fMsg").textContent = t; }
+function editar(e) {
+  editando = e.id;
+  $("fTitulo").value = e.titulo; $("fFecha").value = e.fecha; $("fHora").value = e.hora || ""; $("fFin").value = e.fin || "";
+  $("fLugar").value = e.lugar || ""; $("fDesc").value = e.descripcion || ""; $("fPuntos").value = e.puntos ?? 100;
+  $("fMomento").value = e.momento || ""; $("fConfirmar").checked = !!e.porConfirmar; $("fNuevo").checked = !!e.nuevo;
+  $("nTitulo").textContent = "Editar evento"; $("fGuardar").textContent = "Guardar"; $("fCancelar").hidden = false; msg("");
+  window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
+}
+function limpiar() { editando = null; $("nuevo").reset(); $("fPuntos").value = 100; $("nTitulo").textContent = "Nuevo evento"; $("fGuardar").textContent = "Añadir evento"; $("fCancelar").hidden = true; }
+$("fCancelar").addEventListener("click", () => { limpiar(); msg(""); });
+$("nuevo").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const titulo = $("fTitulo").value.trim(), fecha = $("fFecha").value;
+  const puntos = parseInt($("fPuntos").value || "0", 10);
+  if (!titulo) return msg("Escribe el nombre del evento.", true);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return msg("Elige la fecha.", true);
+  if (!(puntos >= 0) || puntos > 10000) return msg("Revisa los puntos.", true);
+  const datos = { titulo, fecha, hora: $("fHora").value, fin: $("fFin").value, lugar: $("fLugar").value.trim(), descripcion: $("fDesc").value.trim(), puntos,
+    momento: $("fMomento").value, porConfirmar: $("fConfirmar").checked, nuevo: $("fNuevo").checked };
+  try {
+    if (editando) await updateDoc(doc(db, "eventos", editando), datos);
+    else await addDoc(collection(db, "eventos"), { ...datos, creado: serverTimestamp() });
+    anio = +fecha.slice(0, 4);
+    msg(editando ? "✓ Guardado" : "✓ Evento añadido"); limpiar(); pintar();
+  } catch (err) { console.error(err); msg(err?.code === "permission-denied" ? "Solo la cuenta del coach puede crear eventos." : "No se ha podido guardar.", true); }
+});
+</script>
+</body>
+</html>

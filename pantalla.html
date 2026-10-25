@@ -74,9 +74,8 @@
   .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
   dialog textarea { text-transform: uppercase;  width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
-  .controles { position: fixed; left: 1vw; bottom: calc(1vw + 52px); display: flex; gap: 8px; z-index: 5; }
-  .controles button, .ajustes { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 8px; padding: 8px 12px; opacity: .35; font-size: 14px; cursor: pointer; }
-  .controles button:hover, .controles button:focus-visible { opacity: 1; }
+  .ajustes { background: color-mix(in srgb, var(--malva) 14%, transparent); border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); color: var(--malva); border-radius: 999px; padding: .45vw 1.2vw; font-size: 1vw; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .ajustes:hover, .ajustes:focus-visible { background: color-mix(in srgb, var(--malva) 26%, transparent); }
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
   dialog h3 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 24px; margin-bottom: 16px; }
@@ -87,7 +86,7 @@
   dialog .botones .principal { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 800; }
   @media (max-width: 800px) {
     body { height: auto; overflow: auto; grid-template-columns: 1fr; padding: 16px; }
-    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } header .meta strong { font-size: 18px; }
+    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
     .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
     li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
     li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
@@ -103,6 +102,7 @@
     <h1 id="wodNombre">Wod del día</h1>
   </div>
   <div class="meta">
+    <button type="button" class="ajustes" id="abrirAjustes" hidden>⚙ WOD de hoy</button>
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
     <strong id="tipo"></strong>
   </div>
@@ -121,9 +121,6 @@
   </div>
 </aside>
 
-<div class="controles">
-  <button type="button" class="ajustes" id="abrirAjustes">⚙ WOD de hoy</button>
-</div>
 <div class="pie-derecha">
   <button type="button" class="discreto" id="volver" title="Volver">←</button>
   <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
@@ -155,7 +152,6 @@ import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, 
 import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js";
 import { NOMBRE_BOX } from "./config.js";
 import { escucharCuenta } from "./cuenta.js";
-import { cerrarDiasPendientes } from "./cierre.js";
 import { montarMenu, abrirEditor } from "./menu.js";
 
 const $ = (id) => document.getElementById(id);
@@ -181,7 +177,7 @@ $("volver").addEventListener("click", async () => {
   if (history.length > 1) history.back(); else location.href = "ranking.html";
 });
 
-const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, alCambiar: ({ coach }) => { esCoach = coach; pintar(); } });
+const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, alCambiar: ({ coach }) => { esCoach = coach; $("abrirAjustes").hidden = !coach; pintar(); } });
 
 // QR que apunta al formulario de la clase que se está mostrando
 function ponerQR() {
@@ -375,24 +371,9 @@ $("dialogo").addEventListener("close", async () => {
   }
 });
 
-// Borrado automático a las 00:00: elimina los resultados y el WOD de días anteriores (no queda historial)
-async function borrarDiasAnteriores() {
-  try {
-    const viejos = await getDocs(query(collection(db, "resultados"), where("fecha", "<", hoy())));
-    for (const d of viejos.docs) await deleteDoc(d.ref).catch(() => {});
-    const wodsViejos = await getDocs(query(collection(db, "wods"), where(documentId(), "<", hoy())));
-    for (const d of wodsViejos.docs) await deleteDoc(d.ref).catch(() => {});
-  } catch (err) { console.warn("No se han podido borrar resultados antiguos", err); }
-}
-borrarDiasAnteriores();
-
-// Reparto automático de puntos: si en este navegador está abierta la sesión del coach,
-// cierra los días terminados (al abrir la pantalla y a las 00:00, que se recarga sola) y luego limpia
-escucharCuenta(async ({ user }) => {
-  if (!user) return;
-  const n = await cerrarDiasPendientes();
-  if (n) borrarDiasAnteriores();
-});
+// Reparto de puntos y limpieza: lo hace el menú en cualquier página donde haya entrado el coach
+// (ver cierre.js). La pantalla se recarga sola a las 00:00, así que si la TV está encendida con la
+// sesión del coach, los puntos del podio se reparten a medianoche.
 
 // A medianoche recarga para empezar el ranking del día siguiente
 const ahora = new Date();

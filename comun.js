@@ -273,28 +273,73 @@ export const titulo = (t) => String(t || "").replace(/\bWOD\b/g, (m, i) => (i ==
 // El catálogo está en Firebase (colección "logros") y el coach lo va ampliando.
 // Estos son los primeros, que el coach puede crear de golpe con un botón.
 export const LOGROS_INICIALES = [
-  { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100 },
-  { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250 },
-  { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500 },
-  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750 },
-  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000 }
+  { id: "clases100",  nombre: "100 clases",  corto: "100",  unidad: "clases", descripcion: "Has entrenado 100 clases con nosotros.",  puntos: 100, orden: 100,  nivel: "bronce",   clases: 100 },
+  { id: "clases250",  nombre: "250 clases",  corto: "250",  unidad: "clases", descripcion: "Has entrenado 250 clases con nosotros.",  puntos: 200, orden: 250,  nivel: "plata",    clases: 250 },
+  { id: "clases500",  nombre: "500 clases",  corto: "500",  unidad: "clases", descripcion: "Has entrenado 500 clases con nosotros.",  puntos: 350, orden: 500,  nivel: "oro",      clases: 500 },
+  { id: "clases750",  nombre: "750 clases",  corto: "750",  unidad: "clases", descripcion: "Has entrenado 750 clases con nosotros.",  puntos: 500, orden: 750,  nivel: "oro",      clases: 750 },
+  { id: "clases1000", nombre: "1000 clases", corto: "1000", unidad: "clases", descripcion: "Has entrenado 1000 clases con nosotros.", puntos: 750, orden: 1000, nivel: "diamante", clases: 1000 }
 ];
+// Niveles de dificultad de los logros: cuanto más difícil, más exótica la medalla
+export const NIVELES = {
+  bronce:   { nombre: "Bronce",   texto: "#f3b98d" },
+  plata:    { nombre: "Plata",    texto: "#eef1f6" },
+  oro:      { nombre: "Oro",      texto: "#ffd969" },
+  diamante: { nombre: "Diamante", texto: "#c9f6ff" }
+};
 // Logros conseguidos por un socio, del más importante al menos
 export function insigniasDe(ficha) {
   const m = ficha?.insignias || {};
   return Object.entries(m).map(([id, v]) => ({ id, ...v })).sort((a, b) => (b.orden || 0) - (a.orden || 0) || String(b.fecha).localeCompare(String(a.fecha)));
 }
-// Medalla redonda: número grande + unidad; las personalizadas llevan una estrella
+// Estrella de n puntas (para el borde del oro)
+function estrella(n, R, r) {
+  const p = [];
+  for (let i = 0; i < n * 2; i++) { const a = (Math.PI * i) / n - Math.PI / 2, d = i % 2 ? r : R; p.push((30 + d * Math.cos(a)).toFixed(2) + "," + (30 + d * Math.sin(a)).toFixed(2)); }
+  return p.join(" ");
+}
+let nInsignia = 0;
+// Medalla: número grande + unidad. Bronce = aro simple · Plata = doble aro con remaches ·
+// Oro = roseta con rayos · Diamante = gema facetada con brillo animado
 export function crearInsignia(ins, tam = 56) {
   const d = document.createElement("span");
-  d.className = "insignia";
+  const nivel = NIVELES[ins.nivel] ? ins.nivel : "";
+  d.className = "insignia" + (nivel ? " nivel-" + nivel : "");
   d.style.setProperty("--t", tam + "px");
-  d.title = ins.nombre || "";
+  if (nivel) d.style.setProperty("--tc", NIVELES[nivel].texto);
+  d.title = (ins.nombre || "") + (nivel ? " · " + NIVELES[nivel].nombre : "");
   const corto = ins.corto || "★";
   const unidad = ins.unidad || "";
-  d.innerHTML = `<svg viewBox="0 0 60 60" aria-hidden="true"><defs><linearGradient id="g${tam}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3c8ee"/><stop offset="1" stop-color="#9b6db0"/></linearGradient></defs>
-    <circle cx="30" cy="30" r="27" fill="none" stroke="url(#g${tam})" stroke-width="3"/>
-    <circle cx="30" cy="30" r="21.5" fill="rgba(195,155,211,.14)"/></svg>`;
+  const g = "g" + (++nInsignia);
+  let svg;
+  if (nivel === "bronce") {
+    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6c49b"/><stop offset=".5" stop-color="#c47a45"/><stop offset="1" stop-color="#7a4522"/></linearGradient></defs>
+      <circle cx="30" cy="30" r="27" fill="none" stroke="url(#${g})" stroke-width="3.5"/>
+      <circle cx="30" cy="30" r="22" fill="rgba(196,122,69,.16)"/>`;
+  } else if (nivel === "plata") {
+    let rem = "";
+    for (let i = 0; i < 12; i++) { const a = (Math.PI * 2 * i) / 12; rem += `<circle cx="${(30 + 25.2 * Math.cos(a)).toFixed(2)}" cy="${(30 + 25.2 * Math.sin(a)).toFixed(2)}" r="1.1" fill="#fff" opacity=".85"/>`; }
+    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#b9c0cc"/><stop offset=".7" stop-color="#f2f4f8"/><stop offset="1" stop-color="#7d8594"/></linearGradient></defs>
+      <circle cx="30" cy="30" r="28" fill="none" stroke="url(#${g})" stroke-width="2.4"/>
+      <circle cx="30" cy="30" r="22.4" fill="rgba(200,206,216,.14)" stroke="url(#${g})" stroke-width="1.4"/>${rem}`;
+  } else if (nivel === "oro") {
+    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset=".4" stop-color="#f2c230"/><stop offset=".75" stop-color="#ffe680"/><stop offset="1" stop-color="#a8740c"/></linearGradient>
+      <radialGradient id="${g}r"><stop offset="0" stop-color="#3b3320"/><stop offset="1" stop-color="#26231c"/></radialGradient></defs>
+      <polygon points="${estrella(16, 29.5, 25)}" fill="url(#${g})"/>
+      <circle cx="30" cy="30" r="21.5" fill="url(#${g}r)" stroke="#fff3b0" stroke-width=".8"/>
+      <circle cx="30" cy="30" r="19" fill="none" stroke="url(#${g})" stroke-width=".6" stroke-dasharray="1.5 1.5"/>`;
+  } else if (nivel === "diamante") {
+    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6fbff"/><stop offset=".3" stop-color="#7fe3ff"/><stop offset=".55" stop-color="#d7b5ff"/><stop offset=".8" stop-color="#ff9ad5"/><stop offset="1" stop-color="#7fe3ff"/></linearGradient>
+      <radialGradient id="${g}r"><stop offset="0" stop-color="#1f2a3a"/><stop offset="1" stop-color="#151a24"/></radialGradient></defs>
+      <polygon points="30,1.5 51,10 58.5,30 51,50 30,58.5 9,50 1.5,30 9,10" fill="url(#${g})"/>
+      <polygon points="30,7 47,14 53,30 47,46 30,53 13,46 7,30 13,14" fill="url(#${g}r)"/>
+      <g stroke="#e6fbff" stroke-width=".5" opacity=".55"><line x1="30" y1="1.5" x2="30" y2="7"/><line x1="51" y1="10" x2="47" y2="14"/><line x1="58.5" y1="30" x2="53" y2="30"/><line x1="51" y1="50" x2="47" y2="46"/><line x1="30" y1="58.5" x2="30" y2="53"/><line x1="9" y1="50" x2="13" y2="46"/><line x1="1.5" y1="30" x2="7" y2="30"/><line x1="9" y1="10" x2="13" y2="14"/></g>
+      <path class="destello" d="M47 4 l1.2 3 3 1.2 -3 1.2 -1.2 3 -1.2 -3 -3 -1.2 3 -1.2z" fill="#fff"/>`;
+  } else {
+    svg = `<defs><linearGradient id="${g}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3c8ee"/><stop offset="1" stop-color="#9b6db0"/></linearGradient></defs>
+      <circle cx="30" cy="30" r="27" fill="none" stroke="url(#${g})" stroke-width="3"/>
+      <circle cx="30" cy="30" r="21.5" fill="rgba(195,155,211,.14)"/>`;
+  }
+  d.innerHTML = `<svg viewBox="0 0 60 60" aria-hidden="true">${svg}</svg>`;
   const t = document.createElement("span"); t.className = "insignia-txt" + (corto.length >= 4 ? " largo" : corto.length === 3 ? " medio" : "");
   t.append(Object.assign(document.createElement("b"), { textContent: corto }));
   if (unidad && tam >= 40) t.append(Object.assign(document.createElement("small"), { textContent: unidad }));
