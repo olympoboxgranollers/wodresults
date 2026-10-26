@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026e";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026f";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -65,7 +65,12 @@ export const cosa = (d) => {
 };
 
 // Memoria local en el móvil: al cambiar de página solo se descarga lo que ha cambiado (ahorra lecturas del plan gratis)
-export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+// En las pantallas de la TV (navegadores de Smart TV, a veces antiguos o con redes que cortan la conexión continua)
+// se usa memoria normal y "long polling", que funciona en cualquier navegador y red.
+const esPantallaTV = typeof location !== "undefined" && /\/(tv|pantalla)\.html$/.test(location.pathname);
+export const db = esPantallaTV
+  ? initializeFirestore(app, { localCache: memoryLocalCache(), experimentalForceLongPolling: true })
+  : initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
 // Fecha de hoy en formato YYYY-MM-DD según la zona horaria del box
 // Diferencia entre el reloj del aparato y la hora real (algunas Smart TV tienen la fecha mal)
@@ -371,7 +376,7 @@ for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA))
 const MEDALLA_ANTIGUA = { deadlift: "deadlift-bronce", backsquat: "backsquat-plata", frontsquat: "frontsquat-plata", shoulderpress: "shoulderpress-oro", cleanjerk: "cleanjerk-diamante", snatch: "snatch-olimpo", benchpress: "benchpress-bronce" };
 export const idMedalla = (id) => MEDALLA_ANTIGUA[id] || id;
 // Versión de las imágenes: al cambiar una medalla se sube este número para que nadie vea la antigua guardada
-export const VERSION_MEDALLAS = "20261026e";
+export const VERSION_MEDALLAS = "20261026f";
 export const rutaMedalla = (id) => `${id}.webp?v=${VERSION_MEDALLAS}`;
 // Imagen de una medalla: primero en la página principal del repositorio, luego en la carpeta medallas/
 // y, si tampoco, la copia guardada dentro del código.
@@ -381,7 +386,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261026e").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261026f").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

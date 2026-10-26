@@ -11,7 +11,7 @@
 <title>TV · Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026e">
+<link rel="stylesheet" href="estilos.css?v=20261026f">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -185,7 +185,7 @@
 <div class="pie-derecha">
   <button type="button" class="discreto" id="volver" title="Volver">←</button>
   <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
-  <span class="estado-tv" id="estadoTV"></span>
+  <span class="estado-tv" id="estadoTV">● conectando…</span>
   <div class="fecha-hoy" id="fecha"></div>
 </div>
 
@@ -193,11 +193,11 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261026e";
-import { NOMBRE_BOX } from "./config.js?v=20261026e";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261026e";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261026f";
+import { NOMBRE_BOX } from "./config.js?v=20261026f";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261026f";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026e";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026f";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
@@ -418,6 +418,8 @@ function escucharResultados() {
   });
 }
 escucharResultados();
+// Si en 20 s no ha llegado nada, se avisa en pantalla (red del box o navegador de la TV)
+setTimeout(() => { if (!cargado.res) { const e = $("estadoTV"); if (e) { e.className = "estado-tv mal"; e.textContent = "● sin conexión con los datos: revisa la wifi de la TV"; } escucharResultados(); } }, 20000);
 sincronizarReloj().then((cambio) => { pintarFecha(); if (cambio) { escucharResultados(); escucharWods(); } programarMedianoche(); });
 // Al volver internet o al volver a mostrarse la pantalla, se reconecta por si acaso
 addEventListener("online", escucharResultados);
