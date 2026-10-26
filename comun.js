@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026b";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026c";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -17,6 +17,22 @@ export async function quienReacciona(reacciones, conocidos = new Map()) {
     }
     return { uid, emoji, nombre };
   }));
+}
+
+// ---------- Red wifi ----------
+// Huella de la red a la que está conectado el aparato (la dirección de internet de la wifi, cifrada).
+// El móvil y la TV en la misma wifi tienen la misma huella: así el móvil reconoce la TV del box.
+let huellaCache;
+export async function huellaRed() {
+  if (huellaCache !== undefined) return huellaCache;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch("https://api.ipify.org?format=json", { signal: ctl.signal, cache: "no-store" }); clearTimeout(t);
+    const { ip } = await r.json();
+    const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("olympo-wifi:" + ip));
+    huellaCache = [...new Uint8Array(h)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch { huellaCache = null; }
+  return huellaCache;
 }
 
 // ---------- Mayúsculas automáticas ----------
@@ -342,7 +358,7 @@ for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA))
 const MEDALLA_ANTIGUA = { deadlift: "deadlift-bronce", backsquat: "backsquat-plata", frontsquat: "frontsquat-plata", shoulderpress: "shoulderpress-oro", cleanjerk: "cleanjerk-diamante", snatch: "snatch-olimpo", benchpress: "benchpress-bronce" };
 export const idMedalla = (id) => MEDALLA_ANTIGUA[id] || id;
 // Versión de las imágenes: al cambiar una medalla se sube este número para que nadie vea la antigua guardada
-export const VERSION_MEDALLAS = "20261026b";
+export const VERSION_MEDALLAS = "20261026c";
 export const rutaMedalla = (id) => `${id}.webp?v=${VERSION_MEDALLAS}`;
 // Imagen de una medalla: primero en la página principal del repositorio, luego en la carpeta medallas/
 // y, si tampoco, la copia guardada dentro del código.
@@ -352,7 +368,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261026b").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261026c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

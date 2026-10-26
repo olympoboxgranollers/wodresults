@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026b">
+<link rel="stylesheet" href="estilos.css?v=20261026c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -146,7 +146,13 @@
   .tv-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--lila); animation: tvLatido 1.4s ease-in-out infinite; flex: none; }
   @keyframes tvLatido { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
   .tv-item { margin-top: 12px; padding: 12px; border: 1px solid var(--borde); border-radius: 14px; display: grid; gap: 10px; }
-  .tv-item.lista { border-color: color-mix(in srgb, var(--lila) 45%, transparent); }
+  .tv-item.lista, .tv-item.mia { border-color: color-mix(in srgb, var(--lila) 45%, transparent); }
+  .tv-item.mia { background: color-mix(in srgb, var(--lila) 8%, transparent); }
+  .tv-wifi { font-weight: 700; }
+  .tv-btn.con-tv::after { content: ""; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--lila); box-shadow: 0 0 6px var(--lila); }
+  .tv-toast { position: fixed; left: 50%; bottom: calc(156px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 16px;
+    border-radius: 16px; background: rgba(30,32,36,.94); border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 14px; white-space: nowrap; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .tv-toast-x { background: none; border: 0; color: var(--suave); font-size: 16px; padding: 4px; }
   .tv-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
   .tv-fila b { font-size: 22px; letter-spacing: .12em; color: var(--lila); font-variant-numeric: tabular-nums; }
   .tv-fila small { display: block; color: var(--suave); font-size: 12px; }
@@ -168,7 +174,7 @@
   <div id="tvLista"></div>
   <details class="tv-primera">
     <summary>¿No sale tu TV?</summary>
-    <p>Solo la primera vez: en el navegador de la TV abre esta dirección y guárdala en favoritos. Saldrá un código y la TV aparecerá aquí para conectarla.</p>
+    <p>El móvil y la TV tienen que estar en la misma wifi. Solo la primera vez: en el navegador de la TV abre esta dirección y guárdala en favoritos. La TV aparecerá aquí sola.</p>
     <code class="tv-url" id="tvUrl"></code>
     <button type="button" class="tv-copiar" id="tvCopiar">Copiar dirección</button>
   </details>
@@ -234,10 +240,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026b";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026b";
-import { escucharCuenta } from "./cuenta.js?v=20261026b";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona } from "./comun.js?v=20261026b";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026c";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026c";
+import { escucharCuenta } from "./cuenta.js?v=20261026c";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed } from "./comun.js?v=20261026c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -247,52 +253,76 @@ let clase = claseInicial();
 let esCoach = false;
 const menu = montarMenu({ actual: "ranking", cuenta: false });
 // Coach y entrenadores: tocar un resultado abre el editor
-escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !staff; pintar(); });
+escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !staff; if (staff) escucharTvs(); pintar(); });
 
 // ---------- Poner el ranking en la TV (coach y entrenadores) ----------
 const urlPantalla = () => { const u = new URL("pantalla.html", location.href); return u.href; };
-// Las TV que esperan (con su código) y las conectadas salen aquí en directo
-let dejarTvs = null;
+// Las TV que esperan y las conectadas salen aquí en directo. Las que están en tu misma wifi se reconocen solas.
+let dejarTvs = null, miRed = null, tvsUltimas = [];
+const tvsAvisadas = new Set();
+async function conectarTV(t, bt) {
+  if (bt) bt.disabled = true;
+  try { await updateDoc(doc(db, "tvs", t.id), { vinculada: true, por: (yo?.email || "").split("@")[0], clase }); return true; }
+  catch (e) { console.warn(e); if (bt) bt.textContent = "No se ha podido"; return false; }
+  finally { if (bt) bt.disabled = false; }
+}
+function avisoTvWifi() {
+  // Aviso flotante: "TV encontrada en tu wifi · Conectar" (una vez por TV)
+  const t = tvsUltimas.find((x) => !x.vinculada && miRed && x.red === miRed && !tvsAvisadas.has(x.id));
+  $("tvBtn").classList.toggle("con-tv", tvsUltimas.some((x) => !x.vinculada && miRed && x.red === miRed));
+  if (!t || $("dlgTv").open || document.querySelector(".tv-toast")) return;
+  tvsAvisadas.add(t.id);
+  const toast = document.createElement("div"); toast.className = "tv-toast";
+  toast.append(Object.assign(document.createElement("span"), { textContent: "📺 TV encontrada en tu wifi" }));
+  const ok = Object.assign(document.createElement("button"), { type: "button", className: "tv-conectar", textContent: "Conectar" });
+  ok.addEventListener("click", async () => { if (await conectarTV(t, ok)) { toast.querySelector("span").textContent = "✓ TV conectada"; ok.remove(); setTimeout(() => toast.remove(), 1800); } });
+  const x = Object.assign(document.createElement("button"), { type: "button", className: "tv-toast-x", textContent: "✕" }); x.setAttribute("aria-label", "Cerrar"); x.addEventListener("click", () => toast.remove());
+  toast.append(ok, x); document.body.append(toast);
+}
+function pintarTvs() {
+  const ahora = Date.now();
+  const tvs = tvsUltimas.filter((t) => t.vinculada || (typeof t.creado === "number" && ahora - t.creado < 1800000))
+    .map((t) => ({ ...t, mia: !!(miRed && t.red === miRed) }))
+    .sort((a, b) => (b.vinculada - a.vinculada) || (b.mia - a.mia) || ((b.creado || 0) - (a.creado || 0)));
+  const caja = $("tvLista"); caja.replaceChildren();
+  if (!tvs.some((t) => !t.vinculada)) {
+    const v = document.createElement("div"); v.className = "tv-vacio";
+    v.append(Object.assign(document.createElement("span"), { className: "tv-punto" }), document.createTextNode(tvs.length ? "Ninguna TV nueva esperando." : "Buscando la TV en tu wifi… Enciéndela y abre la pantalla."));
+    caja.append(v);
+  }
+  for (const t of tvs) {
+    const it = document.createElement("div"); it.className = "tv-item" + (t.vinculada ? " lista" : "") + (t.mia && !t.vinculada ? " mia" : "");
+    const fila = document.createElement("div"); fila.className = "tv-fila";
+    const info = document.createElement("div");
+    if (t.vinculada) info.append(Object.assign(document.createElement("span"), { textContent: "📺 TV conectada" }), Object.assign(document.createElement("small"), { textContent: t.por ? `Conectada por ${t.por}` : "" }));
+    else if (t.mia) info.append(Object.assign(document.createElement("span"), { className: "tv-wifi", textContent: "📶 TV en tu wifi" }), Object.assign(document.createElement("small"), { textContent: `Código en pantalla: ${t.codigo}` }));
+    else info.append(Object.assign(document.createElement("b"), { textContent: t.codigo }), Object.assign(document.createElement("small"), { textContent: "Otra wifi · comprueba el código de la TV" }));
+    const bt = Object.assign(document.createElement("button"), { type: "button", className: t.vinculada ? "tv-desconectar" : "tv-conectar", textContent: t.vinculada ? "Desconectar" : "Conectar" });
+    bt.addEventListener("click", async () => {
+      if (t.vinculada) { bt.disabled = true; try { await updateDoc(doc(db, "tvs", t.id), { vinculada: false }); } catch (e) { console.warn(e); } bt.disabled = false; }
+      else conectarTV(t, bt);
+    });
+    fila.append(info, bt); it.append(fila);
+    // Elegir qué clase se ve en esa TV
+    if (t.vinculada) {
+      const cl = document.createElement("div"); cl.className = "tv-clases";
+      for (const [id, c] of Object.entries(CLASES)) {
+        const b = Object.assign(document.createElement("button"), { type: "button", textContent: c.nombre || id });
+        b.setAttribute("aria-pressed", String((t.clase || "wod") === id));
+        b.addEventListener("click", () => updateDoc(doc(db, "tvs", t.id), { clase: id }).catch(() => {}));
+        cl.append(b);
+      }
+      it.append(cl);
+    }
+    caja.append(it);
+  }
+}
 function escucharTvs() {
   if (dejarTvs) return;
+  huellaRed().then((r) => { miRed = r; pintarTvs(); avisoTvWifi(); });
   dejarTvs = onSnapshot(collection(db, "tvs"), (s) => {
-    const ahora = Date.now();
-    const tvs = s.docs.map((d) => ({ id: d.id, ...d.data() }))
-      .filter((t) => t.vinculada || (typeof t.creado === "number" && ahora - t.creado < 1800000))
-      .sort((a, b) => (b.vinculada - a.vinculada) || ((b.creado || 0) - (a.creado || 0)));
-    const caja = $("tvLista"); caja.replaceChildren();
-    if (!tvs.some((t) => !t.vinculada)) {
-      const v = document.createElement("div"); v.className = "tv-vacio";
-      v.append(Object.assign(document.createElement("span"), { className: "tv-punto" }), document.createTextNode(tvs.length ? "Ninguna TV nueva esperando." : "Enciende la TV y abre la pantalla: aparecerá aquí."));
-      caja.append(v);
-    }
-    for (const t of tvs) {
-      const it = document.createElement("div"); it.className = "tv-item" + (t.vinculada ? " lista" : "");
-      const fila = document.createElement("div"); fila.className = "tv-fila";
-      const info = document.createElement("div");
-      if (t.vinculada) info.append(Object.assign(document.createElement("span"), { textContent: "📺 TV conectada" }), Object.assign(document.createElement("small"), { textContent: t.por ? `Conectada por ${t.por}` : "" }));
-      else info.append(Object.assign(document.createElement("b"), { textContent: t.codigo }), Object.assign(document.createElement("small"), { textContent: "Código que sale en la TV" }));
-      const bt = Object.assign(document.createElement("button"), { type: "button", className: t.vinculada ? "tv-desconectar" : "tv-conectar", textContent: t.vinculada ? "Desconectar" : "Conectar" });
-      bt.addEventListener("click", async () => {
-        bt.disabled = true;
-        try { await updateDoc(doc(db, "tvs", t.id), t.vinculada ? { vinculada: false } : { vinculada: true, por: (yo?.email || "").split("@")[0], clase }); }
-        catch (e) { console.warn(e); bt.textContent = "No se ha podido"; }
-        bt.disabled = false;
-      });
-      fila.append(info, bt); it.append(fila);
-      // Elegir qué clase se ve en esa TV
-      if (t.vinculada) {
-        const cl = document.createElement("div"); cl.className = "tv-clases";
-        for (const [id, c] of Object.entries(CLASES)) {
-          const b = Object.assign(document.createElement("button"), { type: "button", textContent: c.nombre || id });
-          b.setAttribute("aria-pressed", String((t.clase || "wod") === id));
-          b.addEventListener("click", () => updateDoc(doc(db, "tvs", t.id), { clase: id }).catch(() => {}));
-          cl.append(b);
-        }
-        it.append(cl);
-      }
-      caja.append(it);
-    }
+    tvsUltimas = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+    pintarTvs(); avisoTvWifi();
   }, () => { $("tvLista").replaceChildren(Object.assign(document.createElement("div"), { className: "tv-vacio", textContent: "Publica las reglas nuevas de Firebase para conectar la TV." })); });
 }
 $("tvBtn").addEventListener("click", () => {

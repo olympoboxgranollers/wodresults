@@ -351,16 +351,18 @@ service cloud.firestore {
     }
   
     // ---------- TV del box: se conecta desde el móvil (Ranking → icono de TV) ----------
-    // La TV crea su ficha con un código; el coach o un entrenador la conecta y elige la clase que se ve
+    // La TV crea su ficha con un código y la huella de su wifi; el móvil del coach o de un entrenador
+    // en la misma wifi la encuentra sola y la conecta (y elige la clase que se ve)
     match /tvs/{tv} {
       allow read: if esStaff() || (esAnonimo() && request.auth.uid == tv);
       allow create: if esAnonimo() && request.auth.uid == tv
-        && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada'])
+        && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
+        && (!('red' in request.resource.data) || (request.resource.data.red is string && request.resource.data.red.size() <= 32))
         && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
         && request.resource.data.creado is number
         && request.resource.data.vinculada == false;
       allow update: if (esAnonimo() && request.auth.uid == tv
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
           && request.resource.data.vinculada == false)
         || (esStaff()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])

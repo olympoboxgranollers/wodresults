@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026b">
+<link rel="stylesheet" href="estilos.css?v=20261026c">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -161,11 +161,11 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona } from "./comun.js?v=20261026b";
-import { NOMBRE_BOX } from "./config.js?v=20261026b";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261026b";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed } from "./comun.js?v=20261026c";
+import { NOMBRE_BOX } from "./config.js?v=20261026c";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261026c";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026b";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -368,16 +368,18 @@ crearPestanas($("pestanas"), clase, cambiarClase);
 // La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
 let tvEsperando = false, dejarTV = null;
 const codigoNuevo = () => String(Math.floor(1000 + Math.random() * 9000));
+// Mensaje de estado en la pantalla de espera (para saber qué falta si no aparece en el móvil)
+function avisoTV(txt) { pintarEspera(""); const p = document.querySelector(".tv-espera-sub"); if (p) p.innerHTML = txt; }
 function pintarEspera(codigo) {
   let o = $("tvEspera");
   if (!o) {
     o = document.createElement("div"); o.id = "tvEspera"; o.className = "tv-espera";
     o.innerHTML = `<div class="tv-espera-caja"><img src="logo-400.png" alt="" class="tv-espera-logo"><h2>Conectar esta TV</h2>
-      <p>En el móvil del coach o de un entrenador abre <b>Ranking</b> y pulsa el icono de la <b>TV</b>.</p>
+      <p>Con el móvil del coach o de un entrenador <b>en esta misma wifi</b>, abre <b>Ranking</b>: la TV aparecerá sola para conectarla.</p>
       <div class="tv-codigo" id="tvCodigo"></div><p class="tv-espera-sub"><span class="tv-punto"></span> Esperando al móvil…</p></div>`;
     document.body.append(o);
   }
-  $("tvCodigo").textContent = codigo.split("").join(" ");
+  $("tvCodigo").textContent = codigo ? codigo.split("").join(" ") : "· · · ·";
   document.documentElement.classList.add("tv-sin-conectar");
 }
 function arrancarTV(u) {
@@ -389,19 +391,33 @@ function arrancarTV(u) {
       tvEsperando = true;
       // Código nuevo cada vez que se queda sin conectar (o si el anterior tiene más de 30 min)
       const viejo = !d || typeof d.creado !== "number" || Date.now() - d.creado > 1800000;
-      if (!d || viejo) { try { await setDoc(ref, { codigo: codigoNuevo(), creado: Date.now(), vinculada: false }); } catch (e) { console.warn(e); } return; }
+      if (!d || viejo) {
+        try { await setDoc(ref, { codigo: codigoNuevo(), creado: Date.now(), vinculada: false, ...((await huellaRed()) ? { red: await huellaRed() } : {}) }); }
+        catch (e) { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); }
+        return;
+      }
       pintarEspera(d.codigo);
+      const sub = document.querySelector(".tv-espera-sub"); if (sub) sub.innerHTML = '<span class="tv-punto"></span> Esperando al móvil…';
       return;
     }
     // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
     if (tvEsperando) { location.reload(); return; }
     $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
     if (d.clase && d.clase !== clase && CLASES[d.clase]) { cambiarClase(d.clase); crearPestanas($("pestanas"), clase, cambiarClase); }
-  }, () => {});
+  }, (e) => { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); });
 }
 onAuthStateChanged(auth, (u) => {
   if (u && !u.isAnonymous) { dejarTV?.(); dejarTV = null; $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar"); return; }  // con cuenta: pantalla normal
-  if (!u) { signInAnonymously(auth).catch((e) => { console.warn("Activa el acceso anónimo en Firebase", e); pintarEspera("····"); }); return; }
+  if (!u) {
+    avisoTV('<span class="tv-punto"></span> Preparando la TV…');
+    signInAnonymously(auth).catch((e) => {
+      console.warn(e);
+      avisoTV(e?.code === "auth/operation-not-allowed" || e?.code === "auth/admin-restricted-operation"
+        ? "⚠️ Activa el acceso <b>Anónimo</b> en Firebase → Authentication → Sign-in method."
+        : "⚠️ No se ha podido conectar (" + (e?.code || "sin internet") + ").");
+    });
+    return;
+  }
   arrancarTV(u);
 });
 cambiarClase(clase);
