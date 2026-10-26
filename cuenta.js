@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026a";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026b";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -36,7 +36,8 @@ export function escucharCuenta(alCambiar) {
   let dejarFicha = null;
   onAuthStateChanged(auth, (user) => {
     if (dejarFicha) { dejarFicha(); dejarFicha = null; }
-    if (!user) return alCambiar({ user: null, ficha: null });
+    // Las TV conectadas entran como anónimas: para la app es como no tener sesión
+    if (!user || user.isAnonymous) return alCambiar({ user: null, ficha: null });
     alCambiar({ user, ficha: undefined });  // undefined = cargando
     dejarFicha = onSnapshot(doc(db, "usuarios", user.uid),
       (s) => {

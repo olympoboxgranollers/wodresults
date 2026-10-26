@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026a">
+<link rel="stylesheet" href="estilos.css?v=20261026b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -138,29 +138,40 @@
   .tv-btn { position: absolute; top: 0; right: 0; z-index: 3; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: var(--lila); opacity: .75; border-radius: 10px; }
   .tv-btn:hover, .tv-btn:focus-visible { opacity: .9; color: var(--lila); }
   .tv-btn svg { width: 19px; height: 19px; }
-  .dlg-tv { margin: auto; width: min(320px, calc(100vw - 32px)); background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 18px 18px; text-align: center; }
+  .dlg-tv { margin: auto; width: min(340px, calc(100vw - 32px)); background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 18px 18px; }
   .dlg-tv::backdrop { background: rgba(0,0,0,.65); }
-  .tv-cab { display: flex; justify-content: space-between; align-items: center; font-size: 16px; text-align: left; }
+  .tv-cab { display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
   .tv-cab button { background: none; border: 0; color: var(--suave); font-size: 18px; }
-  .tv-qr { width: 168px; height: 168px; margin: 14px auto 10px; padding: 8px; background: #fff; border-radius: 12px; }
-  .tv-qr img, .tv-qr canvas { width: 100% !important; height: 100% !important; }
-  .tv-url { display: block; font-size: 12px; color: var(--suave); word-break: break-all; }
+  .tv-vacio { margin: 14px 0 4px; color: var(--suave); font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+  .tv-punto { width: 8px; height: 8px; border-radius: 50%; background: var(--lila); animation: tvLatido 1.4s ease-in-out infinite; flex: none; }
+  @keyframes tvLatido { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+  .tv-item { margin-top: 12px; padding: 12px; border: 1px solid var(--borde); border-radius: 14px; display: grid; gap: 10px; }
+  .tv-item.lista { border-color: color-mix(in srgb, var(--lila) 45%, transparent); }
+  .tv-fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .tv-fila b { font-size: 22px; letter-spacing: .12em; color: var(--lila); font-variant-numeric: tabular-nums; }
+  .tv-fila small { display: block; color: var(--suave); font-size: 12px; }
+  .tv-conectar { border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; font-size: 14px; background: var(--lila); color: #1f2125; }
+  .tv-desconectar { border: 1px solid var(--borde); background: none; color: var(--suave); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; }
+  .tv-clases { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tv-clases button { border: 1px solid var(--borde); background: none; color: var(--suave); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+  .tv-clases button[aria-pressed="true"] { border-color: var(--lila); color: var(--texto); background: color-mix(in srgb, var(--lila) 16%, transparent); }
+  .tv-primera { margin-top: 14px; font-size: 13px; color: var(--suave); }
+  .tv-primera summary { cursor: pointer; color: var(--suave); }
+  .tv-primera p { margin: 8px 0; line-height: 1.45; }
+  .tv-url { display: block; font-size: 12px; color: var(--lila); word-break: break-all; }
   .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
-  .tv-pasos { margin: 14px 0 0 18px; padding: 0; text-align: left; display: grid; gap: 3px; list-style: decimal; }
-  .dlg-tv li { display: list-item !important; border: 0 !important; background: none !important; padding: 0 !important; margin: 0; border-radius: 0; font-size: 13px; line-height: 1.45; color: var(--suave); animation: none !important; }
 </style>
 </head>
 <body>
-<dialog class="dlg-tv" id="dlgTv" aria-label="Poner en la Smart TV">
-  <div class="tv-cab"><b>Ver en la Smart TV</b><button type="button" id="tvCerrar" aria-label="Cerrar">✕</button></div>
-  <div class="tv-qr" id="tvQr"></div>
-  <code class="tv-url" id="tvUrl"></code>
-  <button type="button" class="tv-copiar" id="tvCopiar">Copiar dirección</button>
-  <ol class="tv-pasos">
-    <li>Abre el navegador de la TV (misma wifi).</li>
-    <li>Escanea el código o escribe la dirección.</li>
-    <li>Entra una vez con tu cuenta y ponla en pantalla completa.</li>
-  </ol>
+<dialog class="dlg-tv" id="dlgTv" aria-label="Conectar la Smart TV">
+  <div class="tv-cab"><b>Smart TV</b><button type="button" id="tvCerrar" aria-label="Cerrar">✕</button></div>
+  <div id="tvLista"></div>
+  <details class="tv-primera">
+    <summary>¿No sale tu TV?</summary>
+    <p>Solo la primera vez: en el navegador de la TV abre esta dirección y guárdala en favoritos. Saldrá un código y la TV aparecerá aquí para conectarla.</p>
+    <code class="tv-url" id="tvUrl"></code>
+    <button type="button" class="tv-copiar" id="tvCopiar">Copiar dirección</button>
+  </details>
 </dialog>
 <main>
   <header>
@@ -223,10 +234,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026a";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026a";
-import { escucharCuenta } from "./cuenta.js?v=20261026a";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona } from "./comun.js?v=20261026a";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026b";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026b";
+import { escucharCuenta } from "./cuenta.js?v=20261026b";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona } from "./comun.js?v=20261026b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -240,12 +251,53 @@ escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcu
 
 // ---------- Poner el ranking en la TV (coach y entrenadores) ----------
 const urlPantalla = () => { const u = new URL("pantalla.html", location.href); return u.href; };
+// Las TV que esperan (con su código) y las conectadas salen aquí en directo
+let dejarTvs = null;
+function escucharTvs() {
+  if (dejarTvs) return;
+  dejarTvs = onSnapshot(collection(db, "tvs"), (s) => {
+    const ahora = Date.now();
+    const tvs = s.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .filter((t) => t.vinculada || (typeof t.creado === "number" && ahora - t.creado < 1800000))
+      .sort((a, b) => (b.vinculada - a.vinculada) || ((b.creado || 0) - (a.creado || 0)));
+    const caja = $("tvLista"); caja.replaceChildren();
+    if (!tvs.some((t) => !t.vinculada)) {
+      const v = document.createElement("div"); v.className = "tv-vacio";
+      v.append(Object.assign(document.createElement("span"), { className: "tv-punto" }), document.createTextNode(tvs.length ? "Ninguna TV nueva esperando." : "Enciende la TV y abre la pantalla: aparecerá aquí."));
+      caja.append(v);
+    }
+    for (const t of tvs) {
+      const it = document.createElement("div"); it.className = "tv-item" + (t.vinculada ? " lista" : "");
+      const fila = document.createElement("div"); fila.className = "tv-fila";
+      const info = document.createElement("div");
+      if (t.vinculada) info.append(Object.assign(document.createElement("span"), { textContent: "📺 TV conectada" }), Object.assign(document.createElement("small"), { textContent: t.por ? `Conectada por ${t.por}` : "" }));
+      else info.append(Object.assign(document.createElement("b"), { textContent: t.codigo }), Object.assign(document.createElement("small"), { textContent: "Código que sale en la TV" }));
+      const bt = Object.assign(document.createElement("button"), { type: "button", className: t.vinculada ? "tv-desconectar" : "tv-conectar", textContent: t.vinculada ? "Desconectar" : "Conectar" });
+      bt.addEventListener("click", async () => {
+        bt.disabled = true;
+        try { await updateDoc(doc(db, "tvs", t.id), t.vinculada ? { vinculada: false } : { vinculada: true, por: (yo?.email || "").split("@")[0], clase }); }
+        catch (e) { console.warn(e); bt.textContent = "No se ha podido"; }
+        bt.disabled = false;
+      });
+      fila.append(info, bt); it.append(fila);
+      // Elegir qué clase se ve en esa TV
+      if (t.vinculada) {
+        const cl = document.createElement("div"); cl.className = "tv-clases";
+        for (const [id, c] of Object.entries(CLASES)) {
+          const b = Object.assign(document.createElement("button"), { type: "button", textContent: c.nombre || id });
+          b.setAttribute("aria-pressed", String((t.clase || "wod") === id));
+          b.addEventListener("click", () => updateDoc(doc(db, "tvs", t.id), { clase: id }).catch(() => {}));
+          cl.append(b);
+        }
+        it.append(cl);
+      }
+      caja.append(it);
+    }
+  }, () => { $("tvLista").replaceChildren(Object.assign(document.createElement("div"), { className: "tv-vacio", textContent: "Publica las reglas nuevas de Firebase para conectar la TV." })); });
+}
 $("tvBtn").addEventListener("click", () => {
   $("tvUrl").textContent = urlPantalla().replace(/^https?:\/\//, "");
-  const qr = $("tvQr");
-  const pintarQR = () => { qr.replaceChildren(); new QRCode(qr, { text: urlPantalla(), width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M }); };
-  if (window.QRCode) pintarQR();
-  else { const sc = Object.assign(document.createElement("script"), { src: "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" }); sc.onload = pintarQR; document.head.append(sc); }
+  escucharTvs();
   $("dlgTv").showModal();
 });
 $("tvCerrar").addEventListener("click", () => $("dlgTv").close());

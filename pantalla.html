@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026a">
+<link rel="stylesheet" href="estilos.css?v=20261026b">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -93,6 +93,18 @@
     li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
     aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
   }
+  /* Modo TV sin conectar */
+  html.tv-sin-conectar body > *:not(.tv-espera) { visibility: hidden; }
+  .tv-espera { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 30%, #2b2d33, #17181b 70%); color: #fff; text-align: center; padding: 24px; }
+  .tv-espera-caja { max-width: 720px; }
+  .tv-espera-logo { width: 84px; opacity: .9; }
+  .tv-espera h2 { font-size: clamp(28px, 4vw, 52px); margin-top: 14px; }
+  .tv-espera p { color: #b9bcc4; font-size: clamp(16px, 1.8vw, 24px); margin-top: 10px; line-height: 1.4; }
+  .tv-espera p b { color: #fff; }
+  .tv-codigo { margin: 28px auto 8px; font-size: clamp(64px, 12vw, 160px); font-weight: 800; letter-spacing: .08em; color: #c39bd3; text-shadow: 0 0 40px rgba(195,155,211,.35); font-variant-numeric: tabular-nums; }
+  .tv-espera-sub { display: inline-flex; align-items: center; gap: 10px; }
+  .tv-punto { width: 10px; height: 10px; border-radius: 50%; background: #c39bd3; animation: tvLatido 1.4s ease-in-out infinite; }
+  @keyframes tvLatido { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
 </style>
 </head>
 <body>
@@ -148,11 +160,12 @@
 </dialog>
 
 <script type="module">
-import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona } from "./comun.js?v=20261026a";
-import { NOMBRE_BOX } from "./config.js?v=20261026a";
-import { escucharCuenta } from "./cuenta.js?v=20261026a";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026a";
+import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona } from "./comun.js?v=20261026b";
+import { NOMBRE_BOX } from "./config.js?v=20261026b";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261026b";
+import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -177,7 +190,7 @@ $("volver").addEventListener("click", async () => {
   if (history.length > 1) history.back(); else location.href = "ranking.html";
 });
 
-const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false });
+const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, protegida: false });
 // Solo el coach configura el WOD y corrige resultados desde la pantalla (los entrenadores lo hacen en Publicar)
 escucharRol(({ coach }) => { esCoach = coach; $("abrirAjustes").hidden = !coach; pintar(); });
 
@@ -350,6 +363,47 @@ function cambiarClase(nueva) {
   escucharWod();
 }
 crearPestanas($("pestanas"), clase, cambiarClase);
+
+// ---------- Modo TV: sin cuenta, la TV se conecta desde el móvil del coach o de un entrenador ----------
+// La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
+let tvEsperando = false, dejarTV = null;
+const codigoNuevo = () => String(Math.floor(1000 + Math.random() * 9000));
+function pintarEspera(codigo) {
+  let o = $("tvEspera");
+  if (!o) {
+    o = document.createElement("div"); o.id = "tvEspera"; o.className = "tv-espera";
+    o.innerHTML = `<div class="tv-espera-caja"><img src="logo-400.png" alt="" class="tv-espera-logo"><h2>Conectar esta TV</h2>
+      <p>En el móvil del coach o de un entrenador abre <b>Ranking</b> y pulsa el icono de la <b>TV</b>.</p>
+      <div class="tv-codigo" id="tvCodigo"></div><p class="tv-espera-sub"><span class="tv-punto"></span> Esperando al móvil…</p></div>`;
+    document.body.append(o);
+  }
+  $("tvCodigo").textContent = codigo.split("").join(" ");
+  document.documentElement.classList.add("tv-sin-conectar");
+}
+function arrancarTV(u) {
+  if (dejarTV) return;
+  const ref = doc(db, "tvs", u.uid);
+  dejarTV = onSnapshot(ref, async (s) => {
+    const d = s.exists() ? s.data() : null;
+    if (!d || !d.vinculada) {
+      tvEsperando = true;
+      // Código nuevo cada vez que se queda sin conectar (o si el anterior tiene más de 30 min)
+      const viejo = !d || typeof d.creado !== "number" || Date.now() - d.creado > 1800000;
+      if (!d || viejo) { try { await setDoc(ref, { codigo: codigoNuevo(), creado: Date.now(), vinculada: false }); } catch (e) { console.warn(e); } return; }
+      pintarEspera(d.codigo);
+      return;
+    }
+    // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
+    if (tvEsperando) { location.reload(); return; }
+    $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
+    if (d.clase && d.clase !== clase && CLASES[d.clase]) { cambiarClase(d.clase); crearPestanas($("pestanas"), clase, cambiarClase); }
+  }, () => {});
+}
+onAuthStateChanged(auth, (u) => {
+  if (u && !u.isAnonymous) { dejarTV?.(); dejarTV = null; $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar"); return; }  // con cuenta: pantalla normal
+  if (!u) { signInAnonymously(auth).catch((e) => { console.warn("Activa el acceso anónimo en Firebase", e); pintarEspera("····"); }); return; }
+  arrancarTV(u);
+});
 cambiarClase(clase);
 
 // Configurar el WOD del día

@@ -9,7 +9,14 @@ service cloud.firestore {
         && request.auth.token.email == 'olympoboxgranollers@gmail.com'
         && request.auth.token.email_verified == true;
     }
-    function conCuenta() { return request.auth != null; }
+    // Cuenta de persona (correo o Google). Las TV conectadas entran como "anónimas" y no cuentan aquí.
+    function conCuenta() { return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    function esAnonimo() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+    // TV del box conectada desde el móvil del coach o de un entrenador: solo puede LEER el ranking del día
+    function esTV() {
+      return esAnonimo() && exists(/databases/$(database)/documents/tvs/$(request.auth.uid))
+        && get(/databases/$(database)/documents/tvs/$(request.auth.uid)).data.vinculada == true;
+    }
     // Entrenadores: los emails que el coach ha puesto en ajustes/entrenadores (publican el WOD y corrigen resultados)
     function esEntrenador() {
       return request.auth != null && request.auth.token.email_verified == true
@@ -60,7 +67,7 @@ service cloud.firestore {
     // ---------- Resultados ----------
     // Uno por socio, clase y día: el id es "fecha_clase_uid". El socio lo puede editar hasta que el coach cierra el día.
     match /resultados/{id} {
-      allow read: if conCuenta();
+      allow read: if conCuenta() || esTV();
       allow create: if conCuenta() && !esCoach()
         && request.resource.data.uid == request.auth.uid
         && id == request.resource.data.fecha + '_' + request.resource.data.clase + '_' + request.auth.uid
@@ -332,7 +339,7 @@ service cloud.firestore {
 
     // ---------- WOD del día de cada clase (lo publica el coach). Id: "2026-10-23_hyrox" ----------
     match /wods/{id} {
-      allow read: if conCuenta();
+      allow read: if conCuenta() || esTV();
       allow create, update: if esStaff()
         && id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional)$')
         && request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
@@ -342,5 +349,25 @@ service cloud.firestore {
         && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
       allow delete: if esStaff() || diaPasado(id.split('_')[0]);
     }
+  
+    // ---------- TV del box: se conecta desde el móvil (Ranking → icono de TV) ----------
+    // La TV crea su ficha con un código; el coach o un entrenador la conecta y elige la clase que se ve
+    match /tvs/{tv} {
+      allow read: if esStaff() || (esAnonimo() && request.auth.uid == tv);
+      allow create: if esAnonimo() && request.auth.uid == tv
+        && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada'])
+        && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
+        && request.resource.data.creado is number
+        && request.resource.data.vinculada == false;
+      allow update: if (esAnonimo() && request.auth.uid == tv
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada'])
+          && request.resource.data.vinculada == false)
+        || (esStaff()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])
+          && request.resource.data.vinculada is bool
+          && (!('clase' in request.resource.data) || request.resource.data.clase in ['wod', 'hyrox', 'funcional']));
+      allow delete: if esStaff() || (esAnonimo() && request.auth.uid == tv);
+    }
   }
+
 }
