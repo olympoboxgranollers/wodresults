@@ -12,7 +12,7 @@
 <title>Logros Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026d">
+<link rel="stylesheet" href="estilos.css?v=20261026e">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -175,9 +175,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261026d";
-import { escucharCuenta } from "./cuenta.js?v=20261026d";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026d";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261026e";
+import { escucharCuenta } from "./cuenta.js?v=20261026e";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026e";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
@@ -237,7 +237,7 @@ escucharCuenta(({ user, ficha: f }) => {
       const auto = logros.filter((l) => l.clases > 0);
       if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
         dando = true;
-        import("./cierre.js?v=20261026d").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+        import("./cierre.js?v=20261026e").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
       }
     }, () => {});
   }

@@ -11,7 +11,7 @@
 <title>TV · Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026d">
+<link rel="stylesheet" href="estilos.css?v=20261026e">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -151,6 +151,9 @@
   @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
   /* Las tarjetas un poco translúcidas para que se intuya el fondo */
   ol li, li { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
+  .estado-tv.ok { color: #3ddc84; }
+  .estado-tv.mal { color: #ff8a80; opacity: .9; }
 </style>
 </head>
 <body>
@@ -182,6 +185,7 @@
 <div class="pie-derecha">
   <button type="button" class="discreto" id="volver" title="Volver">←</button>
   <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
+  <span class="estado-tv" id="estadoTV"></span>
   <div class="fecha-hoy" id="fecha"></div>
 </div>
 
@@ -189,15 +193,16 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed } from "./comun.js?v=20261026d";
-import { NOMBRE_BOX } from "./config.js?v=20261026d";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261026d";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261026e";
+import { NOMBRE_BOX } from "./config.js?v=20261026e";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261026e";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026d";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026e";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
-$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const pintarFecha = () => ($("fecha").textContent = ahoraReal().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+pintarFecha();
 
 // Clase que se está mostrando (WOD, Hyrox o Funcional)
 let clase = claseInicial();
@@ -381,23 +386,32 @@ function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
 // Resultados de hoy en directo. Si la escucha se corta (sin permiso aún, sin internet, sesión caducada…)
 // se vuelve a conectar sola: así la TV nunca se queda con resultados viejos.
 let dejarRes = null, reintento = null, esperaRes = 2000;
+// Indicador discreto abajo: "● en directo" o el motivo si no puede leer
+function estadoTV(ok, codigo) {
+  const e = $("estadoTV"); if (!e) return;
+  e.className = "estado-tv " + (ok ? "ok" : "mal");
+  e.textContent = ok ? "● en directo" : (codigo === "permission-denied" ? "● sin permiso: conecta la TV o entra con una cuenta" : "● reconectando…");
+}
 function escucharResultados() {
   clearTimeout(reintento);
   if (dejarRes) dejarRes();
   dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
     esperaRes = 2000;
+    estadoTV(true);
     todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     resultados = todos.filter((r) => claseDe(r) === clase);
     cargado.res = true;
     pintar();
   }, (e) => {
     console.warn("Escucha de resultados cortada, reconectando…", e?.code);
+    estadoTV(false, e?.code);
     dejarRes = null;
     reintento = setTimeout(escucharResultados, esperaRes);
     esperaRes = Math.min(esperaRes * 2, 30000);
   });
 }
 escucharResultados();
+sincronizarReloj().then((cambio) => { pintarFecha(); if (cambio) { escucharResultados(); escucharWods(); } programarMedianoche(); });
 // Al volver internet o al volver a mostrarse la pantalla, se reconecta por si acaso
 addEventListener("online", escucharResultados);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) escucharResultados(); });
@@ -511,9 +525,12 @@ cambiarClase(clase);
 // sesión del coach, los puntos del podio se reparten a medianoche.
 
 // A medianoche recarga para empezar el ranking del día siguiente
-const ahora = new Date();
-const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
-setTimeout(() => location.reload(), manana - ahora);
+function programarMedianoche() {
+  const ahora = ahoraReal();
+  const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
+  clearTimeout(window.__medianoche); window.__medianoche = setTimeout(() => location.reload(), manana - ahora);
+}
+programarMedianoche();
 </script>
 </body>
 </html>

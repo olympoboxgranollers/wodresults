@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026d";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026e";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -68,8 +68,21 @@ export const cosa = (d) => {
 export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
 // Fecha de hoy en formato YYYY-MM-DD según la zona horaria del box
+// Diferencia entre el reloj del aparato y la hora real (algunas Smart TV tienen la fecha mal)
+let desfaseReloj = 0;
+export const ahoraReal = () => new Date(Date.now() + desfaseReloj);
 export function hoy() {
-  return new Date().toLocaleDateString("sv-SE", { timeZone: ZONA_HORARIA });
+  return ahoraReal().toLocaleDateString("sv-SE", { timeZone: ZONA_HORARIA });
+}
+// Pone en hora la app con la hora del servidor web (cabecera Date). Devuelve true si el día del aparato estaba mal.
+export async function sincronizarReloj() {
+  const antes = hoy();
+  try {
+    const r = await fetch(location.href.split("#")[0], { method: "HEAD", cache: "no-store" });
+    const d = Date.parse(r.headers.get("date") || "");
+    if (!isNaN(d) && Math.abs(d - Date.now()) > 60000) desfaseReloj = d - Date.now();
+  } catch {}
+  return hoy() !== antes;
 }
 
 // ---------- Clases del box ----------
@@ -358,7 +371,7 @@ for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA))
 const MEDALLA_ANTIGUA = { deadlift: "deadlift-bronce", backsquat: "backsquat-plata", frontsquat: "frontsquat-plata", shoulderpress: "shoulderpress-oro", cleanjerk: "cleanjerk-diamante", snatch: "snatch-olimpo", benchpress: "benchpress-bronce" };
 export const idMedalla = (id) => MEDALLA_ANTIGUA[id] || id;
 // Versión de las imágenes: al cambiar una medalla se sube este número para que nadie vea la antigua guardada
-export const VERSION_MEDALLAS = "20261026d";
+export const VERSION_MEDALLAS = "20261026e";
 export const rutaMedalla = (id) => `${id}.webp?v=${VERSION_MEDALLAS}`;
 // Imagen de una medalla: primero en la página principal del repositorio, luego en la carpeta medallas/
 // y, si tampoco, la copia guardada dentro del código.
@@ -368,7 +381,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261026d").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261026e").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
