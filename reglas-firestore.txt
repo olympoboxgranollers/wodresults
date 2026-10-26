@@ -359,11 +359,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
         && (!('red' in request.resource.data) || (request.resource.data.red is string && request.resource.data.red.size() <= 32))
         && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
-        && request.resource.data.creado is number
+        && request.resource.data.creado == request.time
         && request.resource.data.vinculada == false;
       allow update: if (esAnonimo() && request.auth.uid == tv
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
-          && request.resource.data.vinculada == false)
+          && request.resource.data.vinculada == false
+          && (!('creado' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.creado == request.time))
         || (esStaff()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])
           && request.resource.data.vinculada is bool

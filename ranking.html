@@ -266,10 +266,12 @@ async function conectarTV(t, bt) {
   catch (e) { console.warn(e); if (bt) bt.textContent = "No se ha podido"; return false; }
   finally { if (bt) bt.disabled = false; }
 }
+const msTv = (t) => (typeof t.creado?.toMillis === "function" ? t.creado.toMillis() : 0);
 function avisoTvWifi() {
-  // Aviso flotante: "TV encontrada en tu wifi · Conectar" (una vez por TV)
-  const t = tvsUltimas.find((x) => !x.vinculada && miRed && x.red === miRed && !tvsAvisadas.has(x.id));
-  $("tvBtn").classList.toggle("con-tv", tvsUltimas.some((x) => !x.vinculada && miRed && x.red === miRed));
+  // Aviso flotante: "TV encontrada en tu wifi · Conectar" (una vez por TV y solo si está encendida ahora)
+  const esperando = tvsUltimas.filter((x) => !x.vinculada && miRed && x.red === miRed && Date.now() - msTv(x) < 600000);
+  const t = esperando.find((x) => !tvsAvisadas.has(x.id));
+  $("tvBtn").classList.toggle("con-tv", esperando.length > 0);
   if (!t || $("dlgTv").open || document.querySelector(".tv-toast")) return;
   tvsAvisadas.add(t.id);
   const toast = document.createElement("div"); toast.className = "tv-toast";
@@ -281,9 +283,11 @@ function avisoTvWifi() {
 }
 function pintarTvs() {
   const ahora = Date.now();
-  const tvs = tvsUltimas.filter((t) => t.vinculada || (typeof t.creado === "number" && ahora - t.creado < 1800000))
+  // Las que esperan avisan cada 3 min (hora del servidor): si llevan más de 10 min sin avisar, están apagadas
+  const ms = (t) => (typeof t.creado?.toMillis === "function" ? t.creado.toMillis() : 0);
+  const tvs = tvsUltimas.filter((t) => t.vinculada || (ahora - ms(t) < 600000))
     .map((t) => ({ ...t, mia: !!(miRed && t.red === miRed) }))
-    .sort((a, b) => (b.vinculada - a.vinculada) || (b.mia - a.mia) || ((b.creado || 0) - (a.creado || 0)));
+    .sort((a, b) => (b.vinculada - a.vinculada) || (b.mia - a.mia) || (ms(b) - ms(a)));
   const caja = $("tvLista"); caja.replaceChildren();
   if (!tvs.some((t) => !t.vinculada)) {
     const v = document.createElement("div"); v.className = "tv-vacio";

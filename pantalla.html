@@ -385,21 +385,27 @@ function pintarEspera(codigo) {
 function arrancarTV(u) {
   if (dejarTV) return;
   const ref = doc(db, "tvs", u.uid);
+  let creando = false, latido = null;
+  // Mientras espera, la TV avisa cada 3 minutos de que sigue encendida (con la hora del servidor, no la de la TV)
+  const latir = () => updateDoc(ref, { creado: serverTimestamp() }).catch(() => {});
   dejarTV = onSnapshot(ref, async (s) => {
     const d = s.exists() ? s.data() : null;
     if (!d || !d.vinculada) {
       tvEsperando = true;
-      // Código nuevo cada vez que se queda sin conectar (o si el anterior tiene más de 30 min)
-      const viejo = !d || typeof d.creado !== "number" || Date.now() - d.creado > 1800000;
-      if (!d || viejo) {
-        try { await setDoc(ref, { codigo: codigoNuevo(), creado: Date.now(), vinculada: false, ...((await huellaRed()) ? { red: await huellaRed() } : {}) }); }
+      if (!d || !d.codigo) {
+        if (creando) return;
+        creando = true;
+        try { const red = await huellaRed(); await setDoc(ref, { codigo: codigoNuevo(), creado: serverTimestamp(), vinculada: false, ...(red ? { red } : {}) }); }
         catch (e) { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); }
+        creando = false;
         return;
       }
       pintarEspera(d.codigo);
       const sub = document.querySelector(".tv-espera-sub"); if (sub) sub.innerHTML = '<span class="tv-punto"></span> Esperando al móvil…';
+      if (!latido) { latir(); latido = setInterval(latir, 180000); }
       return;
     }
+    if (latido) { clearInterval(latido); latido = null; }
     // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
     if (tvEsperando) { location.reload(); return; }
     $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
