@@ -16,7 +16,12 @@
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
-  header .marca { color: #fff; font-size: 1.3vw; }
+  /* Cabecera de la TV: sin el nombre del WOD, la marca grande */
+  /* El título toma el color de la clase que se ve (más claro para que se lea siempre bien) */
+  header .marca { color: color-mix(in srgb, var(--malva) 70%, #fff); font-size: 2.9vw; font-weight: 400; letter-spacing: .14em; line-height: 1; gap: .45em;
+    text-shadow: 0 2px 14px rgba(0,0,0,.6), 0 0 22px color-mix(in srgb, var(--malva) 25%, transparent); transition: color .8s ease, text-shadow .8s ease; }
+  header .marca::before { width: 1.25em !important; height: 1.25em !important; }
+  header { align-items: center !important; }
   .pie-derecha { position: fixed; right: 2.5vw; bottom: 1.2vw; display: flex; align-items: center; gap: .6vw; z-index: 5; }
   .pie-derecha .fecha-hoy { position: static; font-size: 1.4vw; margin-left: .4vw; }
   .discreto { background: none; border: 0; color: var(--suave); opacity: .25; font-size: 1.3vw; line-height: 1; padding: .3vw .4vw; border-radius: 6px; cursor: pointer; }
@@ -63,7 +68,8 @@
   aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
   aside .cta span { color: var(--acento); }
   aside .total { color: var(--suave); font-size: 1.2vw; }
-  #qr { width: 11vw; flex: none; padding: .6vw; border-radius: .7vw; }
+  #qr { width: 9.5vw; flex: none; padding: .55vw; border-radius: .7vw; aspect-ratio: auto; height: auto; box-sizing: content-box; overflow: visible; line-height: 0; }
+  #qr img, #qr canvas { width: 100% !important; height: auto !important; aspect-ratio: 1; }
   .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
   .escanear .cta { font-size: 1.7vw; }
   .escanear .total { margin-top: .5vw; }
@@ -86,12 +92,12 @@
   dialog .botones .principal { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 800; }
   @media (max-width: 800px) {
     body { height: auto; overflow: auto; grid-template-columns: 1fr; padding: 16px; }
-    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
+    header h1 { font-size: 34px; } header .marca { font-size: 24px; } header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
     .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
     li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
     li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
     li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
-    aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
+    aside { order: -1; } #qr { width: 104px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
   }
   /* Modo TV sin conectar */
   html.tv-sin-conectar body > *:not(.tv-espera) { visibility: hidden; }
@@ -105,40 +111,52 @@
   .tv-espera-sub { display: inline-flex; align-items: center; gap: 10px; }
   .tv-punto { width: 10px; height: 10px; border-radius: 50%; background: #c39bd3; animation: tvLatido 1.4s ease-in-out infinite; }
   @keyframes tvLatido { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  .menu-tv { display: none !important; }
+  body.con-menu-tv { padding-bottom: 4.2vw !important; }
+  /* El lateral nunca se sale de la pantalla: el texto del WOD se encoge y el QR siempre se ve entero */
+  aside { min-height: 0; overflow: hidden; }
+  /* Texto del WOD en una columna; el recuadro se ajusta al texto (alto y ancho) */
+  .descripcion { flex: 0 1 auto !important; width: fit-content !important; max-width: 100%; align-self: flex-end; }
+  /* La columna derecha solo ocupa lo que necesita (WOD y QR pegados a la derecha): el resto es para el ranking */
+  @media (min-width: 801px) { body { grid-template-columns: minmax(0, 1fr) auto !important; } aside { max-width: 35vw; align-items: flex-end !important; } .escanear { width: auto !important; } }
+  #descripcionTexto { column-count: 1 !important; display: block; }
+  .descripcion { text-transform: none !important; }
+  .escanear { margin-top: auto; margin-bottom: 1.2vw; }
+  .rotar-barra { width: 16vw; max-width: 100%; margin-left: auto; height: 3px; border-radius: 3px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .rotar-barra i { display: block; height: 100%; width: 0; background: var(--malva); border-radius: inherit; opacity: .8; }
+  .rotar-barra.anda i { animation: rotarAvanza 30s linear forwards; }
+  @keyframes rotarAvanza { from { width: 0; } to { width: 100%; } }
+  /* ---------- Fondo de la TV: chapa de rombos del box + luces suaves del color de la clase que se mueven despacio ---------- */
+  html { background: #16171a; }
+  body { background: transparent !important; position: relative; isolation: isolate; }
+  body::before, body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  body::before {
+    background-color: #1b1c20;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg%3E%3Cpath d='M14 6 L22 14 L14 22 L6 14Z' fill='%23121317'/%3E%3Cpath d='M6 14 L14 22 L22 14' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3Cpath d='M14 7.6 L20.4 14 L14 20.4 L7.6 14Z' fill='%23191b20'/%3E%3Cpath d='M0 -8 L8 0 L0 8 L-8 0Z M28 -8 L36 0 L28 8 L20 0Z M0 20 L8 28 L0 36 L-8 28Z M28 20 L36 28 L28 36 L20 28Z' fill='%23121317'/%3E%3Cpath d='M-8 0 L0 8 L8 0 M20 0 L28 8 L36 0 M-8 28 L0 36 L8 28 M20 28 L28 36 L36 28' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 34px 34px; opacity: .55;
+    -webkit-mask: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 100%); mask: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 100%);
+  }
+  body::after {
+    background:
+      radial-gradient(40vw 32vw at 8% 92%, color-mix(in srgb, var(--malva) 20%, transparent), transparent 70%),
+      radial-gradient(38vw 30vw at 96% 70%, color-mix(in srgb, var(--malva) 15%, transparent), transparent 70%),
+      linear-gradient(180deg, rgba(10,10,12,.55) 0%, transparent 22%),
+      radial-gradient(30vw 26vw at 70% 20%, rgba(255,255,255,.035), transparent 70%),
+      radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);
+    background-size: 140% 140%, 140% 140%, 100% 100%, 100% 100%, 100% 100%;
+    animation: tvLuces 40s ease-in-out infinite alternate;
+    transition: background .8s ease;
+  }
+  @keyframes tvLuces { from { background-position: 0% 100%, 100% 60%, 0 0, 0 0, 0 0; } to { background-position: 25% 80%, 75% 40%, 0 0, 0 0, 0 0; } }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+  /* Las tarjetas un poco translúcidas para que se intuya el fondo */
+  ol li, li { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
+  .estado-tv.ok { color: #3ddc84; }
+  .estado-tv.mal { color: #ff8a80; opacity: .9; }
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <div class="marca" id="box"></div>
-    <h1 id="wodNombre">Wod del día</h1>
-  </div>
-  <div class="meta">
-    <button type="button" class="ajustes" id="abrirAjustes" hidden>⚙ WOD de hoy</button>
-    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
-    <strong id="tipo"></strong>
-  </div>
-</header>
-
-<section class="columna">
-  <h2>Clasificación <small id="nAtletas"></small></h2>
-  <ol id="lista"></ol>
-</section>
-
-<aside>
-  <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
-  <div class="escanear">
-    <div id="qr"></div>
-    <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
-  </div>
-</aside>
-
-<div class="pie-derecha">
-  <button type="button" class="discreto" id="volver" title="Volver">←</button>
-  <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
-  <div class="fecha-hoy" id="fecha"></div>
-</div>
-
 <dialog id="dialogo">
   <form method="dialog" id="formWod">
     <h3 id="tituloDialogo">WOD de hoy</h3>
@@ -158,18 +176,53 @@
     </div>
   </form>
 </dialog>
+<header>
+  <div>
+    <div class="marca" id="box"></div>
+    <h1 id="wodNombre" hidden>Wod del día</h1>
+  </div>
+  <div class="meta">
+    <button type="button" class="ajustes" id="abrirAjustes" hidden>⚙ WOD de hoy</button>
+    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+    <div class="rotar-barra" id="rotarBarra" hidden><i></i></div>
+    <strong id="tipo"></strong>
+  </div>
+</header>
+
+<section class="columna">
+  <h2>Clasificación <small id="nAtletas"></small></h2>
+  <ol id="lista"></ol>
+</section>
+
+<aside>
+  <div class="descripcion" id="descripcion" hidden><span id="descripcionTexto"></span></div>
+  <div class="escanear">
+    <div id="qr"></div>
+    <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
+  </div>
+</aside>
+
+<div class="pie-derecha">
+  <button type="button" class="discreto" id="volver" title="Volver">←</button>
+  <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
+  <span class="estado-tv" id="estadoTV"></span>
+  <div class="fecha-hoy" id="fecha"></div>
+</div>
+
+
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed } from "./comun.js?v=20261026e";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261026e";
 import { NOMBRE_BOX } from "./config.js?v=20261026e";
 import { escucharCuenta, auth } from "./cuenta.js?v=20261026e";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026e";
 
 const $ = (id) => document.getElementById(id);
-$("box").textContent = NOMBRE_BOX;
-$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+$("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
+const pintarFecha = () => ($("fecha").textContent = ahoraReal().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" }));
+pintarFecha();
 
 // Clase que se está mostrando (WOD, Hyrox o Funcional)
 let clase = claseInicial();
@@ -191,7 +244,9 @@ $("volver").addEventListener("click", async () => {
 });
 
 const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, protegida: false });
+// Pantalla del coach: mismo diseño que la TV, con ⚙ para configurar el WOD
 // Solo el coach configura el WOD y corrige resultados desde la pantalla (los entrenadores lo hacen en Publicar)
+// Solo el coach configura el WOD (⚙) y corrige resultados desde aquí
 escucharRol(({ coach }) => { esCoach = coach; $("abrirAjustes").hidden = !coach; pintar(); });
 
 // QR que apunta al formulario de la clase que se está mostrando
@@ -218,7 +273,7 @@ function ajustarDescripcion() {
   if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; texto.style.columnCount = ""; return; }
   const encaja = (columnas) => {
     texto.style.columnCount = columnas > 1 ? columnas : "";
-    let vw = 2.6;
+    let vw = 2.2;
     caja.style.fontSize = vw + "vw";
     while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
       vw -= 0.05;
@@ -226,12 +281,8 @@ function ajustarDescripcion() {
     }
     return vw;
   };
-  // Primero en una columna; si la letra queda pequeña, prueba en dos columnas y se queda con la más grande
-  const una = encaja(1);
-  if (una < 1.6) {
-    const dos = encaja(2);
-    if (dos < una) encaja(1);
-  }
+  // Siempre en una sola columna: si no cabe, la letra se hace más pequeña
+  encaja(1);
 }
 window.addEventListener("resize", ajustarDescripcion);
 
@@ -325,44 +376,105 @@ function pintar() {
 }
 
 let dejarWod = null;
-function escucharWod() {
-  if (dejarWod) dejarWod();
-  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
-  wod = snap.exists() ? snap.data() : null;
+// Los WOD de las tres clases se escuchan a la vez una sola vez: al rotar no se gastan lecturas
+const wodsCache = {}, wodsCargados = new Set();
+function aplicarWod() {
+  wod = wodsCache[clase] || null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
   $("wodNombre").textContent = titulo(wod?.nombre || `${CLASES[clase].nombre} del día`);
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "";
-  $("descripcionTexto").textContent = wod?.descripcion || "";
+  // Texto del WOD en minúscula con la primera letra de cada línea en mayúscula
+  $("descripcionTexto").textContent = (wod?.descripcion || "").split("\n").map((l) => { const t = l.toLocaleLowerCase("es"); return t.replace(/(^|\s)(\p{L})/u, (_, a, b) => a + b.toLocaleUpperCase("es")); }).join("\n");
   $("descripcion").hidden = !wod?.descripcion;
   ajustarDescripcion();
   pintar();
+}
+const dejarWods = {};
+function escucharWods() { for (const c of Object.keys(CLASES)) escucharWodDe(c); }
+for (const c of Object.keys(CLASES)) escucharWodDe(c);
+function escucharWodDe(c) {
+  dejarWods[c]?.();
+  dejarWods[c] = onSnapshot(doc(db, "wods", idWod(c)), (snap) => {
+    wodsCache[c] = snap.exists() ? snap.data() : null; wodsCargados.add(c);
+    if (c === clase) aplicarWod();
+    if ($("rotarBarra")) $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
+  }, () => { dejarWods[c] = null; setTimeout(() => escucharWodDe(c), 5000); });
+}
+function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
+
+// Resultados de hoy en directo. Si la escucha se corta (sin permiso aún, sin internet, sesión caducada…)
+// se vuelve a conectar sola: así la TV nunca se queda con resultados viejos.
+let dejarRes = null, reintento = null, esperaRes = 2000;
+// Indicador discreto abajo: "● en directo" o el motivo si no puede leer
+function estadoTV(ok, codigo) {
+  const e = $("estadoTV"); if (!e) return;
+  e.className = "estado-tv " + (ok ? "ok" : "mal");
+  e.textContent = ok ? "● en directo" : (codigo === "permission-denied" ? "● sin permiso: conecta la TV o entra con una cuenta" : "● reconectando…");
+}
+function escucharResultados() {
+  clearTimeout(reintento);
+  if (dejarRes) dejarRes();
+  dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+    esperaRes = 2000;
+    estadoTV(true);
+    todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
+    resultados = todos.filter((r) => claseDe(r) === clase);
+    cargado.res = true;
+    pintar();
+  }, (e) => {
+    console.warn("Escucha de resultados cortada, reconectando…", e?.code);
+    estadoTV(false, e?.code);
+    dejarRes = null;
+    reintento = setTimeout(escucharResultados, esperaRes);
+    esperaRes = Math.min(esperaRes * 2, 30000);
   });
 }
-
-onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
-  resultados = todos.filter((r) => claseDe(r) === clase);
-  cargado.res = true;
-  pintar();
-});
+escucharResultados();
+sincronizarReloj().then((cambio) => { pintarFecha(); if (cambio) { escucharResultados(); escucharWods(); } programarMedianoche(); });
+// Al volver internet o al volver a mostrarse la pantalla, se reconecta por si acaso
+addEventListener("online", escucharResultados);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) escucharResultados(); });
 
 // Cambiar de clase con las pestañas
 function cambiarClase(nueva) {
   clase = nueva;
   recordarClase(clase);
+  $("tituloDialogo").textContent = `WOD de hoy · ${CLASES[clase].nombre}`;
+  $("abrirAjustes").textContent = `⚙ WOD de hoy · ${CLASES[clase].nombre}`;
   ponerColorClase(clase);
   menu.repintar();
   ponerQR();
-  $("tituloDialogo").textContent = `WOD de hoy · ${CLASES[clase].nombre}`;
-  $("abrirAjustes").textContent = `⚙ WOD de hoy · ${CLASES[clase].nombre}`;
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   resultados = todos.filter((r) => claseDe(r) === clase);
   $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("descripcion").hidden = true;
   pintar();
   escucharWod();
 }
-crearPestanas($("pestanas"), clase, cambiarClase);
+crearPestanas($("pestanas"), clase, elegirClase);
+
+// ---------- Rotación automática: WOD → Hyrox → Funcional, 30 segundos cada una ----------
+// Solo pasa por las clases que hoy tienen WOD publicado o resultados. No gasta lecturas: los datos ya están cargados.
+const ROTAR_MS = 30000;
+let rotacion = null;
+function reiniciarBarra() {
+  const b = $("rotarBarra"); if (!b) return;
+  b.classList.remove("anda"); void b.offsetWidth; b.classList.add("anda");
+}
+function siguienteClase() {
+  const activas = Object.keys(CLASES).filter((c) => wodsCache[c] || todos.some((r) => claseDe(r) === c));
+  $("rotarBarra").hidden = activas.length < 2;
+  if (activas.length < 2) { if (activas.length === 1 && activas[0] !== clase) elegirClase(activas[0]); return; }
+  const i = activas.indexOf(clase);
+  elegirClase(activas[(i + 1) % activas.length], true);
+}
+function elegirClase(c, auto = false) {
+  if (c !== clase) { cambiarClase(c); crearPestanas($("pestanas"), clase, elegirClase); }
+  clearInterval(rotacion); rotacion = setInterval(siguienteClase, ROTAR_MS);
+  $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
+  reiniciarBarra();
+}
+elegirClase(clase);
 
 // ---------- Modo TV: sin cuenta, la TV se conecta desde el móvil del coach o de un entrenador ----------
 // La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
@@ -409,10 +521,12 @@ function arrancarTV(u) {
     // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
     if (tvEsperando) { location.reload(); return; }
     $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
-    if (d.clase && d.clase !== clase && CLASES[d.clase]) { cambiarClase(d.clase); crearPestanas($("pestanas"), clase, cambiarClase); }
+    if (d.clase && d.clase !== clase && CLASES[d.clase]) elegirClase(d.clase);
   }, (e) => { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); });
 }
 onAuthStateChanged(auth, (u) => {
+  // Con la sesión ya lista se escucha de nuevo (por si la primera vez no había permiso)
+  if (u) { escucharResultados(); escucharWods(); }
   if (u && !u.isAnonymous) { dejarTV?.(); dejarTV = null; $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar"); return; }  // con cuenta: pantalla normal
   if (!u) {
     avisoTV('<span class="tv-punto"></span> Preparando la TV…');
@@ -433,9 +547,11 @@ $("abrirAjustes").addEventListener("click", () => {
   $("wNombre").value = wod?.nombre || "";
   $("wTipo").value = wod?.tipo || "tiempo";
   $("wDesc").value = wod?.descripcion || "";
+  clearInterval(rotacion);
   $("dialogo").showModal();
 });
 $("dialogo").addEventListener("close", async () => {
+  elegirClase(clase);  // sigue rotando
   if ($("dialogo").returnValue !== "guardar") return;
   const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
   const descripcion = $("wDesc").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 1000);
@@ -454,9 +570,12 @@ $("dialogo").addEventListener("close", async () => {
 // sesión del coach, los puntos del podio se reparten a medianoche.
 
 // A medianoche recarga para empezar el ranking del día siguiente
-const ahora = new Date();
-const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
-setTimeout(() => location.reload(), manana - ahora);
+function programarMedianoche() {
+  const ahora = ahoraReal();
+  const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
+  clearTimeout(window.__medianoche); window.__medianoche = setTimeout(() => location.reload(), manana - ahora);
+}
+programarMedianoche();
 </script>
 </body>
 </html>
