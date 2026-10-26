@@ -332,7 +332,8 @@ function pintar() {
   }
   // Una sola clasificación; la categoría (RX / Scaled) aparece en pequeño bajo el resultado
   // Solo cuentan los resultados en la misma medida que el WOD configurado
-  const validos = wod ? resultados.filter((r) => (r.tipo || tipo) === tipo) : [];
+  // Aunque aún no se haya publicado el WOD de esa clase, los resultados salen igual
+  const validos = resultados.filter((r) => (r.tipo || tipo) === tipo);
   const lista = ordenar(validos, tipo);
   const ol = $("lista");
   ol.replaceChildren();
@@ -407,21 +408,27 @@ function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
 // se vuelve a conectar sola: así la TV nunca se queda con resultados viejos.
 let dejarRes = null, reintento = null, esperaRes = 2000;
 // Indicador discreto abajo: "● en directo" o el motivo si no puede leer
-function estadoTV(ok, codigo) {
+function estadoTV(ok, codigo, snap) {
   const e = $("estadoTV"); if (!e) return;
   e.className = "estado-tv " + (ok ? "ok" : "mal");
-  e.textContent = ok ? "● en directo" : (codigo === "permission-denied" ? "● sin permiso: conecta la TV o entra con una cuenta" : "● reconectando…");
+  // Hora de la última vez que llegaron datos del servidor (así se ve si de verdad está en directo)
+  const hora = ahoraReal().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  if (ok) e.textContent = snap?.metadata?.fromCache ? "● cargando…" : `● en directo · ${todos.length} hoy · ${hora}`;
+  else e.textContent = codigo === "permission-denied" ? "● sin permiso: conecta la TV o entra con una cuenta" : "● reconectando…";
 }
 function escucharResultados() {
   clearTimeout(reintento);
   if (dejarRes) dejarRes();
   dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
     esperaRes = 2000;
-    estadoTV(true);
     todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     resultados = todos.filter((r) => claseDe(r) === clase);
     cargado.res = true;
     pintar();
+    estadoTV(true, null, snap);
+    // Si la clase que se ve no tiene nada hoy y otra sí, se pasa a esa al momento
+    const activas = Object.keys(CLASES).filter((c) => wodsCache[c] || todos.some((r) => claseDe(r) === c));
+    if (activas.length && !activas.includes(clase) && typeof elegirClase === "function") elegirClase(activas[0]);
   }, (e) => {
     console.warn("Escucha de resultados cortada, reconectando…", e?.code);
     estadoTV(false, e?.code);
