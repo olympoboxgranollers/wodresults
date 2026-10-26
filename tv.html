@@ -16,7 +16,10 @@
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
-  header .marca { color: #fff; font-size: 1.3vw; }
+  /* Cabecera de la TV: sin el nombre del WOD, la marca grande */
+  header .marca { color: #fff; font-size: 2.9vw; font-weight: 400; letter-spacing: .14em; line-height: 1; gap: .45em; }
+  header .marca::before { width: 1.25em !important; height: 1.25em !important; }
+  header { align-items: center !important; }
   .pie-derecha { position: fixed; right: 2.5vw; bottom: 1.2vw; display: flex; align-items: center; gap: .6vw; z-index: 5; }
   .pie-derecha .fecha-hoy { position: static; font-size: 1.4vw; margin-left: .4vw; }
   .discreto { background: none; border: 0; color: var(--suave); opacity: .25; font-size: 1.3vw; line-height: 1; padding: .3vw .4vw; border-radius: 6px; cursor: pointer; }
@@ -63,7 +66,8 @@
   aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
   aside .cta span { color: var(--acento); }
   aside .total { color: var(--suave); font-size: 1.2vw; }
-  #qr { width: 11vw; flex: none; padding: .6vw; border-radius: .7vw; }
+  #qr { width: 9.5vw; flex: none; padding: .55vw; border-radius: .7vw; aspect-ratio: auto; height: auto; box-sizing: content-box; overflow: visible; line-height: 0; }
+  #qr img, #qr canvas { width: 100% !important; height: auto !important; aspect-ratio: 1; }
   .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
   .escanear .cta { font-size: 1.7vw; }
   .escanear .total { margin-top: .5vw; }
@@ -86,12 +90,12 @@
   dialog .botones .principal { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 800; }
   @media (max-width: 800px) {
     body { height: auto; overflow: auto; grid-template-columns: 1fr; padding: 16px; }
-    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
+    header h1 { font-size: 34px; } header .marca { font-size: 24px; } header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
     .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
     li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
     li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
     li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
-    aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
+    aside { order: -1; } #qr { width: 104px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
   }
   /* Modo TV sin conectar */
   html.tv-sin-conectar body > *:not(.tv-espera) { visibility: hidden; }
@@ -106,17 +110,31 @@
   .tv-punto { width: 10px; height: 10px; border-radius: 50%; background: #c39bd3; animation: tvLatido 1.4s ease-in-out infinite; }
   @keyframes tvLatido { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
   .menu-tv, #volver { display: none !important; }
-  body.con-menu-tv { padding-bottom: 0 !important; }
+  body.con-menu-tv { padding-bottom: 4.2vw !important; }
+  /* El lateral nunca se sale de la pantalla: el texto del WOD se encoge y el QR siempre se ve entero */
+  aside { min-height: 0; overflow: hidden; }
+  /* Texto del WOD en una columna; el recuadro se ajusta al texto (alto y ancho) */
+  .descripcion { flex: 0 1 auto !important; width: fit-content !important; max-width: 100%; align-self: flex-end; }
+  /* La columna derecha solo ocupa lo que necesita (WOD y QR pegados a la derecha): el resto es para el ranking */
+  @media (min-width: 801px) { body { grid-template-columns: minmax(0, 1fr) auto !important; } aside { max-width: 35vw; align-items: flex-end !important; } .escanear { width: auto !important; } }
+  #descripcionTexto { column-count: 1 !important; display: block; }
+  .descripcion { text-transform: none !important; }
+  .escanear { margin-top: auto; margin-bottom: 1.2vw; }
+  .rotar-barra { width: 16vw; max-width: 100%; margin-left: auto; height: 3px; border-radius: 3px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .rotar-barra i { display: block; height: 100%; width: 0; background: var(--malva); border-radius: inherit; opacity: .8; }
+  .rotar-barra.anda i { animation: rotarAvanza 45s linear forwards; }
+  @keyframes rotarAvanza { from { width: 0; } to { width: 100%; } }
 </style>
 </head>
 <body>
 <header>
   <div>
     <div class="marca" id="box"></div>
-    <h1 id="wodNombre">Wod del día</h1>
+    <h1 id="wodNombre" hidden>Wod del día</h1>
   </div>
   <div class="meta">
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+    <div class="rotar-barra" id="rotarBarra" hidden><i></i></div>
     <strong id="tipo"></strong>
   </div>
 </header>
@@ -127,7 +145,7 @@
 </section>
 
 <aside>
-  <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
+  <div class="descripcion" id="descripcion" hidden><span id="descripcionTexto"></span></div>
   <div class="escanear">
     <div id="qr"></div>
     <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
@@ -151,7 +169,7 @@ import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/f
 import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026d";
 
 const $ = (id) => document.getElementById(id);
-$("box").textContent = NOMBRE_BOX;
+$("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
 $("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 // Clase que se está mostrando (WOD, Hyrox o Funcional)
@@ -203,7 +221,7 @@ function ajustarDescripcion() {
   if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; texto.style.columnCount = ""; return; }
   const encaja = (columnas) => {
     texto.style.columnCount = columnas > 1 ? columnas : "";
-    let vw = 2.6;
+    let vw = 2.2;
     caja.style.fontSize = vw + "vw";
     while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
       vw -= 0.05;
@@ -211,12 +229,8 @@ function ajustarDescripcion() {
     }
     return vw;
   };
-  // Primero en una columna; si la letra queda pequeña, prueba en dos columnas y se queda con la más grande
-  const una = encaja(1);
-  if (una < 1.6) {
-    const dos = encaja(2);
-    if (dos < una) encaja(1);
-  }
+  // Siempre en una sola columna: si no cabe, la letra se hace más pequeña
+  encaja(1);
 }
 window.addEventListener("resize", ajustarDescripcion);
 
@@ -310,20 +324,28 @@ function pintar() {
 }
 
 let dejarWod = null;
-function escucharWod() {
-  if (dejarWod) dejarWod();
-  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
-  wod = snap.exists() ? snap.data() : null;
+// Los WOD de las tres clases se escuchan a la vez una sola vez: al rotar no se gastan lecturas
+const wodsCache = {}, wodsCargados = new Set();
+function aplicarWod() {
+  wod = wodsCache[clase] || null;
   if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
   cargado.wod = true;
   $("wodNombre").textContent = titulo(wod?.nombre || `${CLASES[clase].nombre} del día`);
   $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "";
-  $("descripcionTexto").textContent = wod?.descripcion || "";
+  // Texto del WOD en minúscula con la primera letra de cada línea en mayúscula
+  $("descripcionTexto").textContent = (wod?.descripcion || "").split("\n").map((l) => { const t = l.toLocaleLowerCase("es"); return t.replace(/(^|\s)(\p{L})/u, (_, a, b) => a + b.toLocaleUpperCase("es")); }).join("\n");
   $("descripcion").hidden = !wod?.descripcion;
   ajustarDescripcion();
   pintar();
-  });
 }
+for (const c of Object.keys(CLASES)) {
+  onSnapshot(doc(db, "wods", idWod(c)), (snap) => {
+    wodsCache[c] = snap.exists() ? snap.data() : null; wodsCargados.add(c);
+    if (c === clase) aplicarWod();
+    if ($("rotarBarra")) $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
+  }, () => {});
+}
+function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
 
 onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
   todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
@@ -345,7 +367,30 @@ function cambiarClase(nueva) {
   pintar();
   escucharWod();
 }
-crearPestanas($("pestanas"), clase, cambiarClase);
+crearPestanas($("pestanas"), clase, elegirClase);
+
+// ---------- Rotación automática: WOD → Hyrox → Funcional, unos 45 segundos cada una ----------
+// Solo pasa por las clases que hoy tienen WOD publicado o resultados. No gasta lecturas: los datos ya están cargados.
+const ROTAR_MS = 45000;
+let rotacion = null;
+function reiniciarBarra() {
+  const b = $("rotarBarra"); if (!b) return;
+  b.classList.remove("anda"); void b.offsetWidth; b.classList.add("anda");
+}
+function siguienteClase() {
+  const activas = Object.keys(CLASES).filter((c) => wodsCache[c] || todos.some((r) => claseDe(r) === c));
+  $("rotarBarra").hidden = activas.length < 2;
+  if (activas.length < 2) { if (activas.length === 1 && activas[0] !== clase) elegirClase(activas[0]); return; }
+  const i = activas.indexOf(clase);
+  elegirClase(activas[(i + 1) % activas.length], true);
+}
+function elegirClase(c, auto = false) {
+  if (c !== clase) { cambiarClase(c); crearPestanas($("pestanas"), clase, elegirClase); }
+  clearInterval(rotacion); rotacion = setInterval(siguienteClase, ROTAR_MS);
+  $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
+  reiniciarBarra();
+}
+elegirClase(clase);
 
 // ---------- Modo TV: sin cuenta, la TV se conecta desde el móvil del coach o de un entrenador ----------
 // La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
@@ -392,7 +437,7 @@ function arrancarTV(u) {
     // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
     if (tvEsperando) { location.reload(); return; }
     $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
-    if (d.clase && d.clase !== clase && CLASES[d.clase]) { cambiarClase(d.clase); crearPestanas($("pestanas"), clase, cambiarClase); }
+    if (d.clase && d.clase !== clase && CLASES[d.clase]) elegirClase(d.clase);
   }, (e) => { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); });
 }
 onAuthStateChanged(auth, (u) => {
