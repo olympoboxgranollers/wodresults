@@ -9,7 +9,7 @@ const ZONA = "Europe/Madrid";
 export const hoyMadrid = (d = new Date()) => d.toLocaleDateString("sv-SE", { timeZone: ZONA });
 
 // ---------- Cliente de la API de AimHarder ----------
-export function crearAim({ base = "https://api.aimharder.com", fetchFn = fetch, minRestanteHora = 15, minRestanteDia = 200 } = {}) {
+export function crearAim({ base = "https://api.aimharder.com", fetchFn = fetch, minRestanteHora = 5, minRestanteDia = 20 } = {}) {
   let acceso = null;
   const cupo = { hora: null, dia: null, peticiones: 0 };
   const sinCupo = () => (cupo.hora !== null && cupo.hora < minRestanteHora) || (cupo.dia !== null && cupo.dia < minRestanteDia);

@@ -91,6 +91,7 @@
   .med-grid button img, .med-grid button .sin { width: 56px; height: 56px; object-fit: contain; display: grid; place-items: center; font-size: 20px; }
   .med-grid button[aria-pressed="true"] { border-color: var(--lila); background: color-mix(in srgb, var(--lila) 16%, var(--fondo)); color: var(--texto); box-shadow: 0 0 0 2px color-mix(in srgb, var(--lila) 40%, transparent); }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
+  .sync-detalle { margin-top: 6px; font-size: 12.5px; color: var(--suave); }
 </style>
 </head>
 <body>
@@ -203,6 +204,11 @@ function escucharSync() {
       ? `Prueba hecha el ${cuando} · ${d.vinculados} socios se pueden vincular por email. Aún no se ha cambiado nada: en cuanto funcione la sincronización automática, sus clases saldrán de AimHarder.`
       : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las reservas no canceladas) y se actualizan cada hora.`
         + (d.pendientesRecuento ? ` · Recuento por reservas en marcha: faltan ${d.pendientesRecuento} socios (AimHarder deja leer unos 30 por hora).` : "")));
+    // Detalle de la última vuelta (para saber si de verdad ha cambiado algo)
+    if (!d.prueba) txt.append(Object.assign(document.createElement("div"), { className: "sync-detalle",
+      textContent: `Última vuelta: ${d.revisados ?? 0} socios leídos en AimHarder · ${d.actualizados ?? 0} actualizados en la app`
+        + (d.detenidoPorCupo ? " · se paró por el límite de peticiones de AimHarder (sigue en la próxima hora)" : "")
+        + (typeof d.restanteDia === "number" ? ` · peticiones que quedan hoy: ${d.restanteDia}` : "") }));
     if (d.sinVincular?.length) {
       const det = document.createElement("details");
       det.append(Object.assign(document.createElement("summary"), { textContent: `${d.sinVincular.length} socios de la app sin vincular` }),
