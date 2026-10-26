@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026c">
+<link rel="stylesheet" href="estilos.css?v=20261026d">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -240,10 +240,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026c";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026c";
-import { escucharCuenta } from "./cuenta.js?v=20261026c";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed } from "./comun.js?v=20261026c";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026d";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026d";
+import { escucharCuenta } from "./cuenta.js?v=20261026d";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed } from "./comun.js?v=20261026d";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -256,7 +256,7 @@ const menu = montarMenu({ actual: "ranking", cuenta: false });
 escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !staff; if (staff) escucharTvs(); pintar(); });
 
 // ---------- Poner el ranking en la TV (coach y entrenadores) ----------
-const urlPantalla = () => { const u = new URL("pantalla.html", location.href); return u.href; };
+const urlPantalla = () => { const u = new URL("tv.html", location.href); return u.href; };
 // Las TV que esperan y las conectadas salen aquí en directo. Las que están en tu misma wifi se reconocen solas.
 let dejarTvs = null, miRed = null, tvsUltimas = [];
 const tvsAvisadas = new Set();

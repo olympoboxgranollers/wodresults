@@ -12,7 +12,7 @@
 <title>Eventos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026c">
+<link rel="stylesheet" href="estilos.css?v=20261026d">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -120,10 +120,10 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, persona, cosa } from "./comun.js?v=20261026c";
-import { escucharCuenta } from "./cuenta.js?v=20261026c";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026c";
-import { ZONA_HORARIA } from "./config.js?v=20261026c";
+import { db, hoy, fmtPuntos, persona, cosa } from "./comun.js?v=20261026d";
+import { escucharCuenta } from "./cuenta.js?v=20261026d";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026d";
+import { ZONA_HORARIA } from "./config.js?v=20261026d";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "eventos", cuenta: false });

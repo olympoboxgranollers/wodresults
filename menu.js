@@ -1,9 +1,11 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito } from "./comun.js?v=20261026c";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261026c";
-import { COACH_EMAIL } from "./config.js?v=20261026c";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito } from "./comun.js?v=20261026d";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261026d";
+import { COACH_EMAIL } from "./config.js?v=20261026d";
 
+// Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
+export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
 export const esCuentaCoach = (user) => !!user && user.email?.toLowerCase() === COACH_EMAIL.toLowerCase();
 
 // ---------- Entrenadores: socios normales que además pueden publicar el WOD y corregir resultados ----------
@@ -119,10 +121,10 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u) arrancarEntrenadores();
     usuarioRol = u;
     // Socios: logros que ya le tocan, aviso de logro nuevo y aviso de evento nuevo
-    if (u && !esCuentaCoach(u) && ficha) { revisarLogros(u, ficha); avisarLogrosNuevos(u, ficha); }
-    if (u && !esCuentaCoach(u)) vigilarEventosNuevos(actual);
+    if (u && !esCuentaCoach(u) && !esCuentaTV(u) && ficha) { revisarLogros(u, ficha); avisarLogrosNuevos(u, ficha); }
+    if (u && !esCuentaCoach(u) && !esCuentaTV(u)) vigilarEventosNuevos(actual);
     // Sin perfil de atleta no se puede usar la app: se pide una vez (el coach no lo necesita)
-    if (u && !esCuentaCoach(u) && ficha !== undefined && (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado)) pedirPerfil(u, ficha);
+    if (u && !esCuentaCoach(u) && !esCuentaTV(u) && ficha !== undefined && (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado)) pedirPerfil(u, ficha);
     else if (dlgPerfil?.open) dlgPerfil.close();
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
@@ -136,7 +138,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261026c").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261026d").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);

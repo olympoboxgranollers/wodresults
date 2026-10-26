@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#2f3237">
+<title>TV · Ranking WOD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css?v=20261026d">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
+  header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
+  header .marca { color: #fff; font-size: 1.3vw; }
+  .pie-derecha { position: fixed; right: 2.5vw; bottom: 1.2vw; display: flex; align-items: center; gap: .6vw; z-index: 5; }
+  .pie-derecha .fecha-hoy { position: static; font-size: 1.4vw; margin-left: .4vw; }
+  .discreto { background: none; border: 0; color: var(--suave); opacity: .25; font-size: 1.3vw; line-height: 1; padding: .3vw .4vw; border-radius: 6px; cursor: pointer; }
+  .discreto:hover, .discreto:focus-visible { opacity: 1; }
+  header h1 { color: var(--malva); }
+  header h1 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 4.2vw; line-height: 1; margin-top: .4vw; }
+  header .meta { text-align: right; color: var(--suave); font-size: 1.3vw; }
+  header .meta { display: flex; flex-direction: column; align-items: flex-end; gap: .8vw; }
+  header .pestanas button { font-size: 1.1vw; padding: .45vw 1.1vw; }
+  header .meta strong { display: block; color: var(--texto); font-size: 2vw; font-family: "Oswald", sans-serif; }
+  .columna { min-height: 0; display: flex; flex-direction: column; }
+  .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .08em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
+  .columna h2 small { font-size: 1.1vw; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
+  ol { list-style: none; overflow-y: auto; scrollbar-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: .6vw 1.5vw; align-content: start; min-height: 0; }
+  ol::-webkit-scrollbar { display: none; }
+  /* Cuando hay muchos atletas la lista se compacta para que quepan todos */
+  ol.compacta li { padding: .55vw 1vw; font-size: 1.4vw; }
+  ol.compacta li .pos, ol.compacta li .res { font-size: 1.6vw; }
+  ol.compacta li .cat { font-size: .75vw; }
+  ol.compacta li .emoji { width: 1.8vw; height: 1.8vw; }
+  ol.mini { gap: .4vw 1vw; }
+  ol.mini li { padding: .35vw .8vw; font-size: 1.1vw; grid-template-columns: 2.4vw 1fr auto; border-radius: .6vw; }
+  ol.mini li .pos, ol.mini li .res { font-size: 1.25vw; }
+  ol.mini li .cat { font-size: .65vw; margin-top: 0; }
+  ol.mini li .emoji { width: 1.4vw; height: 1.4vw; margin-left: .4vw; }
+  .vacio { grid-column: 1 / -1; }
+  li { display: grid; grid-template-columns: 3.2vw 1fr auto; align-items: center; gap: 1vw; background: var(--panel); border: 1px solid var(--borde); border-radius: .8vw; padding: .9vw 1.2vw; font-size: 1.7vw; }
+  li .pos { font-family: "Oswald", sans-serif; font-size: 2vw; color: var(--suave); text-align: center; }
+  li .nom { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li .emoji { margin-left: .6vw; width: 2.2vw; height: 2.2vw; font-size: 1.8vw; vertical-align: middle; display: inline-block; line-height: 2.2vw; }
+  li .res { font-family: "Oswald", sans-serif; font-size: 2vw; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
+  li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
+  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
+  /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
+  li { border-color: color-mix(in srgb, var(--malva) 55%, transparent) !important; background: color-mix(in srgb, var(--malva) 7%, var(--panel)); }
+  li.p1 { border-color: var(--malva) !important; box-shadow: 0 0 0 1px var(--malva), 0 0 18px color-mix(in srgb, var(--malva) 30%, transparent); } li.p1 .pos { color: var(--oro); }
+  li.p2 .pos { color: var(--plata); } li.p3 .pos { color: var(--bronce); }
+  li.nuevo { animation: entra 1.6s ease-out; }
+  @keyframes entra { 0% { background: var(--acento); color: var(--acento-texto); transform: scale(1.03); } 100% { background: var(--panel); color: var(--texto); transform: none; } }
+  .vacio { color: var(--suave); font-size: 1.4vw; padding: 1vw 0; }
+  aside { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.2vw; }
+  #qr { background: #fff; padding: 1vw; border-radius: 1vw; width: 100%; aspect-ratio: 1; }
+  #qr img, #qr canvas { width: 100% !important; height: auto !important; display: block; }
+  aside .cta { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2vw; line-height: 1.1; }
+  aside .cta span { color: var(--acento); }
+  aside .total { color: var(--suave); font-size: 1.2vw; }
+  #qr { width: 11vw; flex: none; padding: .6vw; border-radius: .7vw; }
+  .escanear { display: flex; align-items: center; gap: 1.2vw; width: 100%; flex: none; text-align: left; }
+  .escanear .cta { font-size: 1.7vw; }
+  .escanear .total { margin-top: .5vw; }
+  .descripcion { text-transform: uppercase; width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
+  #descripcionTexto { display: block; column-gap: 1.6vw; }
+  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
+  aside { min-height: 0; }
+  .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
+  .descripcion b { font-size: 1.2vw; }
+  dialog textarea { text-transform: uppercase;  width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; color: inherit; resize: vertical; line-height: 1.4; }
+  .ajustes { background: color-mix(in srgb, var(--malva) 14%, transparent); border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); color: var(--malva); border-radius: 999px; padding: .45vw 1.2vw; font-size: 1vw; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .ajustes:hover, .ajustes:focus-visible { background: color-mix(in srgb, var(--malva) 26%, transparent); }
+  dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
+  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog h3 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 24px; margin-bottom: 16px; }
+  dialog label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 14px 0 6px; letter-spacing: .06em; }
+  dialog input, dialog select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; }
+  dialog .botones { display: flex; gap: 10px; margin-top: 22px; }
+  dialog .botones button { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--borde); background: none; color: var(--texto); }
+  dialog .botones .principal { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 800; }
+  @media (max-width: 800px) {
+    body { height: auto; overflow: auto; grid-template-columns: 1fr; padding: 16px; }
+    header h1 { font-size: 34px; } header .marca, header .meta { font-size: 13px; } .ajustes { font-size: 13px; padding: 6px 12px; } header .meta strong { font-size: 18px; }
+    .columna h2 { font-size: 22px; } .columna h2 small { font-size: 13px; }
+    li { font-size: 17px; grid-template-columns: 32px 1fr auto; padding: 12px; border-radius: 10px; }
+    li .emoji { width: 24px; height: 24px; font-size: 20px; line-height: 24px; }
+    li .pos, li .res { font-size: 20px; } li .cat { font-size: 11px; } ol { grid-template-columns: 1fr; }
+    aside { order: -1; } #qr { width: 120px; } .escanear .cta { font-size: 20px; } .descripcion { font-size: 15px; padding: 12px 14px; border-radius: 10px; } .descripcion b { font-size: 13px; } aside .cta { font-size: 22px; } aside .total, .vacio { font-size: 14px; }
+  }
+  /* Modo TV sin conectar */
+  html.tv-sin-conectar body > *:not(.tv-espera) { visibility: hidden; }
+  .tv-espera { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 30%, #2b2d33, #17181b 70%); color: #fff; text-align: center; padding: 24px; }
+  .tv-espera-caja { max-width: 720px; }
+  .tv-espera-logo { width: 84px; opacity: .9; }
+  .tv-espera h2 { font-size: clamp(28px, 4vw, 52px); margin-top: 14px; }
+  .tv-espera p { color: #b9bcc4; font-size: clamp(16px, 1.8vw, 24px); margin-top: 10px; line-height: 1.4; }
+  .tv-espera p b { color: #fff; }
+  .tv-codigo { margin: 28px auto 8px; font-size: clamp(64px, 12vw, 160px); font-weight: 800; letter-spacing: .08em; color: #c39bd3; text-shadow: 0 0 40px rgba(195,155,211,.35); font-variant-numeric: tabular-nums; }
+  .tv-espera-sub { display: inline-flex; align-items: center; gap: 10px; }
+  .tv-punto { width: 10px; height: 10px; border-radius: 50%; background: #c39bd3; animation: tvLatido 1.4s ease-in-out infinite; }
+  @keyframes tvLatido { 0%, 100% { opacity: .3; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  .menu-tv, #volver { display: none !important; }
+  body.con-menu-tv { padding-bottom: 0 !important; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="marca" id="box"></div>
+    <h1 id="wodNombre">Wod del día</h1>
+  </div>
+  <div class="meta">
+    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+    <strong id="tipo"></strong>
+  </div>
+</header>
+
+<section class="columna">
+  <h2>Clasificación <small id="nAtletas"></small></h2>
+  <ol id="lista"></ol>
+</section>
+
+<aside>
+  <div class="descripcion" id="descripcion" hidden><b>El WOD</b><span id="descripcionTexto"></span></div>
+  <div class="escanear">
+    <div id="qr"></div>
+    <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
+  </div>
+</aside>
+
+<div class="pie-derecha">
+  <button type="button" class="discreto" id="volver" title="Volver">←</button>
+  <button type="button" class="discreto" id="completa" title="Pantalla completa">⛶</button>
+  <div class="fecha-hoy" id="fecha"></div>
+</div>
+
+
+
+<script type="module">
+import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed } from "./comun.js?v=20261026d";
+import { NOMBRE_BOX } from "./config.js?v=20261026d";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261026d";
+import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026d";
+
+const $ = (id) => document.getElementById(id);
+$("box").textContent = NOMBRE_BOX;
+$("fecha").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+// Clase que se está mostrando (WOD, Hyrox o Funcional)
+let clase = claseInicial();
+let esCoach = false;
+// Pantalla completa (quita la barra del navegador en la TV) y volver atrás
+const enCompleta = () => document.fullscreenElement || document.webkitFullscreenElement;
+function pintarCompleta() { const b = $("completa"); b.textContent = enCompleta() ? "✕" : "⛶"; b.title = enCompleta() ? "Salir de pantalla completa" : "Pantalla completa"; }
+$("completa").addEventListener("click", () => {
+  const el = document.documentElement;
+  if (enCompleta()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+});
+document.addEventListener("fullscreenchange", pintarCompleta);
+document.addEventListener("webkitfullscreenchange", pintarCompleta);
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) $("completa").hidden = true;
+$("volver").addEventListener("click", async () => {
+  if (enCompleta()) { try { await (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch {} }
+  if (history.length > 1) history.back(); else location.href = "ranking.html";
+});
+
+const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false, protegida: false });
+// Pantalla solo para la TV: sin menú, sin botón de volver, solo el ranking
+// Solo el coach configura el WOD y corrige resultados desde la pantalla (los entrenadores lo hacen en Publicar)
+// Versión solo para ver: nadie edita desde aquí
+escucharRol(() => { esCoach = false; pintar(); });
+
+// QR que apunta al formulario de la clase que se está mostrando
+function ponerQR() {
+  const url = new URL("index.html", location.href);
+  url.searchParams.set("clase", clase);
+  $("qr").replaceChildren();
+  new QRCode($("qr"), { text: url.href, width: 512, height: 512, correctLevel: QRCode.CorrectLevel.M });
+}
+
+let wod = null;
+let todos = [];        // resultados de hoy de todas las clases
+let resultados = [];   // solo los de la clase que se está mostrando
+const vistos = new Set();
+let primeraCarga = true;
+let lideresAntes = null;
+const cargado = { wod: false, res: false };
+let lideresAntesTipo = null;
+
+// Si el WOD es muy largo, reduce la letra hasta que quepa entero en su recuadro
+function ajustarDescripcion() {
+  const caja = $("descripcion");
+  const texto = $("descripcionTexto");
+  if (caja.hidden || window.innerWidth <= 800) { caja.style.fontSize = ""; texto.style.columnCount = ""; return; }
+  const encaja = (columnas) => {
+    texto.style.columnCount = columnas > 1 ? columnas : "";
+    let vw = 2.6;
+    caja.style.fontSize = vw + "vw";
+    while (caja.scrollHeight > caja.clientHeight + 1 && vw > 0.7) {
+      vw -= 0.05;
+      caja.style.fontSize = vw.toFixed(2) + "vw";
+    }
+    return vw;
+  };
+  // Primero en una columna; si la letra queda pequeña, prueba en dos columnas y se queda con la más grande
+  const una = encaja(1);
+  if (una < 1.6) {
+    const dos = encaja(2);
+    if (dos < una) encaja(1);
+  }
+}
+window.addEventListener("resize", ajustarDescripcion);
+
+// Hace que quepan todos los atletas en la TV: primero compacta la lista y añade columnas;
+// si aun así no caben todos, la lista se desplaza sola de arriba abajo (y también se puede bajar con la rueda del ratón)
+const NIVELES = [
+  { cols: 2, clase: "" }, { cols: 2, clase: "compacta" }, { cols: 3, clase: "compacta" },
+  { cols: 3, clase: "mini" }, { cols: 4, clase: "mini" }
+];
+let autoScroll = null;
+function ajustarLista() {
+  const ol = $("lista");
+  const n = ol.querySelectorAll("li").length;
+  if (window.innerWidth <= 800) {
+    ol.className = ""; ol.style.gridTemplateColumns = ""; ol.style.gridTemplateRows = ""; ol.style.gridAutoFlow = "";
+    pararAutoScroll(); return;
+  }
+  for (const nivel of NIVELES) {
+    ol.className = nivel.clase;
+    ol.style.gridTemplateColumns = `repeat(${nivel.cols}, minmax(0, 1fr))`;
+    ol.style.gridAutoFlow = "column";
+    ol.style.gridTemplateRows = `repeat(${Math.max(1, Math.ceil(n / nivel.cols))}, auto)`;
+    if (ol.scrollHeight <= ol.clientHeight + 1) { pararAutoScroll(); return; }
+  }
+  empezarAutoScroll();
+}
+function pararAutoScroll() { clearInterval(autoScroll); autoScroll = null; $("lista").scrollTop = 0; }
+function empezarAutoScroll() {
+  if (autoScroll || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  let pausa = 80;  // ~3 s quieto arriba y abajo
+  autoScroll = setInterval(() => {
+    const ol = $("lista");
+    if (pausa > 0) { pausa--; return; }
+    if (ol.scrollTop + ol.clientHeight >= ol.scrollHeight - 1) { pausa = 80; setTimeout(() => (ol.scrollTop = 0), 2500); return; }
+    ol.scrollTop += 1;
+  }, 40);
+}
+window.addEventListener("resize", ajustarLista);
+
+function pintar() {
+  // Tipo del ranking: el del WOD configurado o, si no hay, el más usado por los socios
+  let tipo = wod?.tipo;
+  if (!tipo) {
+    const cuenta = {};
+    resultados.forEach((r) => (cuenta[r.tipo] = (cuenta[r.tipo] || 0) + 1));
+    tipo = Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])[0] || "tiempo";
+  }
+  // Una sola clasificación; la categoría (RX / Scaled) aparece en pequeño bajo el resultado
+  // Solo cuentan los resultados en la misma medida que el WOD configurado
+  const validos = wod ? resultados.filter((r) => (r.tipo || tipo) === tipo) : [];
+  const lista = ordenar(validos, tipo);
+  const ol = $("lista");
+  ol.replaceChildren();
+  $("nAtletas").textContent = lista.length ? `${lista.length} atleta${lista.length > 1 ? "s" : ""}` : "";
+  if (!lista.length) {
+    const v = document.createElement("div");
+    v.className = "vacio"; v.textContent = "Todavía no hay resultados";
+    ol.append(v);
+  }
+  // Orden en columnas: 1, 2, 3… hacia abajo en la izquierda y luego sigue en la derecha
+  const pos = posiciones(lista);
+  lista.forEach((r, i) => {
+    const li = document.createElement("li");
+    if (pos[i] <= 3) li.classList.add("p" + pos[i]);
+    if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
+    const num = document.createElement("span"); num.className = "pos"; num.textContent = pos[i];
+    const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
+    const em = crearEmoji(r.sensacion);
+    if (em) nom.append(em);
+    const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
+    const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
+    const tp = r.categoria === "Open" ? textoPesos(r.pesos) : "";
+    if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
+    res.append(cat);
+    li.append(num, nom, res);
+    // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
+    if (esCoach && r.id) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }
+    ol.append(li);
+  });
+  ajustarLista();
+  // Pique: avisa cuando cambia el líder o hay empate en cabeza
+  // (solo cuando ya han llegado el WOD y los resultados, para no avisar al abrir la página)
+  if (wod && cargado.wod && cargado.res) {
+    const ahora = lideres(resultados, tipo);
+    if (lideresAntes) mensajesDeLider(lideresAntes, ahora).forEach(aviso);
+    lideresAntes = ahora;
+  }
+  resultados.forEach((r) => vistos.add(r.id));
+  if (cargado.res) primeraCarga = false;  // no resaltar como "nuevos" los que ya estaban al abrir
+  $("total").textContent = lista.length ? `${lista.length} resultados hoy` : "";
+}
+
+let dejarWod = null;
+function escucharWod() {
+  if (dejarWod) dejarWod();
+  dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
+  wod = snap.exists() ? snap.data() : null;
+  if (wod?.tipo !== lideresAntesTipo) { lideresAntes = null; lideresAntesTipo = wod?.tipo; }
+  cargado.wod = true;
+  $("wodNombre").textContent = titulo(wod?.nombre || `${CLASES[clase].nombre} del día`);
+  $("tipo").textContent = wod ? TIPOS[wod.tipo].etiqueta : "";
+  $("descripcionTexto").textContent = wod?.descripcion || "";
+  $("descripcion").hidden = !wod?.descripcion;
+  ajustarDescripcion();
+  pintar();
+  });
+}
+
+onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+  todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
+  resultados = todos.filter((r) => claseDe(r) === clase);
+  cargado.res = true;
+  pintar();
+});
+
+// Cambiar de clase con las pestañas
+function cambiarClase(nueva) {
+  clase = nueva;
+  recordarClase(clase);
+  ponerColorClase(clase);
+  menu.repintar();
+  ponerQR();
+  wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
+  resultados = todos.filter((r) => claseDe(r) === clase);
+  $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("descripcion").hidden = true;
+  pintar();
+  escucharWod();
+}
+crearPestanas($("pestanas"), clase, cambiarClase);
+
+// ---------- Modo TV: sin cuenta, la TV se conecta desde el móvil del coach o de un entrenador ----------
+// La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
+let tvEsperando = false, dejarTV = null;
+const codigoNuevo = () => String(Math.floor(1000 + Math.random() * 9000));
+// Mensaje de estado en la pantalla de espera (para saber qué falta si no aparece en el móvil)
+function avisoTV(txt) { pintarEspera(""); const p = document.querySelector(".tv-espera-sub"); if (p) p.innerHTML = txt; }
+function pintarEspera(codigo) {
+  let o = $("tvEspera");
+  if (!o) {
+    o = document.createElement("div"); o.id = "tvEspera"; o.className = "tv-espera";
+    o.innerHTML = `<div class="tv-espera-caja"><img src="logo-400.png" alt="" class="tv-espera-logo"><h2>Conectar esta TV</h2>
+      <p>Con el móvil del coach o de un entrenador <b>en esta misma wifi</b>, abre <b>Ranking</b>: la TV aparecerá sola para conectarla.</p>
+      <div class="tv-codigo" id="tvCodigo"></div><p class="tv-espera-sub"><span class="tv-punto"></span> Esperando al móvil…</p></div>`;
+    document.body.append(o);
+  }
+  $("tvCodigo").textContent = codigo ? codigo.split("").join(" ") : "· · · ·";
+  document.documentElement.classList.add("tv-sin-conectar");
+}
+function arrancarTV(u) {
+  if (dejarTV) return;
+  const ref = doc(db, "tvs", u.uid);
+  let creando = false, latido = null;
+  // Mientras espera, la TV avisa cada 3 minutos de que sigue encendida (con la hora del servidor, no la de la TV)
+  const latir = () => updateDoc(ref, { creado: serverTimestamp() }).catch(() => {});
+  dejarTV = onSnapshot(ref, async (s) => {
+    const d = s.exists() ? s.data() : null;
+    if (!d || !d.vinculada) {
+      tvEsperando = true;
+      if (!d || !d.codigo) {
+        if (creando) return;
+        creando = true;
+        try { const red = await huellaRed(); await setDoc(ref, { codigo: codigoNuevo(), creado: serverTimestamp(), vinculada: false, ...(red ? { red } : {}) }); }
+        catch (e) { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); }
+        creando = false;
+        return;
+      }
+      pintarEspera(d.codigo);
+      const sub = document.querySelector(".tv-espera-sub"); if (sub) sub.innerHTML = '<span class="tv-punto"></span> Esperando al móvil…';
+      if (!latido) { latir(); latido = setInterval(latir, 180000); }
+      return;
+    }
+    if (latido) { clearInterval(latido); latido = null; }
+    // Conectada: si estaba esperando se recarga para leer ya el ranking con permiso
+    if (tvEsperando) { location.reload(); return; }
+    $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar");
+    if (d.clase && d.clase !== clase && CLASES[d.clase]) { cambiarClase(d.clase); crearPestanas($("pestanas"), clase, cambiarClase); }
+  }, (e) => { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); });
+}
+onAuthStateChanged(auth, (u) => {
+  if (u && !u.isAnonymous) { dejarTV?.(); dejarTV = null; $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar"); return; }  // con cuenta: pantalla normal
+  if (!u) {
+    avisoTV('<span class="tv-punto"></span> Preparando la TV…');
+    signInAnonymously(auth).catch((e) => {
+      console.warn(e);
+      avisoTV(e?.code === "auth/operation-not-allowed" || e?.code === "auth/admin-restricted-operation"
+        ? "⚠️ Activa el acceso <b>Anónimo</b> en Firebase → Authentication → Sign-in method."
+        : "⚠️ No se ha podido conectar (" + (e?.code || "sin internet") + ").");
+    });
+    return;
+  }
+  arrancarTV(u);
+});
+cambiarClase(clase);
+
+// Reparto de puntos y limpieza: lo hace el menú en cualquier página donde haya entrado el coach
+// (ver cierre.js). La pantalla se recarga sola a las 00:00, así que si la TV está encendida con la
+// sesión del coach, los puntos del podio se reparten a medianoche.
+
+// A medianoche recarga para empezar el ranking del día siguiente
+const ahora = new Date();
+const manana = new Date(ahora); manana.setHours(24, 0, 30, 0);
+setTimeout(() => location.reload(), manana - ahora);
+</script>
+</body>
+</html>
