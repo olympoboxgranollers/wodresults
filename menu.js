@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios } from "./comun.js?v=20261025d";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261025d";
-import { COACH_EMAIL } from "./config.js?v=20261025d";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito } from "./comun.js?v=20261026a";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261026a";
+import { COACH_EMAIL } from "./config.js?v=20261026a";
 
 export const esCuentaCoach = (user) => !!user && user.email?.toLowerCase() === COACH_EMAIL.toLowerCase();
 
@@ -57,7 +57,7 @@ const PAGINAS = [
   { id: "logros",    href: "logros.html",   texto: "Logros", coach: true },   // los socios ven sus logros en su perfil
   { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
   { id: "perfil",    href: "perfil.html",   texto: "Perfil", socio: true },
-  { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", staff: true },
+  { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },  // solo el coach (los entrenadores solo Publicar)
   { id: "publicar",  href: "publicar.html", texto: "Publicar", staff: true }
 ];
 
@@ -136,7 +136,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261025d").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261026a").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -149,7 +149,7 @@ function revisarLogros(user, ficha) {
   ultimaFicha = ficha; ultimoUser = user;
   if (!escuchandoLogros) {
     escuchandoLogros = true;
-    onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...d.data() })); if (ultimaFicha) revisarLogros(ultimoUser, ultimaFicha); }, () => {});
+    onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })); if (ultimaFicha) revisarLogros(ultimoUser, ultimaFicha); }, () => {});
   }
   if (!catalogoLogros || otorgando) return;
   const toca = catalogoLogros.filter((l) => l.clases > 0 && (ficha.clases || 0) >= l.clases && !ficha.insignias?.[l.id]).sort((a, b) => a.clases - b.clases);
@@ -217,7 +217,7 @@ function vigilarEventosNuevos(paginaActual) {
   // Solo los eventos que aún no han pasado
   onSnapshot(query(collection(db, "eventos"), where("fecha", ">=", hoy())), async (s) => {
     const ahora = Date.now(), estado = leer();
-    const futuros = s.docs.map((d) => ({ id: d.id, ...d.data() })).filter((e) => e.fecha >= hoy()).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const futuros = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })).filter((e) => e.fecha >= hoy()).sort((a, b) => a.fecha.localeCompare(b.fecha));
     // Limpia lo guardado de eventos que ya pasaron
     for (const id of Object.keys(estado)) if (!futuros.some((e) => e.id === id)) delete estado[id];
     // En la propia página de eventos ya se ven: cuenta como visto
@@ -304,7 +304,7 @@ function pedirPerfil(user, ficha) {
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
-    const nombre = limpio(f.nombre.value), favorito = limpio(f.favorito.value), odiado = limpio(f.odiado.value);
+    const nombre = nombreBonito(limpio(f.nombre.value)), favorito = limpio(f.favorito.value), odiado = limpio(f.odiado.value);
     const msg = f.querySelector(".perfil-msg");
     if (nombre.length < 2) { msg.textContent = "Escribe tu nombre y apellido."; return; }
     if (!favorito || !odiado) { msg.textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }

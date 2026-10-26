@@ -12,7 +12,7 @@
 <title>Eventos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025d">
+<link rel="stylesheet" href="estilos.css?v=20261026a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -120,10 +120,10 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos } from "./comun.js?v=20261025d";
-import { escucharCuenta } from "./cuenta.js?v=20261025d";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261025d";
-import { ZONA_HORARIA } from "./config.js?v=20261025d";
+import { db, hoy, fmtPuntos, persona, cosa } from "./comun.js?v=20261026a";
+import { escucharCuenta } from "./cuenta.js?v=20261026a";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026a";
+import { ZONA_HORARIA } from "./config.js?v=20261026a";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "eventos", cuenta: false });
@@ -145,18 +145,18 @@ escucharCuenta(({ user: u, ficha }) => {
     : "Apúntate a los eventos del box. Si vienes, te llevas puntos extra cuando el coach pase lista.";
   if (coach && !dejarSocios) {
     dejarSocios = onSnapshot(query(collection(db, "usuarios"), orderBy("nombre", "asc")), (s) => {
-      socios = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((x) => x.nombre); pintar();
+      socios = s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((x) => x.nombre); pintar();
     }, () => {});
   }
   pintar();
 });
 
 onSnapshot(query(collection(db, "eventos"), orderBy("fecha", "asc")), (s) => {
-  eventos = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+  eventos = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) }));
   // Escucha la lista de asistentes de cada evento
   for (const e of eventos) if (!escuchas[e.id]) {
     escuchas[e.id] = onSnapshot(collection(db, "eventos", e.id, "asistentes"), (a) => {
-      asistentes[e.id] = a.docs.map((d) => ({ uid: d.id, ...d.data() })).sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), "es"));
+      asistentes[e.id] = a.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).sort((x, y) => String(x.nombre).localeCompare(String(y.nombre), "es"));
       pintar();
     }, () => {});
   }

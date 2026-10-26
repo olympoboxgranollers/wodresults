@@ -12,7 +12,7 @@
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025d">
+<link rel="stylesheet" href="estilos.css?v=20261026a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -257,9 +257,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261025d";
-import { escucharCuenta } from "./cuenta.js?v=20261025d";
-import { montarMenu } from "./menu.js?v=20261025d";
+import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261026a";
+import { escucharCuenta } from "./cuenta.js?v=20261026a";
+import { montarMenu } from "./menu.js?v=20261026a";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
@@ -284,14 +284,14 @@ function escucharFicha(id) {
   // La foto va aparte para no cargarla en cada ranking
   dejarFoto = onSnapshot(doc(db, "fotos", id), (s) => { foto = s.exists() ? s.data().img : null; pintar(); }, () => {});
   dejar = onSnapshot(doc(db, "usuarios", id), (s) => {
-    if (s.exists()) ficha = { uid: s.id, ...s.data() };
+    if (s.exists()) ficha = { uid: s.id, ...persona(s.data()) };
     // Mi perfil aunque aún no haya registrado nada: se crea la ficha al guardar
-    else if (yo && id === yo.uid) ficha = { uid: id, nombre: yo.displayName || yo.email.split("@")[0], puntos: 0, nueva: true };
+    else if (yo && id === yo.uid) ficha = { uid: id, nombre: nombreBonito(yo.displayName || yo.email.split("@")[0]), puntos: 0, nueva: true };
     else ficha = false;
     pintar();
   }, () => { ficha = false; pintar(); });
 }
-onSnapshot(collection(db, "logros"), (s) => { catalogo = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 0) - (b.orden || 0)); pintar(); }, () => {});
+onSnapshot(collection(db, "logros"), (s) => { catalogo = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })).sort((a, b) => (a.orden || 0) - (b.orden || 0)); pintar(); }, () => {});
 // Puesto en el ranking de puntos con un recuento (1 lectura en lugar de leer a todos los socios).
 // Empates comparten puesto: puesto = socios visibles con más puntos + 1
 let puestoDe = { clave: "", txt: "–" };
@@ -388,7 +388,7 @@ let guardandoAlta = false;
 let proximo = null;
 onSnapshot(query(collection(db, "eventos"), where("fecha", ">=", hoy()), orderBy("fecha", "asc"), limit(6)), (s) => {
   const ahora = Date.now();
-  proximo = s.docs.map((d) => ({ id: d.id, ...d.data() })).find((e) => inicioEvento(e) > ahora - 3 * 3600 * 1000) || null;
+  proximo = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })).find((e) => inicioEvento(e) > ahora - 3 * 3600 * 1000) || null;
   pintarProximo();
 }, () => {});
 function inicioEvento(e) {
@@ -467,12 +467,12 @@ $("pFoto").addEventListener("change", async () => {
 $("perfilForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
-  const nombre = limpio($("pNombre").value);
+  const nombre = nombreBonito(limpio($("pNombre").value));
   if (nombre.length < 2) { $("pMsg").textContent = "Escribe tu nombre y apellido."; return; }
   if (!limpio($("pFav").value) || !limpio($("pOdio").value)) { $("pMsg").textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }
   $("pGuardar").disabled = true;
   try {
-    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), bio: $("pBio").value.trim().replace(/\s+/g, " ").slice(0, 160), ocultarPuntos: $("pOcultar").checked, atleta: true };
+    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), bio: mayus($("pBio").value.trim().replace(/\s+/g, " ")).slice(0, 160), ocultarPuntos: $("pOcultar").checked, atleta: true };
     if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre, puntos: 0 });
     await updateDoc(doc(db, "usuarios", yo.uid), datos);
     if (fotoNueva === null) await deleteDoc(doc(db, "fotos", yo.uid));

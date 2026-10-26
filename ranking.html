@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025d">
+<link rel="stylesheet" href="estilos.css?v=20261026a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -80,6 +80,15 @@
   .reac button.mia { border-color: var(--malva); background: color-mix(in srgb, var(--malva) 18%, transparent); }
   .reac button.mia b { color: var(--texto); }
   .reac .mas { color: var(--suave); padding: 3px 8px; }
+  .reac .quien { color: var(--malva); border-color: color-mix(in srgb, var(--malva) 35%, transparent); font-size: 12px; }
+  .dlg-quien { margin: auto; width: min(380px, calc(100vw - 32px)); max-height: 70dvh; background: var(--panel); color: var(--texto); border: 1px solid color-mix(in srgb, var(--malva) 45%, transparent); border-radius: 18px; padding: 16px 18px; }
+  .dlg-quien::backdrop { background: rgba(0,0,0,.6); }
+  .dq-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 16px; }
+  .dq-cab button { background: none; border: 0; color: var(--suave); font-size: 18px; }
+  .dlg-quien ul { list-style: none; margin-top: 10px; display: grid; gap: 2px; }
+  .dlg-quien li { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border: 0 !important; border-bottom: 1px solid var(--borde) !important; font-size: 15px; background: none !important; border-radius: 0; }
+  .dlg-quien li:last-child { border-bottom: 0 !important; }
+  .dq-emoji { font-size: 20px; }
   .elegir-reac { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: #26282d; border: 1px solid var(--borde); }
   .elegir-reac button { border: 0 !important; background: none !important; font-size: 20px; padding: 2px 6px !important; }
   /* Ranking general */
@@ -124,11 +133,40 @@
   .chat-form input:focus { border-color: var(--lila); }
   .chat-form button { flex: none; width: 46px; border: 0; border-radius: 50%; background: var(--lila); color: #1f2125; font-size: 18px; font-weight: 800; }
   .vacio { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 20px; text-align: center; }
+  /* ---------- Ver en la Smart TV (botón discreto) ---------- */
+  header { position: relative; }
+  .tv-btn { position: absolute; top: 2px; right: 0; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--suave); opacity: .45; border-radius: 8px; }
+  .tv-btn:hover, .tv-btn:focus-visible { opacity: .9; color: var(--lila); }
+  .tv-btn svg { width: 19px; height: 19px; }
+  .dlg-tv { margin: auto; width: min(320px, calc(100vw - 32px)); background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 18px 18px; text-align: center; }
+  .dlg-tv::backdrop { background: rgba(0,0,0,.65); }
+  .tv-cab { display: flex; justify-content: space-between; align-items: center; font-size: 16px; text-align: left; }
+  .tv-cab button { background: none; border: 0; color: var(--suave); font-size: 18px; }
+  .tv-qr { width: 168px; height: 168px; margin: 14px auto 10px; padding: 8px; background: #fff; border-radius: 12px; }
+  .tv-qr img, .tv-qr canvas { width: 100% !important; height: 100% !important; }
+  .tv-url { display: block; font-size: 12px; color: var(--suave); word-break: break-all; }
+  .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
+  .tv-pasos { margin: 14px 0 0 18px; padding: 0; text-align: left; display: grid; gap: 3px; list-style: decimal; }
+  .dlg-tv li { display: list-item !important; border: 0 !important; background: none !important; padding: 0 !important; margin: 0; border-radius: 0; font-size: 13px; line-height: 1.45; color: var(--suave); animation: none !important; }
 </style>
 </head>
 <body>
+<dialog class="dlg-tv" id="dlgTv" aria-label="Poner en la Smart TV">
+  <div class="tv-cab"><b>Ver en la Smart TV</b><button type="button" id="tvCerrar" aria-label="Cerrar">✕</button></div>
+  <div class="tv-qr" id="tvQr"></div>
+  <code class="tv-url" id="tvUrl"></code>
+  <button type="button" class="tv-copiar" id="tvCopiar">Copiar dirección</button>
+  <ol class="tv-pasos">
+    <li>Abre el navegador de la TV (misma wifi).</li>
+    <li>Escanea el código o escribe la dirección.</li>
+    <li>Entra una vez con la cuenta del coach y ponla en pantalla completa.</li>
+  </ol>
+</dialog>
 <main>
   <header>
+    <button type="button" class="tv-btn" id="tvBtn" hidden aria-label="Ver en la Smart TV" title="Ver en la Smart TV">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2.5"/><path d="M8.5 20.5h7"/></svg>
+    </button>
     <div class="marca" id="box">Resultados atletas</div>
     <h1 id="wodNombre">Wod del día</h1>
     <div class="meta" id="tipo"></div>
@@ -185,10 +223,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js?v=20261025d";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261025d";
-import { escucharCuenta } from "./cuenta.js?v=20261025d";
-import { insigniasDe, crearInsignia, fmtPuntos } from "./comun.js?v=20261025d";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026a";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026a";
+import { escucharCuenta } from "./cuenta.js?v=20261026a";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona } from "./comun.js?v=20261026a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -198,7 +236,24 @@ let clase = claseInicial();
 let esCoach = false;
 const menu = montarMenu({ actual: "ranking", cuenta: false });
 // Coach y entrenadores: tocar un resultado abre el editor
-escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; pintar(); });
+escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !coach; pintar(); });
+
+// ---------- Poner el ranking en la TV (solo el coach) ----------
+const urlPantalla = () => { const u = new URL("pantalla.html", location.href); return u.href; };
+$("tvBtn").addEventListener("click", () => {
+  $("tvUrl").textContent = urlPantalla().replace(/^https?:\/\//, "");
+  const qr = $("tvQr");
+  const pintarQR = () => { qr.replaceChildren(); new QRCode(qr, { text: urlPantalla(), width: 256, height: 256, correctLevel: QRCode.CorrectLevel.M }); };
+  if (window.QRCode) pintarQR();
+  else { const sc = Object.assign(document.createElement("script"), { src: "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" }); sc.onload = pintarQR; document.head.append(sc); }
+  $("dlgTv").showModal();
+});
+$("tvCerrar").addEventListener("click", () => $("dlgTv").close());
+$("dlgTv").addEventListener("click", (e) => { if (e.target === $("dlgTv")) $("dlgTv").close(); });
+$("tvCopiar").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(urlPantalla()); $("tvCopiar").textContent = "¡Copiada!"; } catch { $("tvCopiar").textContent = "Mantén pulsada la dirección para copiarla"; }
+  setTimeout(() => ($("tvCopiar").textContent = "Copiar dirección"), 2500);
+});
 let esAdmin = false, yo = null, miNombre = "";
 escucharCuenta(({ user, ficha }) => {
   yo = user; miNombre = ficha?.nombre || user?.displayName || "";
@@ -287,6 +342,12 @@ function filaReacciones(r) {
     b.addEventListener("click", () => reaccionar(r, mia === e ? null : e));
     caja.append(b);
   }
+  // Ver quién ha reaccionado
+  if (Object.keys(todas).length) {
+    const ver = Object.assign(document.createElement("button"), { type: "button", className: "quien", textContent: "Ver quién" });
+    ver.addEventListener("click", () => verQuien(r));
+    caja.append(ver);
+  }
   if (!yo) return caja;
   if (abiertoReac === r.id) {
     const sel = document.createElement("div"); sel.className = "elegir-reac";
@@ -299,6 +360,23 @@ function filaReacciones(r) {
     caja.append(mas);
   }
   return caja;
+}
+async function verQuien(r) {
+  let dlg = document.getElementById("dlgQuien");
+  if (!dlg) {
+    dlg = Object.assign(document.createElement("dialog"), { id: "dlgQuien", className: "dlg-quien" });
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+    document.body.append(dlg);
+  }
+  const cab = document.createElement("div"); cab.className = "dq-cab";
+  const cerrar = Object.assign(document.createElement("button"), { type: "button", textContent: "✕" }); cerrar.setAttribute("aria-label", "Cerrar"); cerrar.addEventListener("click", () => dlg.close());
+  cab.append(Object.assign(document.createElement("b"), { textContent: (yo && r.uid === yo.uid) ? "Reacciones a tu resultado" : `Reacciones a ${r.nombre}` }), cerrar);
+  const ul = document.createElement("ul"); ul.append(Object.assign(document.createElement("li"), { className: "dq-carga", textContent: "Cargando…" }));
+  dlg.replaceChildren(cab, ul); if (!dlg.open) dlg.showModal();
+  const conocidos = new Map(todos.map((x) => [x.uid, x.nombre]));
+  const lista = (await quienReacciona(r.reacciones, conocidos)).sort((a, b) => EMOJIS.indexOf(a.emoji) - EMOJIS.indexOf(b.emoji) || a.nombre.localeCompare(b.nombre, "es"));
+  ul.replaceChildren(...lista.map((x) => { const li = document.createElement("li"); li.append(Object.assign(document.createElement("span"), { className: "dq-emoji", textContent: x.emoji }), Object.assign(document.createElement("span"), { textContent: x.nombre + (yo && x.uid === yo.uid ? " (tú)" : "") })); return li; }));
+  if (!lista.length) ul.append(Object.assign(document.createElement("li"), { textContent: "Nadie ha reaccionado todavía." }));
 }
 async function reaccionar(r, emoji) {
   if (!yo) return;
@@ -315,7 +393,7 @@ function verVista(v) {
   $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy";
   if (v === "general" && !dejarGeneral) {
     dejarGeneral = onSnapshot(query(collection(db, "usuarios"), orderBy("puntosRanking", "desc"), limit(100)), (s) => {
-      generales = s.docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => (u.puntosRanking || 0) > 0);
+      generales = s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => (u.puntosRanking || 0) > 0);
       pintarGeneral();
     }, () => { $("listaGeneral").innerHTML = '<div class="vacio">No se ha podido cargar el ranking.</div>'; });
   }
@@ -364,7 +442,7 @@ $("recalcular").addEventListener("click", async () => {
 let todosAtletas = null;
 async function cargarAtletas() {
   if (todosAtletas) return todosAtletas;
-  todosAtletas = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...d.data() })).filter((u) => u.nombre);
+  todosAtletas = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => u.nombre);
   return todosAtletas;
 }
 const sinTildes = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -389,7 +467,7 @@ const claveLeido = () => "chat-leido-" + hoy();
 function escucharChat() {
   if (dejarChat) return;
   dejarChat = onSnapshot(query(collection(db, "chat", hoy(), "mensajes"), orderBy("creado", "asc"), limit(200)), (s) => {
-    mensajes = s.docs.map((d) => ({ id: d.id, ...d.data() }));
+    mensajes = s.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     pintarChat();
   }, () => {});
 }
@@ -426,7 +504,7 @@ $("chatForm").addEventListener("submit", async (e) => {
   const texto = $("chatTexto").value.trim().replace(/\s+/g, " ").slice(0, 300);
   if (!texto || !yo) return;
   $("chatTexto").value = "";
-  try { await addDoc(collection(db, "chat", hoy(), "mensajes"), { uid: yo.uid, nombre: (miNombre || "Atleta").slice(0, 40), texto, creado: serverTimestamp() }); }
+  try { await addDoc(collection(db, "chat", hoy(), "mensajes"), { uid: yo.uid, nombre: nombreBonito(miNombre || "Atleta").slice(0, 40), texto: mayus(texto), creado: serverTimestamp() }); }
   catch (err) { console.warn(err); $("chatTexto").value = texto; }
 });
 
@@ -454,7 +532,7 @@ function conectar() {
   desconectar();
   cargado.res = false;
   dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy()), where("clase", "==", clase)), (snap) => {
-    todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     resultados = todos;
     cargado.res = true;
     pintar();

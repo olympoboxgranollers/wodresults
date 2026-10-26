@@ -1,8 +1,53 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261025d";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026a";
 
 export const app = initializeApp(firebaseConfig);
+
+// ---------- Quién ha reaccionado a un resultado ----------
+// reacciones = { uid: "🔥" } · conocidos = Map uid → nombre (p. ej. los que han registrado hoy)
+const cacheNombres = new Map();
+export async function quienReacciona(reacciones, conocidos = new Map()) {
+  const lista = Object.entries(reacciones || {}).filter(([, e]) => typeof e === "string" && e);
+  return Promise.all(lista.map(async ([uid, emoji]) => {
+    let nombre = conocidos.get(uid) || cacheNombres.get(uid);
+    if (!nombre) {
+      try { const s = await leerDoc(docRef(db, "usuarios", uid)); nombre = s.exists() ? nombreBonito(s.data().nombre || "Atleta") : "Atleta"; } catch { nombre = "Atleta"; }
+      cacheNombres.set(uid, nombre);
+    }
+    return { uid, emoji, nombre };
+  }));
+}
+
+// ---------- Mayúsculas automáticas ----------
+// Primera letra en mayúscula (frases: bio, chat, títulos, descripciones…)
+export const mayus = (t) => (typeof t === "string" && t ? t.replace(/^(\s*)(\p{Ll})/u, (_, a, b) => a + b.toLocaleUpperCase("es")) : t);
+// Nombres de persona: cada palabra con mayúscula ("ana lópez garcía" → "Ana López García").
+// Las partículas (de, del, la…) se quedan en minúscula salvo al principio. Lo que ya va en mayúscula no se toca.
+const PARTICULAS = new Set(["de", "del", "la", "las", "los", "y", "i", "da", "do", "dos", "van", "von", "di"]);
+export function nombreBonito(t) {
+  if (typeof t !== "string" || !t) return t;
+  return t.trim().replace(/\s+/g, " ").split(" ").map((w, i) =>
+    (i > 0 && PARTICULAS.has(w.toLowerCase())) ? w.toLowerCase() : w.replace(/(^|[-'’])(\p{Ll})/gu, (_, a, b) => a + b.toLocaleUpperCase("es"))
+  ).join(" ");
+}
+// Datos de una persona (socio, resultado, mensaje, asistente…) listos para enseñar
+export const persona = (d) => {
+  if (!d) return d;
+  const o = { ...d };
+  if (typeof o.nombre === "string") o.nombre = nombreBonito(o.nombre);
+  if (typeof o.bio === "string") o.bio = mayus(o.bio);
+  if (typeof o.texto === "string") o.texto = mayus(o.texto);
+  return o;
+};
+// Datos de una cosa (logro, evento, canjeable, movimiento…): primera letra en mayúscula
+export const cosa = (d) => {
+  if (!d) return d;
+  const o = { ...d };
+  for (const k of ["nombre", "titulo", "descripcion", "lugar", "texto"]) if (typeof o[k] === "string") o[k] = mayus(o[k]);
+  return o;
+};
+
 // Memoria local en el móvil: al cambiar de página solo se descarga lo que ha cambiado (ahorra lecturas del plan gratis)
 export const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
@@ -297,7 +342,7 @@ for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA))
 const MEDALLA_ANTIGUA = { deadlift: "deadlift-bronce", backsquat: "backsquat-plata", frontsquat: "frontsquat-plata", shoulderpress: "shoulderpress-oro", cleanjerk: "cleanjerk-diamante", snatch: "snatch-olimpo", benchpress: "benchpress-bronce" };
 export const idMedalla = (id) => MEDALLA_ANTIGUA[id] || id;
 // Versión de las imágenes: al cambiar una medalla se sube este número para que nadie vea la antigua guardada
-export const VERSION_MEDALLAS = "20261025d";
+export const VERSION_MEDALLAS = "20261026a";
 export const rutaMedalla = (id) => `${id}.webp?v=${VERSION_MEDALLAS}`;
 // Imagen de una medalla: primero en la página principal del repositorio, luego en la carpeta medallas/
 // y, si tampoco, la copia guardada dentro del código.
@@ -307,7 +352,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261025d").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261026a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

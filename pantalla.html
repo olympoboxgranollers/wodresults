@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025d">
+<link rel="stylesheet" href="estilos.css?v=20261026a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -149,10 +149,10 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo } from "./comun.js?v=20261025d";
-import { NOMBRE_BOX } from "./config.js?v=20261025d";
-import { escucharCuenta } from "./cuenta.js?v=20261025d";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261025d";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona } from "./comun.js?v=20261026a";
+import { NOMBRE_BOX } from "./config.js?v=20261026a";
+import { escucharCuenta } from "./cuenta.js?v=20261026a";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261026a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -178,8 +178,8 @@ $("volver").addEventListener("click", async () => {
 });
 
 const menu = montarMenu({ actual: "pantalla", tv: true, cuenta: false });
-// Coach y entrenadores: configurar el WOD y corregir resultados
-escucharRol(({ staff }) => { esCoach = staff; $("abrirAjustes").hidden = !staff; pintar(); });
+// Solo el coach configura el WOD y corrige resultados desde la pantalla (los entrenadores lo hacen en Publicar)
+escucharRol(({ coach }) => { esCoach = coach; $("abrirAjustes").hidden = !coach; pintar(); });
 
 // QR que apunta al formulario de la clase que se está mostrando
 function ponerQR() {
@@ -328,7 +328,7 @@ function escucharWod() {
 }
 
 onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
   resultados = todos.filter((r) => claseDe(r) === clase);
   cargado.res = true;
   pintar();

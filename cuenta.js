@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS } from "./comun.js?v=20261025d";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026a";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -39,7 +39,12 @@ export function escucharCuenta(alCambiar) {
     if (!user) return alCambiar({ user: null, ficha: null });
     alCambiar({ user, ficha: undefined });  // undefined = cargando
     dejarFicha = onSnapshot(doc(db, "usuarios", user.uid),
-      (s) => alCambiar({ user, ficha: s.exists() ? s.data() : null }),
+      (s) => {
+        const raw = s.exists() ? s.data() : null;
+        // Si el nombre está guardado en minúscula (p. ej. "ana lópez"), se corrige solo a "Ana López"
+        if (raw?.nombre && nombreBonito(raw.nombre) !== raw.nombre) updateDoc(doc(db, "usuarios", user.uid), { nombre: nombreBonito(raw.nombre).slice(0, 40) }).catch(() => {});
+        alCambiar({ user, ficha: raw ? persona(raw) : null });
+      },
       () => alCambiar({ user, ficha: null }));
   });
 }
@@ -48,8 +53,9 @@ export function escucharCuenta(alCambiar) {
 export async function guardarNombre(user, ficha, nombre) {
   if (ficha === undefined) {  // aún no había llegado la ficha: se mira antes de crearla
     const s = await getDoc(doc(db, "usuarios", user.uid));
-    ficha = s.exists() ? s.data() : null;
+    ficha = s.exists() ? persona(s.data()) : null;
   }
+  nombre = nombreBonito(nombre);
   if (!ficha) await setDoc(doc(db, "usuarios", user.uid), { nombre, puntos: 0 });
   else if (ficha.nombre !== nombre) await updateDoc(doc(db, "usuarios", user.uid), { nombre });
 }

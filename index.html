@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261025d">
+<link rel="stylesheet" href="estilos.css?v=20261026a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -133,6 +133,11 @@
   .atleta-fijo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); }
   .atleta-fijo b { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
   .atleta-fijo a { color: var(--suave); font-size: 13px; white-space: nowrap; }
+  .reac-mias { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--malva) 8%, transparent); border: 1px solid color-mix(in srgb, var(--malva) 35%, transparent); text-align: left; }
+  .reac-titulo { font-size: 13px; font-weight: 700; color: var(--malva); margin-bottom: 8px; }
+  .reac-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+  .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
+  .reac-chip b { font-size: 15px; }
 </style>
 </head>
 <body>
@@ -168,6 +173,7 @@
     <nav class="pestanas pestanas-form" id="pestanas" aria-label="Clase"></nav>
 
     <div class="ya-registrado" id="yaRegistrado" hidden></div>
+    <div class="reac-mias" id="reacMias2" hidden></div>
 
     <label>Atleta</label>
     <div class="atleta-fijo"><b id="nombre">…</b><a href="perfil.html">Cambiar en tu perfil</a></div>
@@ -230,6 +236,7 @@
       <div class="avisame-info" id="avisameInfo" hidden></div>
     </div>
     <div class="puntos-hoy" id="puntosHoy"></div>
+    <div class="reac-mias" id="reacMias" hidden></div>
     <a class="progreso-logro" id="progresoLogro" href="perfil.html" hidden>
       <span class="pl-medalla" id="plMedalla"></span>
       <span class="pl-info">
@@ -255,11 +262,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe } from "./comun.js?v=20261025d";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261025d";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261025d";
-import { montarMenu } from "./menu.js?v=20261025d";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261025d";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261026a";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261026a";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261026a";
+import { montarMenu } from "./menu.js?v=20261026a";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261026a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -332,7 +339,7 @@ function pintarProgresoLogro() {
 function escucharLogros() {
   if (escuchandoLogros) return;
   escuchandoLogros = true;
-  onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...d.data() })); pintarProgresoLogro(); }, () => {});
+  onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })); pintarProgresoLogro(); }, () => {});
 }
 
 escucharCuenta((c) => {
@@ -365,6 +372,20 @@ escucharCuenta((c) => {
 
 // ---------- Mi resultado de hoy en esta clase (solo uno; se puede editar mientras el día esté abierto) ----------
 let miDoc = null;        // mi resultado guardado de hoy en la clase elegida (o null)
+// Quién ha reaccionado a mi resultado
+async function pintarReacMias() {
+  const cajas = [$("reacMias"), $("reacMias2")], reac = miDoc?.reacciones || {};
+  if (!Object.keys(reac).length) { cajas.forEach((c) => (c.hidden = true)); return; }
+  const lista = await quienReacciona(reac);
+  const orden = ["🔥", "💪", "👏", "😮", "😂"];
+  lista.sort((a, b) => orden.indexOf(a.emoji) - orden.indexOf(b.emoji) || a.nombre.localeCompare(b.nombre, "es"));
+  for (const caja of cajas) {
+    caja.replaceChildren(Object.assign(document.createElement("div"), { className: "reac-titulo", textContent: lista.length === 1 ? "1 reacción a tu resultado" : `${lista.length} reacciones a tu resultado` }));
+    const filas = document.createElement("div"); filas.className = "reac-lista";
+    for (const x of lista) { const c = document.createElement("span"); c.className = "reac-chip"; c.append(Object.assign(document.createElement("b"), { textContent: x.emoji }), document.createTextNode(x.nombre)); filas.append(c); }
+    caja.append(filas); caja.hidden = false;
+  }
+}
 let diaCerrado = false;  // el coach ya ha repartido los puntos de esta clase
 let dejarMiDoc = null, dejarCierre = null;
 function escucharMiResultado() {
@@ -374,8 +395,9 @@ function escucharMiResultado() {
   if (!user) return;
   dejarMiDoc = onSnapshot(doc(db, "resultados", idResultado(clase, user.uid)), (s) => {
     const antes = miDoc;
-    miDoc = s.exists() ? { id: s.id, ...s.data() } : null;
+    miDoc = s.exists() ? { id: s.id, ...persona(s.data()) } : null;
     if (miDoc && !antes && $("hecho").hidden) rellenarConMiResultado();
+    pintarReacMias();
     pintarAvisoRegistro();
   }, () => {});
   dejarCierre = onSnapshot(doc(db, "cierres", idCierre(clase)), (s) => { diaCerrado = s.exists(); pintarAvisoRegistro(); }, () => {});
@@ -532,7 +554,7 @@ $("formulario").addEventListener("submit", async (e) => {
   $("error").textContent = "";
   if (!user) return ($("error").textContent = "Entra en tu cuenta para subir el resultado.");
   if (diaCerrado) return ($("error").textContent = "El día ya está cerrado.");
-  const nombre = (ficha?.nombre || user.displayName || "").trim().replace(/\s+/g, " ").slice(0, 40);
+  const nombre = nombreBonito((ficha?.nombre || user.displayName || "").trim().replace(/\s+/g, " ")).slice(0, 40);
   if (!nombre) return ($("error").textContent = "Primero crea tu perfil de atleta.");
   if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
 
@@ -619,7 +641,7 @@ function seguirMiPosicion(r) {
   delete $("estado").dataset.destronado;
   if (dejarDeSeguir) dejarDeSeguir();
   dejarDeSeguir = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-    const todos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     if (!todos.some((x) => x.id === r.id)) todos.push(r);  // por si aún no ha llegado el mío
     pintarEstado(todos);
   });
