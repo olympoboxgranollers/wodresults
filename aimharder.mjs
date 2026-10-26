@@ -1,4 +1,4 @@
-// Se ejecuta en GitHub Actions cada 3 horas (ver .github/workflows/aimharder.yml).
+// Se ejecuta en GitHub Actions cada hora (ver .github/workflows/aimharder.yml).
 // Lee las clases asistidas en AimHarder y las pone en la app (Firestore) con la cuenta de servicio de Firebase.
 import { createHash } from "node:crypto";
 import { initializeApp, cert } from "firebase-admin/app";

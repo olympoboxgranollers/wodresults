@@ -150,7 +150,12 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   // La primera vez se vuelve a leer todo el historial de cada socio y se quitan los ajustes manuales antiguos.
   const VERSION = 2;
   const estados = priv.versionConteo === VERSION ? { ...(priv.estados || {}) } : {};
-  pares.sort((a, b) => String(estados[a.cliente.id]?.revisado || "").localeCompare(String(estados[b.cliente.id]?.revisado || "")));
+  // Primero los que aún no tienen el recuento por reservas (los de más clases antes, que son los que más se notan);
+  // después, los que hace más que no se miran
+  const migrado = (p) => !!usuarios.get(p.uid)?.conteoV2 && !!estados[p.cliente.id];
+  pares.sort((a, b) => (migrado(a) - migrado(b))
+    || (!migrado(a) ? (usuarios.get(b.uid)?.clases || 0) - (usuarios.get(a.uid)?.clases || 0) : 0)
+    || String(estados[a.cliente.id]?.revisado || "").localeCompare(String(estados[b.cliente.id]?.revisado || "")));
   let n = 0;
   for (const { uid, cliente } of pares) {
     if (prueba && n >= 3) break;
@@ -198,7 +203,9 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   res.cupo = { ...aim.cupo };
   await almacen.guardarEstado({
     ultima: ahora.toISOString(), ok: true, prueba, vinculados: res.vinculados, revisados: res.revisados, actualizados: res.actualizados, logros: res.logros,
-    clientesAim: res.clientesAim, sinVincular, detenidoPorCupo: res.detenidoPorCupo, restanteDia: aim.cupo.dia, refreshCaduca: t.caduca || null, mensaje: ""
+    clientesAim: res.clientesAim, sinVincular, detenidoPorCupo: res.detenidoPorCupo,
+    // Socios que aún esperan el recuento por reservas (se van haciendo en cada sincronización)
+    pendientesRecuento: prueba ? null : pares.filter((p) => !estados[p.cliente.id]).length, restanteDia: aim.cupo.dia, refreshCaduca: t.caduca || null, mensaje: ""
   });
   log(`Revisados: ${res.revisados} · actualizados: ${res.actualizados} · logros dados: ${res.logros} · peticiones: ${aim.cupo.peticiones} · cupo restante hoy: ${aim.cupo.dia ?? "?"}${res.detenidoPorCupo ? " · parado para no pasar el límite (sigue en la próxima sincronización)" : ""}`);
   if (prueba) res.muestras.forEach((m, i) => log(`Prueba · socio ${i + 1}: ${m.reservasLeidas} reservas leídas → ${m.clasesAsistidas} clases contadas (${m.pendientes} por venir)`));

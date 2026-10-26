@@ -190,7 +190,7 @@ const cajaClases = cajasCoach.find((c) => c.querySelector("#cSocio"));
 const plegClases = plegable(cajaClases, cajaClases?.querySelector("h2"), "logros-clases");
 
 let coach = false, ficha = null, logros = [], socios = [], editando = null, dejarSocios = null, dando = false, dejarSync = null;
-// Estado de la sincronización con AimHarder (la hace GitHub cada 3 horas)
+// Estado de la sincronización con AimHarder (la hace GitHub cada hora)
 function escucharSync() {
   return onSnapshot(doc(db, "sync", "aimharder"), (s) => {
     const caja = $("sync"), txt = $("syncTxt");
@@ -201,7 +201,8 @@ function escucharSync() {
     caja.className = "sync ok";
     txt.replaceChildren(document.createTextNode(d.prueba
       ? `Prueba hecha el ${cuando} · ${d.vinculados} socios se pueden vincular por email. Aún no se ha cambiado nada: en cuanto funcione la sincronización automática, sus clases saldrán de AimHarder.`
-      : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las reservas no canceladas) y se actualizan cada 3 horas.`));
+      : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las reservas no canceladas) y se actualizan cada hora.`
+        + (d.pendientesRecuento ? ` · Recuento por reservas en marcha: faltan ${d.pendientesRecuento} socios (AimHarder deja leer unos 30 por hora).` : "")));
     if (d.sinVincular?.length) {
       const det = document.createElement("details");
       det.append(Object.assign(document.createElement("summary"), { textContent: `${d.sinVincular.length} socios de la app sin vincular` }),

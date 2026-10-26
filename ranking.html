@@ -197,7 +197,7 @@
       <button type="button" id="verGeneral" aria-pressed="false">General</button>
     </div>
     <div class="buscar">
-      <input id="buscar" type="search" placeholder="Buscar atleta…" autocomplete="off" aria-label="Buscar el perfil de un atleta">
+      <input id="buscar" type="search" placeholder="Buscar atleta por nombre…" autocomplete="off" aria-label="Buscar el perfil de un atleta">
       <div class="resultados-busqueda" id="resBusqueda" hidden></div>
     </div>
   </div>
@@ -525,25 +525,34 @@ $("recalcular").addEventListener("click", async () => {
 });
 
 // ---------- Buscar el perfil de un atleta ----------
-let todosAtletas = null;
-async function cargarAtletas() {
-  if (todosAtletas) return todosAtletas;
-  todosAtletas = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => u.nombre);
-  return todosAtletas;
+// Busca por el principio del nombre en Firebase (unas pocas lecturas por búsqueda, no todos los socios)
+const cacheBusqueda = new Map();
+let esperaBusqueda = null;
+async function buscarAtletas(texto) {
+  const t = nombreBonito(texto.trim().replace(/\s+/g, " "));
+  if (cacheBusqueda.has(t)) return cacheBusqueda.get(t);
+  const s = await getDocs(query(collection(db, "usuarios"), orderBy("nombre"), where("nombre", ">=", t), where("nombre", "<", t + "\uf8ff"), limit(10)));
+  const lista = s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => u.nombre);
+  cacheBusqueda.set(t, lista);
+  return lista;
 }
-const sinTildes = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-$("buscar").addEventListener("input", async () => {
-  const q = sinTildes($("buscar").value.trim()), caja = $("resBusqueda");
-  if (!q) { caja.hidden = true; return; }
-  const lista = (await cargarAtletas()).filter((u) => sinTildes(u.nombre).includes(q)).slice(0, 12);
-  caja.replaceChildren();
-  if (!lista.length) caja.append(Object.assign(document.createElement("div"), { className: "nada", textContent: "No hay ningún atleta con ese nombre." }));
-  for (const u of lista) {
-    const a = Object.assign(document.createElement("a"), { href: "perfil.html?uid=" + encodeURIComponent(u.uid) });
-    a.append(Object.assign(document.createElement("span"), { className: "ini", textContent: u.nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase() }), document.createTextNode(u.nombre));
-    caja.append(a);
-  }
-  caja.hidden = false;
+$("buscar").addEventListener("input", () => {
+  clearTimeout(esperaBusqueda);
+  const texto = $("buscar").value, caja = $("resBusqueda");
+  if (texto.trim().length < 2) { caja.hidden = true; return; }
+  esperaBusqueda = setTimeout(async () => {
+    let lista = [];
+    try { lista = await buscarAtletas(texto); } catch (e) { console.warn(e); }
+    if ($("buscar").value !== texto) return;
+    caja.replaceChildren();
+    if (!lista.length) caja.append(Object.assign(document.createElement("div"), { className: "nada", textContent: "No hay ningún atleta con ese nombre." }));
+    for (const u of lista) {
+      const a = Object.assign(document.createElement("a"), { href: "perfil.html?uid=" + encodeURIComponent(u.uid) });
+      a.append(Object.assign(document.createElement("span"), { className: "ini", textContent: u.nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase() }), document.createTextNode(u.nombre));
+      caja.append(a);
+    }
+    caja.hidden = false;
+  }, 350);
 });
 document.addEventListener("click", (e) => { if (!e.target.closest(".buscar")) $("resBusqueda").hidden = true; });
 
