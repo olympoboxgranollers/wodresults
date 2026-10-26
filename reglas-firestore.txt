@@ -1,0 +1,375 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Quién es quién ----------
+    // El coach: solo esta cuenta (entrando con Google) puede publicar WODs y repartir puntos
+    function esCoach() {
+      return request.auth != null
+        && request.auth.token.email == 'olympoboxgranollers@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    // Cuenta de persona (correo o Google). Las TV conectadas entran como "anónimas" y no cuentan aquí.
+    function conCuenta() { return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    function esAnonimo() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
+    // TV del box conectada desde el móvil del coach o de un entrenador: solo puede LEER el ranking del día
+    function esTV() {
+      return esAnonimo() && exists(/databases/$(database)/documents/tvs/$(request.auth.uid))
+        && get(/databases/$(database)/documents/tvs/$(request.auth.uid)).data.vinculada == true;
+    }
+    // Entrenadores: los emails que el coach ha puesto en ajustes/entrenadores (publican el WOD y corrigen resultados)
+    function esEntrenador() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/ajustes/entrenadores)
+        && request.auth.token.email.lower() in get(/databases/$(database)/documents/ajustes/entrenadores).data.emails;
+    }
+    function esStaff() { return esCoach() || esEntrenador(); }
+    function logro(id) { return get(/databases/$(database)/documents/logros/$(id)).data; }
+
+    // ---------- Fechas ----------
+    // Medianoche UTC del día "AAAA-MM-DD"
+    function inicioDia(f) {
+      return timestamp.date(int(f.split('-')[0]), int(f.split('-')[1]), int(f.split('-')[2]));
+    }
+    // Es "hoy" en España (con 1-2 h de margen por el horario de verano/invierno)
+    function esHoy(f) {
+      return request.time > inicioDia(f) - duration.value(2, 'h')
+        && request.time < inicioDia(f) + duration.value(23, 'h');
+    }
+    // Ya ha pasado la medianoche de ese día
+    function diaPasado(f) { return request.time > inicioDia(f) + duration.value(22, 'h'); }
+
+    // ---------- Validación de un resultado ----------
+    function kgOk(p, k) { return !(k in p) || (p[k] is number && p[k] > 0 && p[k] <= 500); }
+    function pesosValidos(d) {
+      return !('pesos' in d) || (d.pesos is map
+        && d.pesos.keys().hasOnly(['wallball', 'dumbbell', 'kettlebell', 'barbell'])
+        && kgOk(d.pesos, 'wallball') && kgOk(d.pesos, 'dumbbell')
+        && kgOk(d.pesos, 'kettlebell') && kgOk(d.pesos, 'barbell'));
+    }
+    function resultadoValido(d) {
+      return d.keys().hasOnly(['uid', 'nombre', 'clase', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'editado', 'sensacion', 'pesos', 'revisado', 'validado', 'reacciones'])
+        && d.clase in ['wod', 'hyrox', 'funcional']
+        && d.categoria in ['RX', 'Scaled', 'Open']
+        && d.tipo in ['tiempo', 'rondas', 'kg']
+        && d.tipo == get(/databases/$(database)/documents/wods/$(d.fecha + '_' + d.clase)).data.tipo
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 40
+        && d.valor is number && d.valor > 0 && d.valor < 100000
+        && d.fecha is string && d.fecha.size() == 10
+        && (!('sensacion' in d) || d.sensacion in ['duro', 'bien', 'sobrado', 'muerto', 'fuego', 'molestia'])
+        && pesosValidos(d);
+    }
+    function textoCorto(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 40); }
+    function cerrado(fecha, clase) {
+      return exists(/databases/$(database)/documents/cierres/$(fecha + '_' + clase));
+    }
+
+    // ---------- Resultados ----------
+    // Uno por socio, clase y día: el id es "fecha_clase_uid". El socio lo puede editar hasta que el coach cierra el día.
+    match /resultados/{id} {
+      allow read: if conCuenta() || esTV();
+      allow create: if conCuenta() && !esCoach()
+        && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.fecha + '_' + request.resource.data.clase + '_' + request.auth.uid
+        && request.resource.data.creado == request.time
+        && !('editado' in request.resource.data)
+        && !('revisado' in request.resource.data)
+        && !('validado' in request.resource.data)
+        && esHoy(request.resource.data.fecha)
+        && resultadoValido(request.resource.data)
+        && !cerrado(request.resource.data.fecha, request.resource.data.clase);
+      // El socio puede editar el suyo (si el coach no lo ha corregido ya)...
+      allow update: if (conCuenta()
+        && resource.data.uid == request.auth.uid
+        && !resource.data.get('revisado', false)
+        && !resource.data.get('validado', false)
+        && !('revisado' in request.resource.data)
+        && !('validado' in request.resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.fecha == resource.data.fecha
+        && request.resource.data.clase == resource.data.clase
+        && request.resource.data.creado == resource.data.creado
+        && request.resource.data.editado == request.time
+        && esHoy(request.resource.data.fecha)
+        && resultadoValido(request.resource.data)
+        && !cerrado(resource.data.fecha, resource.data.clase))
+        // ...validarlo él mismo (después ya no lo puede cambiar)...
+        || (conCuenta()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validado'])
+        && request.resource.data.validado == true)
+        // ...cualquier socio puede reaccionar con un emoji (solo cambia su propia reacción)...
+        || (conCuenta()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reacciones'])
+        && request.resource.data.reacciones is map
+        && request.resource.data.reacciones.diff(resource.data.get('reacciones', {})).affectedKeys().hasOnly([request.auth.uid])
+        && (!(request.auth.uid in request.resource.data.reacciones) || request.resource.data.reacciones[request.auth.uid] in ['🔥', '💪', '👏', '😮', '😂']))
+        // ...el coach y los entrenadores pueden validar cualquier resultado...
+        || (esStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['validado'])
+        && request.resource.data.validado == true)
+        // ...y corregir la categoría y el resultado de cualquiera mientras el día siga abierto
+        || (esStaff()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'valor', 'revisado', 'validado'])
+        && request.resource.data.categoria in ['RX', 'Scaled', 'Open']
+        && request.resource.data.valor is number && request.resource.data.valor > 0 && request.resource.data.valor < 100000
+        && request.resource.data.revisado == true
+        && !cerrado(resource.data.fecha, resource.data.get('clase', 'wod')));
+      // Se borran: el coach cuando quiera; cualquiera cuando el día ya está cerrado y ha pasado,
+      // o a los 7 días aunque no se haya cerrado (para no guardar nada para siempre)
+      allow delete: if esStaff()
+        || (diaPasado(resource.data.fecha) && cerrado(resource.data.fecha, resource.data.get('clase', 'wod')))
+        || request.time > inicioDia(resource.data.fecha) + duration.value(7, 'd');
+    }
+
+    // ---------- Fichas de socio (nombre y puntos) ----------
+    match /usuarios/{uid} {
+      allow read: if conCuenta();
+      // El socio crea su perfil de atleta con 0 puntos; luego solo puede cambiar sus datos de perfil. Los puntos solo los toca el coach.
+      allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nombre', 'puntos', 'atleta', 'favorito', 'odiado', 'alta'])
+        && request.resource.data.puntos == 0
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado'));
+      allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos', 'bio', 'alta'])
+        && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 160))
+        && (!('alta' in request.resource.data) || (request.resource.data.alta is string && request.resource.data.alta.size() == 10))
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado')
+        && (!('ocultarPuntos' in request.resource.data) || request.resource.data.ocultarPuntos is bool)
+        && (!('atleta' in request.resource.data) || request.resource.data.atleta is bool))
+        // Sus marcas personales (los ejercicios que quiera, hasta 40) y las 2 que destaca en el perfil
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['marcas', 'destacadas'])
+        && request.resource.data.marcas is map && request.resource.data.marcas.size() <= 40
+        && request.resource.data.destacadas is list && request.resource.data.destacadas.size() <= 2)
+        // Sus marcas personales (RM de snatch y clean & jerk), que verán los demás en su perfil
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rm'])
+        && request.resource.data.rm.keys().hasOnly(['snatch', 'cleanJerk', 'fecha'])
+        && request.resource.data.rm.snatch is number && request.resource.data.rm.snatch >= 0 && request.resource.data.rm.snatch <= 400
+        && request.resource.data.rm.cleanJerk is number && request.resource.data.rm.cleanJerk >= 0 && request.resource.data.rm.cleanJerk <= 400)
+        // +10 al momento por registrar: solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro', 'clases', 'puntosRanking'])
+        && request.resource.data.puntos == resource.data.puntos + 10
+        && (request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0) + 10 || request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0))
+        && (request.resource.data.get('clases', 0) == resource.data.get('clases', 0) + 1 || request.resource.data.get('clases', 0) == resource.data.get('clases', 0))
+        && request.resource.data.ultimoRegistro is string
+        && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
+        && existsAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)))
+        // Canje hecho por el propio socio: se descuenta exactamente el coste del objeto (lo comprueba su movimiento) y nunca queda en negativo
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoCanje'])
+        && request.resource.data.ultimoCanje is string
+        && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje))
+        && getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje)).data.tipo == 'canje'
+        && request.resource.data.puntos == resource.data.puntos + getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoCanje)).data.puntos
+        && request.resource.data.puntos >= 0)
+        // Logro de clases que se da solo: ya tiene las clases que pide el logro y suma exactamente sus puntos
+        || (conCuenta() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['insignias', 'puntos', 'ultimoLogro'])
+        && request.resource.data.ultimoLogro is string
+        && request.resource.data.insignias.diff(resource.data.get('insignias', {})).affectedKeys().hasOnly([request.resource.data.ultimoLogro])
+        && !(request.resource.data.ultimoLogro in resource.data.get('insignias', {}))
+        && logro(request.resource.data.ultimoLogro).clases > 0
+        && resource.data.get('clases', 0) >= logro(request.resource.data.ultimoLogro).clases
+        && request.resource.data.puntos == resource.data.puntos + logro(request.resource.data.ultimoLogro).puntos
+        && request.resource.data.insignias[request.resource.data.ultimoLogro].puntos == logro(request.resource.data.ultimoLogro).puntos)
+        // Un entrenador que borra un resultado le quita los 10 puntos de registrar (y la clase)
+        || (esEntrenador()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'clases', 'puntosRanking'])
+        && request.resource.data.puntos == resource.data.puntos - 10
+        && request.resource.data.get('puntosRanking', 0) >= resource.data.get('puntosRanking', 0) - 10
+        && request.resource.data.get('clases', 0) >= resource.data.get('clases', 0) - 1);
+      allow delete: if esCoach();
+
+      // Historial de puntos de cada socio
+      match /movimientos/{mid} {
+        allow read: if conCuenta();
+        // El socio crea su "registro" (+10) una sola vez por clase y día, y solo si tiene su resultado de hoy
+        allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['fecha', 'clase', 'tipo', 'puntos'])
+          && request.resource.data.tipo == 'registro'
+          && request.resource.data.puntos == 10
+          && request.resource.data.clase in ['wod', 'hyrox', 'funcional']
+          && mid == request.resource.data.fecha + '_' + request.resource.data.clase + '_reg'
+          && esHoy(request.resource.data.fecha)
+          && exists(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid))
+          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoRegistro == mid)
+          // ...o su "canje": el coste tiene que ser el del catálogo y a la vez se crea el pedido para el coach
+          || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['fecha', 'tipo', 'objeto', 'objetoId', 'puntos', 'estado'])
+          && request.resource.data.tipo == 'canje'
+          && request.resource.data.estado == 'pendiente'
+          && request.resource.data.objetoId is string
+          && request.resource.data.puntos == -get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.puntos
+          && request.resource.data.objeto == get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.nombre
+          && esHoy(request.resource.data.fecha)
+          && getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoCanje == mid
+          && existsAfter(/databases/$(database)/documents/pedidos/$(uid + '_' + mid)))
+          // ...o el de un logro de clases que se ha dado solo
+          || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['fecha', 'tipo', 'nombre', 'puntos'])
+          && request.resource.data.tipo == 'insignia'
+          && mid == 'logro_' + getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoLogro
+          && request.resource.data.puntos == logro(getAfter(/databases/$(database)/documents/usuarios/$(uid)).data.ultimoLogro).puntos);
+        allow update: if esCoach();
+        allow delete: if esCoach() || (esEntrenador() && resource.data.tipo == 'registro');
+      }
+    }
+
+    // ---------- Cierres del día: se reparten los puntos una sola vez por clase y día ----------
+    // (lo hace automáticamente un aparato con la sesión del coach abierta: la pantalla a las 00:00 o publicar.html)
+    match /cierres/{id} {
+      allow read: if conCuenta();
+      allow create: if esCoach();
+      allow update: if false;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Sincronización con AimHarder (la hace GitHub con la cuenta de servicio, que no pasa por estas reglas) ----------
+    // Tokens y estado interno: nadie los puede leer ni escribir desde la app
+    match /privado/{id} {
+      allow read, write: if false;
+    }
+    // Resumen de la última sincronización: solo lo ve el coach
+    match /sync/{id} {
+      allow read: if esCoach();
+      allow write: if false;
+    }
+
+    // ---------- Fotos de perfil (aparte, para no cargarlas en cada ranking) ----------
+    match /fotos/{uid} {
+      allow read: if conCuenta();
+      allow create, update: if conCuenta() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['img'])
+        && request.resource.data.img is string && request.resource.data.img.size() <= 150000
+        && request.resource.data.img.matches('^data:image/(jpeg|png|webp);base64,.*');
+      allow delete: if esCoach() || (conCuenta() && request.auth.uid == uid);
+    }
+
+    // ---------- Eventos del box: los crea el coach; los socios se apuntan ("Asistiré") ----------
+    match /eventos/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['titulo', 'fecha', 'hora', 'fin', 'lugar', 'descripcion', 'puntos', 'creado', 'momento', 'porConfirmar', 'nuevo'])
+        && request.resource.data.titulo is string && request.resource.data.titulo.size() > 0 && request.resource.data.titulo.size() <= 60
+        && request.resource.data.fecha is string && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.puntos is number && request.resource.data.puntos >= 0;
+      allow delete: if esCoach();
+
+      // Cada socio solo se apunta o se borra a sí mismo; pasar lista (confirmado) solo lo hace el coach
+      match /asistentes/{uid} {
+        allow read: if conCuenta();
+        allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['nombre', 'creado'])
+          && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+          && request.resource.data.creado == request.time
+          && exists(/databases/$(database)/documents/eventos/$(id)));
+        allow update: if esCoach();
+        allow delete: if esCoach() || (conCuenta() && request.auth.uid == uid && !resource.data.get('confirmado', false));
+      }
+    }
+
+    // ---------- Canjes pendientes de entregar (el socio canjea, el coach entrega) ----------
+    match /pedidos/{id} {
+      allow read: if esCoach() || (conCuenta() && resource.data.uid == request.auth.uid);
+      allow create: if conCuenta()
+        && request.resource.data.keys().hasOnly(['uid', 'nombre', 'objeto', 'objetoId', 'puntos', 'fecha', 'mov'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && request.resource.data.mov is string
+        && id == request.auth.uid + '_' + request.resource.data.mov
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)/movimientos/$(request.resource.data.mov)).data.puntos == -request.resource.data.puntos
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.auth.uid)/movimientos/$(request.resource.data.mov)).data.objetoId == request.resource.data.objetoId
+        && request.resource.data.objeto == get(/databases/$(database)/documents/canjeables/$(request.resource.data.objetoId)).data.nombre
+        && esHoy(request.resource.data.fecha);
+      allow update: if false;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Catálogo de logros (insignias): lo ven los socios con cuenta, solo el coach lo cambia ----------
+    match /logros/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['nombre', 'corto', 'unidad', 'descripcion', 'puntos', 'orden', 'nivel', 'clases', 'imagen'])
+        && (!('imagen' in request.resource.data) || (request.resource.data.imagen is string && request.resource.data.imagen.size() <= 40))
+        && (!('nivel' in request.resource.data) || request.resource.data.nivel in ['', 'bronce', 'plata', 'oro', 'diamante', 'olimpo'])
+        && (!('clases' in request.resource.data) || (request.resource.data.clases is int && request.resource.data.clases >= 0))
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
+        && request.resource.data.corto is string && request.resource.data.corto.size() <= 5
+        && request.resource.data.puntos is number && request.resource.data.puntos >= 0;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Catálogo de canjes: lo ven todos los socios con cuenta, solo el coach lo cambia ----------
+    match /canjeables/{id} {
+      allow read: if conCuenta();
+      allow create, update: if esCoach()
+        && request.resource.data.keys().hasOnly(['nombre', 'descripcion', 'precio', 'puntos', 'creado', 'imagen'])
+        && (!('imagen' in request.resource.data) || (request.resource.data.imagen is string && request.resource.data.imagen.size() <= 400000
+            && (request.resource.data.imagen == '' || request.resource.data.imagen.matches('^data:image/(jpeg|png|webp);base64,.*'))))
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 60
+        && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 140))
+        && request.resource.data.precio is number && request.resource.data.precio >= 0
+        && request.resource.data.puntos is number && request.resource.data.puntos > 0;
+      allow delete: if esCoach();
+    }
+
+    // ---------- Ajustes que solo cambia el admin principal (lista de entrenadores) ----------
+    match /ajustes/{id} {
+      allow read: if conCuenta();
+      allow write: if esCoach()
+        && (id != 'entrenadores' || (request.resource.data.keys().hasOnly(['emails']) && request.resource.data.emails is list && request.resource.data.emails.size() <= 50));
+    }
+
+    // ---------- Chat del ranking: un hilo por día ----------
+    match /chat/{dia}/mensajes/{mid} {
+      allow read: if conCuenta();
+      allow create: if conCuenta()
+        && request.resource.data.keys().hasOnly(['uid', 'nombre', 'texto', 'creado'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.creado == request.time
+        && request.resource.data.texto is string && request.resource.data.texto.size() > 0 && request.resource.data.texto.size() <= 300
+        && request.resource.data.nombre is string && request.resource.data.nombre.size() <= 40;
+      allow delete: if esStaff() || (conCuenta() && resource.data.uid == request.auth.uid);
+    }
+
+    // ---------- WOD del día de cada clase (lo publica el coach). Id: "2026-10-23_hyrox" ----------
+    match /wods/{id} {
+      allow read: if conCuenta() || esTV();
+      allow create, update: if esStaff()
+        && id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional)$')
+        && request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
+        && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 1000))
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() <= 60
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
+      allow delete: if esStaff() || diaPasado(id.split('_')[0]);
+    }
+  
+    // ---------- TV del box: se conecta desde el móvil (Ranking → icono de TV) ----------
+    // La TV crea su ficha con un código y la huella de su wifi; el móvil del coach o de un entrenador
+    // en la misma wifi la encuentra sola y la conecta (y elige la clase que se ve)
+    match /tvs/{tv} {
+      allow read: if esStaff() || (esAnonimo() && request.auth.uid == tv);
+      allow create: if esAnonimo() && request.auth.uid == tv
+        && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
+        && (!('red' in request.resource.data) || (request.resource.data.red is string && request.resource.data.red.size() <= 32))
+        && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
+        && request.resource.data.creado is number
+        && request.resource.data.vinculada == false;
+      allow update: if (esAnonimo() && request.auth.uid == tv
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
+          && request.resource.data.vinculada == false)
+        || (esStaff()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])
+          && request.resource.data.vinculada is bool
+          && (!('clase' in request.resource.data) || request.resource.data.clase in ['wod', 'hyrox', 'funcional']));
+      allow delete: if esStaff() || (esAnonimo() && request.auth.uid == tv);
+    }
+  }
+
+}
