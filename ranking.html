@@ -135,7 +135,7 @@
   .vacio { color: var(--suave); background: var(--panel); border: 1px dashed var(--borde); border-radius: 12px; padding: 20px; text-align: center; }
   /* ---------- Ver en la Smart TV (botón discreto) ---------- */
   header { position: relative; }
-  .tv-btn { position: absolute; top: 2px; right: 0; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; background: none; color: var(--suave); opacity: .45; border-radius: 8px; }
+  .tv-btn { position: absolute; top: 0; right: 0; z-index: 3; width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color: var(--lila); opacity: .75; border-radius: 10px; }
   .tv-btn:hover, .tv-btn:focus-visible { opacity: .9; color: var(--lila); }
   .tv-btn svg { width: 19px; height: 19px; }
   .dlg-tv { margin: auto; width: min(320px, calc(100vw - 32px)); background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 18px; padding: 16px 18px 18px; text-align: center; }
@@ -159,7 +159,7 @@
   <ol class="tv-pasos">
     <li>Abre el navegador de la TV (misma wifi).</li>
     <li>Escanea el código o escribe la dirección.</li>
-    <li>Entra una vez con la cuenta del coach y ponla en pantalla completa.</li>
+    <li>Entra una vez con tu cuenta y ponla en pantalla completa.</li>
   </ol>
 </dialog>
 <main>
@@ -236,9 +236,9 @@ let clase = claseInicial();
 let esCoach = false;
 const menu = montarMenu({ actual: "ranking", cuenta: false });
 // Coach y entrenadores: tocar un resultado abre el editor
-escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !coach; pintar(); });
+escucharRol(({ staff, coach }) => { esCoach = staff; esAdmin = coach; $("recalcular").hidden = !coach; $("tvBtn").hidden = !staff; pintar(); });
 
-// ---------- Poner el ranking en la TV (solo el coach) ----------
+// ---------- Poner el ranking en la TV (coach y entrenadores) ----------
 const urlPantalla = () => { const u = new URL("pantalla.html", location.href); return u.href; };
 $("tvBtn").addEventListener("click", () => {
   $("tvUrl").textContent = urlPantalla().replace(/^https?:\/\//, "");
