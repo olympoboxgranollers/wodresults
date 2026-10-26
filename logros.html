@@ -12,7 +12,7 @@
 <title>Logros Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026f">
+<link rel="stylesheet" href="estilos.css?v=20261026h">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -132,7 +132,7 @@
 
     <div class="caja">
       <h2>Clases realizadas</h2>
-      <p>Cada resultado que sube un socio cuenta como una clase hecha. Cuando llega a 100, 250, 500… recibe el logro y sus puntos automáticamente (al momento si estás en esta página; si no, con el reparto de las 00:00). Aquí puedes corregir el número a mano.</p>
+      <p>Las clases hechas salen de las reservas de AimHarder (cada clase reservada y no cancelada cuenta, aunque no haya check-in). Cuando llega a 100, 250, 500… recibe el logro y sus puntos automáticamente (al momento si estás en esta página; si no, con el reparto de las 00:00). Aquí puedes corregir el número a mano.</p>
       <div class="campos">
         <label class="ancho">Socio<select id="cSocio"></select></label>
         <label>Clases hechas<input id="cNum" inputmode="numeric" placeholder="0"></label>
@@ -175,9 +175,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261026f";
-import { escucharCuenta } from "./cuenta.js?v=20261026f";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026f";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261026h";
+import { escucharCuenta } from "./cuenta.js?v=20261026h";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026h";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
@@ -194,18 +194,18 @@ let coach = false, ficha = null, logros = [], socios = [], editando = null, deja
 function escucharSync() {
   return onSnapshot(doc(db, "sync", "aimharder"), (s) => {
     const caja = $("sync"), txt = $("syncTxt");
-    if (!s.exists()) { caja.className = "sync off"; txt.textContent = "Aún no se ha conectado. Mientras tanto, cada resultado subido cuenta como una clase."; return; }
+    if (!s.exists()) { caja.className = "sync off"; txt.textContent = "Aún no se ha conectado. Las clases hechas salen de las reservas de AimHarder."; return; }
     const d = s.data();
     const cuando = d.ultima ? new Date(d.ultima).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "?";
     if (!d.ok) { caja.className = "sync mal"; txt.textContent = `Falló el ${cuando}: ${d.mensaje || "error desconocido"}`; return; }
     caja.className = "sync ok";
     txt.replaceChildren(document.createTextNode(d.prueba
       ? `Prueba hecha el ${cuando} · ${d.vinculados} socios se pueden vincular por email. Aún no se ha cambiado nada: en cuanto funcione la sincronización automática, sus clases saldrán de AimHarder.`
-      : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las asistidas) y se actualizan cada 3 horas.`));
+      : `Sincronizado el ${cuando} · ${d.vinculados} socios vinculados por email. Sus clases salen de AimHarder (las reservas no canceladas) y se actualizan cada 3 horas.`));
     if (d.sinVincular?.length) {
       const det = document.createElement("details");
       det.append(Object.assign(document.createElement("summary"), { textContent: `${d.sinVincular.length} socios de la app sin vincular` }),
-        Object.assign(document.createElement("div"), { textContent: d.sinVincular.join(", ") + ". Para vincularlos, su email de la app tiene que ser el mismo que tienen en AimHarder. Mientras, sus clases cuentan por resultado subido." }));
+        Object.assign(document.createElement("div"), { textContent: d.sinVincular.join(", ") + ". Para vincularlos, su email de la app tiene que ser el mismo que tienen en AimHarder. Mientras no estén vinculados no se les cuentan clases." }));
       txt.append(det);
     }
   }, () => {});
@@ -237,7 +237,7 @@ escucharCuenta(({ user, ficha: f }) => {
       const auto = logros.filter((l) => l.clases > 0);
       if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
         dando = true;
-        import("./cierre.js?v=20261026f").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+        import("./cierre.js?v=20261026h").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
       }
     }, () => {});
   }
@@ -368,12 +368,18 @@ function cambiosClases(s, n) {
   const nuevos = logros.filter((l) => umbralLogro(l) > 0 && n >= umbralLogro(l) && !s.insignias?.[l.id]);
   return { s, n, nuevos };
 }
+// Ajuste necesario para que el total de clases de un socio sea n
+function ajusteParaTotal(s, n) {
+  if (s.aimharder && typeof s.clasesAim === "number") return n - s.clasesAim;   // total = AimHarder + ajuste
+  return (s.clasesAjuste || 0) + (n - (s.clases || 0));
+}
 async function aplicarClases(lista) {
   // Lotes pequeños para no pasar el límite de Firebase (500 escrituras por lote)
   let lote = writeBatch(db), ops = 0, logrosDados = 0;
   for (const { s, n, nuevos } of lista) {
-    // Si sus clases vienen de AimHarder, se guarda la diferencia para que la sincronización siga contando desde aquí
-    const cambios = { clases: n, clasesAjuste: (s.clasesAjuste || 0) + (n - (s.clases || 0)) };
+    // Si sus clases vienen de AimHarder, el ajuste se calcula sobre las asistidas en AimHarder (clasesAim):
+    // así el total queda exactamente en n y no se suman dos veces las mismas clases
+    const cambios = { clases: n, clasesAjuste: ajusteParaTotal(s, n) };
     let suma = 0;
     for (const l of nuevos) {
       cambios[`insignias.${l.id}`] = copiaInsignia(l);
@@ -388,7 +394,17 @@ async function aplicarClases(lista) {
   if (ops) await lote.commit();
   return logrosDados;
 }
-$("cSocio").addEventListener("change", () => { const s = socios.find((x) => x.uid === $("cSocio").value); $("cNum").value = s ? (s.clases || 0) : ""; });
+$("cSocio").addEventListener("change", () => {
+  const s = socios.find((x) => x.uid === $("cSocio").value);
+  $("cNum").value = s ? (s.clases || 0) : "";
+  // De dónde salen sus clases (para entender si no cuadra con AimHarder)
+  const m = $("cMsg"); m.className = "msg";
+  if (!s) { m.textContent = ""; return; }
+  const aj = s.clasesAjuste || 0;
+  m.textContent = s.aimharder
+    ? (typeof s.clasesAim === "number" ? `AimHarder: ${s.clasesAim} reservas` : "AimHarder: vinculado") + (aj ? ` · ajuste manual: ${aj > 0 ? "+" : ""}${aj}` : "") + ` · total: ${s.clases || 0}`
+    : `Sin vincular con AimHarder (no suma clases)${aj ? ` · ajuste manual: ${aj > 0 ? "+" : ""}${aj}` : ""}`;
+});
 $("cGuardar").addEventListener("click", async () => {
   const s = socios.find((x) => x.uid === $("cSocio").value);
   const n = parseInt($("cNum").value, 10);
@@ -459,7 +475,7 @@ $("dDar").addEventListener("click", async () => {
     const meta = umbralLogro(l);
     if (meta > 0 && (s.clases || 0) < meta) {
       cambios.clases = meta;
-      cambios.clasesAjuste = (s.clasesAjuste || 0) + (meta - (s.clases || 0));
+      cambios.clasesAjuste = ajusteParaTotal(s, meta);
       extra = ` Ahora lleva ${meta} clases.`;
     }
     if (meta > 0) {

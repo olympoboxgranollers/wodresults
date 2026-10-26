@@ -25,7 +25,8 @@ const almacen = {
     if (patch.refresh) console.log(`::add-mask::${patch.refresh}`);
     // Varios intentos: si se perdiera el token nuevo habría que generar otro en AimHarder
     for (let i = 0; i < 5; i++) {
-      try { await privado.set(patch, { merge: true }); return; }
+      // mergeFields: cada campo enviado se sustituye entero (así un recuento nuevo borra los estados antiguos)
+      try { await privado.set(patch, { mergeFields: Object.keys(patch) }); return; }
       catch (e) { if (i === 4) throw e; await new Promise((r) => setTimeout(r, 1500 * (i + 1))); }
     }
   },
@@ -41,10 +42,15 @@ const almacen = {
   },
   async usuarios() { return (await db.collection("usuarios").get()).docs.map((d) => ({ uid: d.id, ...d.data() })); },
   async logros() { return (await db.collection("logros").get()).docs.map((d) => ({ id: d.id, ...d.data() })); },
-  async actualizarUsuario(uid, datos, nuevos, hoy) {
+  async actualizarUsuario(uid, datos, nuevos, hoy, reservas = null) {
     const lote = db.batch();
     const cambios = { ...datos };
     let suma = 0;
+    // Puntos por las clases nuevas reservadas en AimHarder (van a la cartera, no al ranking)
+    if (reservas?.puntos > 0) {
+      suma += reservas.puntos;
+      lote.set(db.doc(`usuarios/${uid}/movimientos/reserva_${hoy}_${Date.now()}`), { fecha: hoy, tipo: "reserva", nombre: `${reservas.nuevas} ${reservas.nuevas === 1 ? "clase" : "clases"}`, puntos: reservas.puntos });
+    }
     for (const l of nuevos) {
       cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", imagen: l.imagen || "", puntos: l.puntos || 0, fecha: hoy };
       suma += l.puntos || 0;

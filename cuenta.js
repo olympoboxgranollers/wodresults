@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026f";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026h";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -160,10 +160,9 @@ export async function sumarRegistro(user, clase, ficha) {
   if ((await getDoc(ref)).exists()) return false;
   const lote = writeBatch(db);
   lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
-  // Cada resultado subido cuenta como una clase hecha (para los logros de 100, 250… clases),
-  // salvo si sus clases ya vienen de AimHarder (entonces manda AimHarder)
+  // Las clases hechas salen solo de AimHarder (las reservas): registrar un resultado NO suma clase
   // puntosRanking: solo registrar y podio (para el ranking general)
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ultimoRegistro: mid, ...(ficha?.aimharder ? {} : { clases: increment(1) }) });
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ultimoRegistro: mid });
   await lote.commit();
   return true;
 }

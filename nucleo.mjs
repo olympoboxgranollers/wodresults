@@ -55,7 +55,7 @@ export function crearAim({ base = "https://api.aimharder.com", fetchFn = fetch, 
   };
 }
 
-// ---------- Contar clases asistidas de un cliente a partir de su historial ----------
+// ---------- Contar las clases (reservas) de un cliente a partir de su historial ----------
 // estado = { desde, asistidas } → solo se piden las reservas con id >= desde.
 // Una reserva está "decidida" cuando su día ya pasó (o se canceló); hasta entonces se vuelve a mirar.
 export function contarReservas(reservas, estado, hoy) {
@@ -65,7 +65,8 @@ export function contarReservas(reservas, estado, hoy) {
   for (const b of lista) {
     const cancelada = !!b.cancellation_date;
     const decidida = cancelada || (b.day && b.day < hoy);
-    const cuenta = !cancelada && b.attended === true && b.state !== "waiting_list";
+    // Cuenta cada reserva no cancelada ni en lista de espera, haya check-in o no
+    const cuenta = !cancelada && b.state !== "waiting_list";
     if (decidida && todoDecidido) {
       if (cuenta) asistidas++;
       desde = b.id + 1;
@@ -96,6 +97,13 @@ export const normalEmail = (e) => String(e || "").trim().toLowerCase();
 export function umbralLogro(l) {
   if (l?.clases > 0) return l.clases;
   return /clases/i.test(l?.nombre || "") ? parseInt(String(l.nombre).match(/\d+/)?.[0] || "0", 10) : 0;
+}
+// Puntos por cada clase reservada en AimHarder (solo las nuevas desde que se activó: el historial no da puntos)
+export const PUNTOS_RESERVA = 5;
+export function puntosReservas(usuario, total) {
+  const base = typeof usuario?.clasesPuntuadas === "number" ? usuario.clasesPuntuadas : total;
+  const nuevas = Math.max(0, total - base);
+  return { nuevas, puntos: nuevas * PUNTOS_RESERVA, clasesPuntuadas: Math.max(base, total) };
 }
 export function logrosNuevos(usuario, clases, logros) {
   return logros.filter((l) => umbralLogro(l) > 0 && clases >= umbralLogro(l) && !usuario?.insignias?.[l.id]);
@@ -138,7 +146,10 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   log(`Clientes activos en AimHarder: ${res.clientesAim} (con email: ${res.conEmail}) · socios de la app vinculados: ${res.vinculados}`);
 
   // 4) Historial de reservas de cada socio vinculado (primero los que hace más que no se miran)
-  const estados = { ...(priv.estados || {}) };
+  // Versión 2 del recuento: se cuentan reservas (antes, solo asistencias con check-in).
+  // La primera vez se vuelve a leer todo el historial de cada socio y se quitan los ajustes manuales antiguos.
+  const VERSION = 2;
+  const estados = priv.versionConteo === VERSION ? { ...(priv.estados || {}) } : {};
   pares.sort((a, b) => String(estados[a.cliente.id]?.revisado || "").localeCompare(String(estados[b.cliente.id]?.revisado || "")));
   let n = 0;
   for (const { uid, cliente } of pares) {
@@ -149,10 +160,12 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     if (!prueba && !hayQueRevisar(est, cliente, hoy)) {
       // Nada nuevo en AimHarder: solo se corrige el número si en la app no coincide (sin gastar peticiones)
       // Las clases de la app = las asistidas en AimHarder + el ajuste del coach (si le dio un logro de clases a mano)
-      const totalApp = est.total + (usuario.clasesAjuste || 0);
+      const ajuste = usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0;
+      const totalApp = est.total + ajuste;
       const nuevos = logrosNuevos(usuario, totalApp, logros);
-      if (usuario.clases !== totalApp || nuevos.length || !usuario.aimharder) {
-        await almacen.actualizarUsuario(uid, { clases: totalApp, aimharder: true }, nuevos, hoy);
+      const pr = puntosReservas(usuario, est.total);
+      if (usuario.clases !== totalApp || usuario.clasesAim !== est.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
+        await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: est.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas }, nuevos, hoy, pr);
         res.actualizados++; res.logros += nuevos.length;
       }
       continue;
@@ -169,21 +182,25 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     const r = contarReservas(reservas, est, hoy);
     if (prueba) { res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes }); continue; }
     estados[cliente.id] = { uid, ...r.estado, total: r.total, pendientes: r.pendientes, proximoDia: r.proximoDia, ultimaReserva: cliente.class_data?.reservation_date || null, revisado: ahora.toISOString() };
-    const totalApp = r.total + (usuario.clasesAjuste || 0);
+    // Ajuste manual del coach: los antiguos (del recuento anterior) se quitan la primera vez
+    const ajuste = usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0;
+    const totalApp = r.total + ajuste;
     const nuevos = logrosNuevos(usuario, totalApp, logros);
-    if (usuario.clases !== totalApp || nuevos.length || !usuario.aimharder) {
-      await almacen.actualizarUsuario(uid, { clases: totalApp, aimharder: true }, nuevos, hoy);
+    const pr = puntosReservas(usuario, r.total);
+    // clasesAim: las reservas en AimHarder (sin ajustes), para que el coach vea de dónde sale el total
+    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
+      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas }, nuevos, hoy, pr);
       res.actualizados++; res.logros += nuevos.length;
     }
   }
 
-  if (!prueba) await almacen.guardarPrivado({ estados });
+  if (!prueba) await almacen.guardarPrivado({ estados, versionConteo: VERSION });
   res.cupo = { ...aim.cupo };
   await almacen.guardarEstado({
     ultima: ahora.toISOString(), ok: true, prueba, vinculados: res.vinculados, revisados: res.revisados, actualizados: res.actualizados, logros: res.logros,
     clientesAim: res.clientesAim, sinVincular, detenidoPorCupo: res.detenidoPorCupo, restanteDia: aim.cupo.dia, refreshCaduca: t.caduca || null, mensaje: ""
   });
   log(`Revisados: ${res.revisados} · actualizados: ${res.actualizados} · logros dados: ${res.logros} · peticiones: ${aim.cupo.peticiones} · cupo restante hoy: ${aim.cupo.dia ?? "?"}${res.detenidoPorCupo ? " · parado para no pasar el límite (sigue en la próxima sincronización)" : ""}`);
-  if (prueba) res.muestras.forEach((m, i) => log(`Prueba · socio ${i + 1}: ${m.reservasLeidas} reservas leídas → ${m.clasesAsistidas} clases asistidas (${m.pendientes} por venir)`));
+  if (prueba) res.muestras.forEach((m, i) => log(`Prueba · socio ${i + 1}: ${m.reservasLeidas} reservas leídas → ${m.clasesAsistidas} clases contadas (${m.pendientes} por venir)`));
   return res;
 }

@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026f">
+<link rel="stylesheet" href="estilos.css?v=20261026h">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -220,9 +220,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261026f";
-import { escucharCuenta } from "./cuenta.js?v=20261026f";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026f";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261026h";
+import { escucharCuenta } from "./cuenta.js?v=20261026h";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026h";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
@@ -566,6 +566,7 @@ function escucharHistorial(u) {
       if (m.tipo === "insignia") t.textContent = `🏅 Logro · ${m.nombre || ""}`;
       else if (m.tipo === "canje") { t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`; if (m.estado === "pendiente") dd.textContent = `${dia} · pendiente de recoger`; }
       else if (m.tipo === "evento") t.textContent = `🎉 Evento · ${m.nombre || ""}`;
+      else if (m.tipo === "reserva") t.textContent = `📅 Clases en AimHarder · ${m.nombre || ""}`;
       else if (m.tipo === "registro") t.textContent = `${c.nombre} · ✅ Resultado registrado`;
       else { t.textContent = `${c.nombre} · ${m.posicion <= 3 ? ["", "🥇", "🥈", "🥉"][m.posicion] + " " : ""}${m.posicion}º en ${m.categoria}`; dd.textContent = `${dia} · podio${m.resultado ? " · " + m.resultado : ""}`; }
       izq.append(t, dd);
@@ -633,7 +634,7 @@ function pintarRanking() {
 }
 $("como").append(
   Object.assign(document.createElement("b"), { textContent: "Cómo se ganan puntos: " }),
-  `${PUNTOS.registrar} por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
+  `${PUNTOS.reserva} por cada clase que reservas en AimHarder, ${PUNTOS.registrar} por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
   ["RX", "Scaled", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
   ". También con logros y eventos."
 );

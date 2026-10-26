@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026f";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026h";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -298,6 +298,7 @@ function siguienteAviso() {
 // Scaled suma la mitad que RX y Open la mitad que Scaled. Los empates comparten puesto.
 export const PUNTOS = {
   registrar: 10,
+  reserva: 5,      // por cada clase reservada en AimHarder (lo suma la sincronización; cambiarlo también en sync/nucleo.mjs)
   podio: {
     RX:     { 1: 30,  2: 20, 3: 10 },
     Scaled: { 1: 15,  2: 10, 3: 5 },
@@ -376,7 +377,7 @@ for (const [id, nombre] of Object.entries(EJERCICIOS_MEDALLA))
 const MEDALLA_ANTIGUA = { deadlift: "deadlift-bronce", backsquat: "backsquat-plata", frontsquat: "frontsquat-plata", shoulderpress: "shoulderpress-oro", cleanjerk: "cleanjerk-diamante", snatch: "snatch-olimpo", benchpress: "benchpress-bronce" };
 export const idMedalla = (id) => MEDALLA_ANTIGUA[id] || id;
 // Versión de las imágenes: al cambiar una medalla se sube este número para que nadie vea la antigua guardada
-export const VERSION_MEDALLAS = "20261026f";
+export const VERSION_MEDALLAS = "20261026h";
 export const rutaMedalla = (id) => `${id}.webp?v=${VERSION_MEDALLAS}`;
 // Imagen de una medalla: primero en la página principal del repositorio, luego en la carpeta medallas/
 // y, si tampoco, la copia guardada dentro del código.
@@ -386,7 +387,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261026f").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261026h").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

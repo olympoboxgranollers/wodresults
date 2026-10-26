@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito } from "./comun.js?v=20261026f";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261026f";
-import { COACH_EMAIL } from "./config.js?v=20261026f";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito } from "./comun.js?v=20261026h";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261026h";
+import { COACH_EMAIL } from "./config.js?v=20261026h";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -138,7 +138,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261026f").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261026h").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -384,7 +384,7 @@ export function abrirEditor(r, tipo) {
         const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(claseDe(r), r.fecha));
         if ((await getDoc(regRef)).exists()) {
           lote.delete(regRef);
-          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), clases: increment(-1), puntosRanking: increment(-PUNTOS.registrar) });
+          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), puntosRanking: increment(-PUNTOS.registrar) });
         }
       }
       await lote.commit();
