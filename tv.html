@@ -17,7 +17,9 @@
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
   header { grid-column: 1 / -1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--borde); padding-bottom: 1.2vw; }
   /* Cabecera de la TV: sin el nombre del WOD, la marca grande */
-  header .marca { color: #fff; font-size: 2.9vw; font-weight: 400; letter-spacing: .14em; line-height: 1; gap: .45em; }
+  /* El título toma el color de la clase que se ve (más claro para que se lea siempre bien) */
+  header .marca { color: color-mix(in srgb, var(--malva) 70%, #fff); font-size: 2.9vw; font-weight: 400; letter-spacing: .14em; line-height: 1; gap: .45em;
+    text-shadow: 0 2px 14px rgba(0,0,0,.6), 0 0 22px color-mix(in srgb, var(--malva) 25%, transparent); transition: color .8s ease, text-shadow .8s ease; }
   header .marca::before { width: 1.25em !important; height: 1.25em !important; }
   header { align-items: center !important; }
   .pie-derecha { position: fixed; right: 2.5vw; bottom: 1.2vw; display: flex; align-items: center; gap: .6vw; z-index: 5; }
@@ -122,8 +124,33 @@
   .escanear { margin-top: auto; margin-bottom: 1.2vw; }
   .rotar-barra { width: 16vw; max-width: 100%; margin-left: auto; height: 3px; border-radius: 3px; background: rgba(255,255,255,.07); overflow: hidden; }
   .rotar-barra i { display: block; height: 100%; width: 0; background: var(--malva); border-radius: inherit; opacity: .8; }
-  .rotar-barra.anda i { animation: rotarAvanza 45s linear forwards; }
+  .rotar-barra.anda i { animation: rotarAvanza 30s linear forwards; }
   @keyframes rotarAvanza { from { width: 0; } to { width: 100%; } }
+  /* ---------- Fondo de la TV: chapa de rombos del box + luces suaves del color de la clase que se mueven despacio ---------- */
+  html { background: #16171a; }
+  body { background: transparent !important; position: relative; isolation: isolate; }
+  body::before, body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+  body::before {
+    background-color: #1b1c20;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg%3E%3Cpath d='M14 6 L22 14 L14 22 L6 14Z' fill='%23121317'/%3E%3Cpath d='M6 14 L14 22 L22 14' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3Cpath d='M14 7.6 L20.4 14 L14 20.4 L7.6 14Z' fill='%23191b20'/%3E%3Cpath d='M0 -8 L8 0 L0 8 L-8 0Z M28 -8 L36 0 L28 8 L20 0Z M0 20 L8 28 L0 36 L-8 28Z M28 20 L36 28 L28 36 L20 28Z' fill='%23121317'/%3E%3Cpath d='M-8 0 L0 8 L8 0 M20 0 L28 8 L36 0 M-8 28 L0 36 L8 28 M20 28 L28 36 L36 28' fill='none' stroke='%23878a92' stroke-width='1' stroke-opacity='.55'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 34px 34px; opacity: .55;
+    -webkit-mask: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 100%); mask: radial-gradient(ellipse 90% 80% at 50% 45%, #000 30%, transparent 100%);
+  }
+  body::after {
+    background:
+      radial-gradient(40vw 32vw at 8% 92%, color-mix(in srgb, var(--malva) 20%, transparent), transparent 70%),
+      radial-gradient(38vw 30vw at 96% 70%, color-mix(in srgb, var(--malva) 15%, transparent), transparent 70%),
+      linear-gradient(180deg, rgba(10,10,12,.55) 0%, transparent 22%),
+      radial-gradient(30vw 26vw at 70% 20%, rgba(255,255,255,.035), transparent 70%),
+      radial-gradient(ellipse 120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);
+    background-size: 140% 140%, 140% 140%, 100% 100%, 100% 100%, 100% 100%;
+    animation: tvLuces 40s ease-in-out infinite alternate;
+    transition: background .8s ease;
+  }
+  @keyframes tvLuces { from { background-position: 0% 100%, 100% 60%, 0 0, 0 0, 0 0; } to { background-position: 25% 80%, 75% 40%, 0 0, 0 0, 0 0; } }
+  @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+  /* Las tarjetas un poco translúcidas para que se intuya el fondo */
+  ol li, li { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 </style>
 </head>
 <body>
@@ -369,9 +396,9 @@ function cambiarClase(nueva) {
 }
 crearPestanas($("pestanas"), clase, elegirClase);
 
-// ---------- Rotación automática: WOD → Hyrox → Funcional, unos 45 segundos cada una ----------
+// ---------- Rotación automática: WOD → Hyrox → Funcional, 30 segundos cada una ----------
 // Solo pasa por las clases que hoy tienen WOD publicado o resultados. No gasta lecturas: los datos ya están cargados.
-const ROTAR_MS = 45000;
+const ROTAR_MS = 30000;
 let rotacion = null;
 function reiniciarBarra() {
   const b = $("rotarBarra"); if (!b) return;
