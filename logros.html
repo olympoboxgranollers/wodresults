@@ -377,16 +377,19 @@ function cambiosClases(s, n) {
 }
 // Ajuste necesario para que el total de clases de un socio sea n
 function ajusteParaTotal(s, n) {
-  if (s.aimharder && typeof s.clasesAim === "number") return n - s.clasesAim;   // total = AimHarder + ajuste
+  if (s.aimharder && s.conteoV2 && typeof s.clasesAim === "number") return n - s.clasesAim;   // total = reservas de AimHarder + ajuste
   return (s.clasesAjuste || 0) + (n - (s.clases || 0));
 }
+// Si aún no sabemos sus reservas reales de AimHarder, se guarda el total que pone el coach
+// y la sincronización ajusta para que se quede exactamente en ese número
+const necesitaFijar = (s) => !(s.aimharder && s.conteoV2 && typeof s.clasesAim === "number");
 async function aplicarClases(lista) {
   // Lotes pequeños para no pasar el límite de Firebase (500 escrituras por lote)
   let lote = writeBatch(db), ops = 0, logrosDados = 0;
   for (const { s, n, nuevos } of lista) {
     // Si sus clases vienen de AimHarder, el ajuste se calcula sobre las asistidas en AimHarder (clasesAim):
     // así el total queda exactamente en n y no se suman dos veces las mismas clases
-    const cambios = { clases: n, clasesAjuste: ajusteParaTotal(s, n) };
+    const cambios = { clases: n, clasesAjuste: ajusteParaTotal(s, n), ...(necesitaFijar(s) ? { clasesFijadas: n } : {}) };
     let suma = 0;
     for (const l of nuevos) {
       cambios[`insignias.${l.id}`] = copiaInsignia(l);

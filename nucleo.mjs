@@ -75,6 +75,8 @@ export function contarReservas(reservas, estado, hoy) {
     } else {
       todoDecidido = false;
       pendientes++;
+      // Las reservas de HOY ya cuentan (si se cancelan, en la siguiente vuelta se descuentan)
+      if (b.day === hoy && cuenta) extra++;
       if (!proximoDia || b.day < proximoDia) proximoDia = b.day;
     }
   }
@@ -165,12 +167,14 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     if (!prueba && !hayQueRevisar(est, cliente, hoy)) {
       // Nada nuevo en AimHarder: solo se corrige el número si en la app no coincide (sin gastar peticiones)
       // Las clases de la app = las asistidas en AimHarder + el ajuste del coach (si le dio un logro de clases a mano)
-      const ajuste = usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0;
+      // Si el coach fijó a mano el total (clasesFijadas), se ajusta para quedarse en ese número
+      const fijado = typeof usuario.clasesFijadas === "number";
+      const ajuste = fijado ? usuario.clasesFijadas - est.total : (usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0);
       const totalApp = est.total + ajuste;
       const nuevos = logrosNuevos(usuario, totalApp, logros);
       const pr = puntosReservas(usuario, est.total);
-      if (usuario.clases !== totalApp || usuario.clasesAim !== est.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
-        await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: est.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas }, nuevos, hoy, pr);
+      if (usuario.clases !== totalApp || usuario.clasesAim !== est.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
+        await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: est.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
         res.actualizados++; res.logros += nuevos.length;
       }
       continue;
@@ -188,13 +192,15 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     if (prueba) { res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes }); continue; }
     estados[cliente.id] = { uid, ...r.estado, total: r.total, pendientes: r.pendientes, proximoDia: r.proximoDia, ultimaReserva: cliente.class_data?.reservation_date || null, revisado: ahora.toISOString() };
     // Ajuste manual del coach: los antiguos (del recuento anterior) se quitan la primera vez
-    const ajuste = usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0;
+    // Si el coach fijó a mano el total (clasesFijadas), se ajusta para quedarse en ese número
+    const fijado = typeof usuario.clasesFijadas === "number";
+    const ajuste = fijado ? usuario.clasesFijadas - r.total : (usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0);
     const totalApp = r.total + ajuste;
     const nuevos = logrosNuevos(usuario, totalApp, logros);
     const pr = puntosReservas(usuario, r.total);
     // clasesAim: las reservas en AimHarder (sin ajustes), para que el coach vea de dónde sale el total
-    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
-      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas }, nuevos, hoy, pr);
+    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
+      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
       res.actualizados++; res.logros += nuevos.length;
     }
   }
