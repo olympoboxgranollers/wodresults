@@ -365,21 +365,42 @@ function aplicarWod() {
   ajustarDescripcion();
   pintar();
 }
-for (const c of Object.keys(CLASES)) {
-  onSnapshot(doc(db, "wods", idWod(c)), (snap) => {
+const dejarWods = {};
+function escucharWods() { for (const c of Object.keys(CLASES)) escucharWodDe(c); }
+for (const c of Object.keys(CLASES)) escucharWodDe(c);
+function escucharWodDe(c) {
+  dejarWods[c]?.();
+  dejarWods[c] = onSnapshot(doc(db, "wods", idWod(c)), (snap) => {
     wodsCache[c] = snap.exists() ? snap.data() : null; wodsCargados.add(c);
     if (c === clase) aplicarWod();
     if ($("rotarBarra")) $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
-  }, () => {});
+  }, () => { dejarWods[c] = null; setTimeout(() => escucharWodDe(c), 5000); });
 }
 function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
 
-onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
-  todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
-  resultados = todos.filter((r) => claseDe(r) === clase);
-  cargado.res = true;
-  pintar();
-});
+// Resultados de hoy en directo. Si la escucha se corta (sin permiso aún, sin internet, sesión caducada…)
+// se vuelve a conectar sola: así la TV nunca se queda con resultados viejos.
+let dejarRes = null, reintento = null, esperaRes = 2000;
+function escucharResultados() {
+  clearTimeout(reintento);
+  if (dejarRes) dejarRes();
+  dejarRes = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+    esperaRes = 2000;
+    todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
+    resultados = todos.filter((r) => claseDe(r) === clase);
+    cargado.res = true;
+    pintar();
+  }, (e) => {
+    console.warn("Escucha de resultados cortada, reconectando…", e?.code);
+    dejarRes = null;
+    reintento = setTimeout(escucharResultados, esperaRes);
+    esperaRes = Math.min(esperaRes * 2, 30000);
+  });
+}
+escucharResultados();
+// Al volver internet o al volver a mostrarse la pantalla, se reconecta por si acaso
+addEventListener("online", escucharResultados);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) escucharResultados(); });
 
 // Cambiar de clase con las pestañas
 function cambiarClase(nueva) {
@@ -468,6 +489,8 @@ function arrancarTV(u) {
   }, (e) => { console.warn(e); avisoTV("⚠️ Falta publicar las <b>reglas nuevas</b> en Firebase (Firestore → Reglas)."); });
 }
 onAuthStateChanged(auth, (u) => {
+  // Con la sesión ya lista se escucha de nuevo (por si la primera vez no había permiso)
+  if (u) { escucharResultados(); escucharWods(); }
   if (u && !u.isAnonymous) { dejarTV?.(); dejarTV = null; $("tvEspera")?.remove(); document.documentElement.classList.remove("tv-sin-conectar"); return; }  // con cuenta: pantalla normal
   if (!u) {
     avisoTV('<span class="tv-punto"></span> Preparando la TV…');
