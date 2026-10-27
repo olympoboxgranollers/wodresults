@@ -110,8 +110,14 @@ export function umbralLogro(l) {
 export const PUNTOS_RESERVA = 5;
 export function puntosReservas(usuario, total) {
   const base = typeof usuario?.clasesPuntuadas === "number" ? usuario.clasesPuntuadas : total;
-  const nuevas = Math.max(0, total - base);
-  return { nuevas, puntos: nuevas * PUNTOS_RESERVA, clasesPuntuadas: Math.max(base, total) };
+  // Si una reserva que ya dio puntos se cancela o se borra en AimHarder, se le quita la clase y sus 5 puntos
+  // (sin dejarle nunca la cartera en negativo)
+  if (total < base) {
+    const quitadas = base - total;
+    return { nuevas: -quitadas, puntos: -Math.min(quitadas * PUNTOS_RESERVA, Math.max(0, usuario?.puntos || 0)), clasesPuntuadas: total };
+  }
+  const nuevas = total - base;
+  return { nuevas, puntos: nuevas * PUNTOS_RESERVA, clasesPuntuadas: total };
 }
 export function logrosNuevos(usuario, clases, logros) {
   return logros.filter((l) => umbralLogro(l) > 0 && clases >= umbralLogro(l) && !usuario?.insignias?.[l.id]);

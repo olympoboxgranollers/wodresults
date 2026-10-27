@@ -47,9 +47,12 @@ const almacen = {
     const cambios = { ...datos };
     let suma = 0;
     // Puntos por las clases nuevas reservadas en AimHarder (van a la cartera, no al ranking)
-    if (reservas?.puntos > 0) {
+    // (y si se ha cancelado o borrado una reserva que ya los había dado, se descuentan)
+    if (reservas?.puntos) {
       suma += reservas.puntos;
-      lote.set(db.doc(`usuarios/${uid}/movimientos/reserva_${hoy}_${Date.now()}`), { fecha: hoy, tipo: "reserva", nombre: `${reservas.nuevas} ${reservas.nuevas === 1 ? "clase" : "clases"}`, puntos: reservas.puntos });
+      const n = Math.abs(reservas.nuevas);
+      const nombre = reservas.puntos > 0 ? `${n} ${n === 1 ? "clase" : "clases"}` : `${n} ${n === 1 ? "clase cancelada" : "clases canceladas"}`;
+      lote.set(db.doc(`usuarios/${uid}/movimientos/reserva_${hoy}_${Date.now()}`), { fecha: hoy, tipo: "reserva", nombre, puntos: reservas.puntos });
     }
     for (const l of nuevos) {
       cambios[`insignias.${l.id}`] = { nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", imagen: l.imagen || "", puntos: l.puntos || 0, fecha: hoy };
