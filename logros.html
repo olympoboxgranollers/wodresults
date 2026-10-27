@@ -12,7 +12,7 @@
 <title>Logros Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -32,7 +32,7 @@
   .logro.n-olimpo.conseguido { border-color: color-mix(in srgb, #ffd24a 45%, transparent); }
   @keyframes borde-olimpo { to { background-position: 0 0, 0 0, -300% 0; } }
   .med { position: relative; display: inline-grid; margin-bottom: 4px; }
-  .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--suave); background: rgba(255,255,255,.05); }
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 10px; letter-spacing: .02em; text-transform: uppercase; font-weight: 700; color: var(--suave); background: rgba(255,255,255,.05); }
   .logro.conseguido .chip, .logro.vista-coach .chip { color: var(--tcl); background: color-mix(in srgb, var(--nc) 18%, transparent); }
   .candado { position: absolute; right: -2px; bottom: 2px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); }
   .candado svg { width: 13px; height: 13px; }
@@ -179,9 +179,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261027j";
-import { escucharCuenta } from "./cuenta.js?v=20261027j";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027j";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261027m";
+import { escucharCuenta } from "./cuenta.js?v=20261027m";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
@@ -247,7 +247,7 @@ escucharCuenta(({ user, ficha: f }) => {
       const auto = logros.filter((l) => l.clases > 0);
       if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
         dando = true;
-        import("./cierre.js?v=20261027j").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+        import("./cierre.js?v=20261027m").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
       }
     }, () => {});
   }

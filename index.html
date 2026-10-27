@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -21,7 +21,7 @@
   h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
   .wod { color: var(--suave); margin-top: 8px; font-size: 15px; }
   .wod-desc { text-transform: uppercase; margin-top: 12px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.5; white-space: pre-line; }
-  label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; margin: 22px 0 8px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); text-transform: uppercase; letter-spacing: .02em; margin: 22px 0 8px; }
   .campo { width: 100%; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; font-size: 20px; outline: none; }
   .campo:focus { border-color: var(--acento); }
   .bloque { margin-top: 12px; }
@@ -36,12 +36,13 @@
   .emom-pesos { margin-top: 14px; display: grid; gap: 8px; }
   .emom-titulo { font-size: 14px; font-weight: 600; color: var(--texto); }
   .emom-lista { display: grid; gap: 8px; }
-  .emom-fila { display: grid; grid-template-columns: minmax(0, 1fr) 88px 40px; gap: 8px; align-items: center; }
+  .emom-fila { display: grid; grid-template-columns: minmax(0, 1fr) 64px 66px 40px; gap: 8px; align-items: center; }
   .emom-fila input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
   .emom-fila input:focus { border-color: var(--malva); }
   .emom-fila .kgc { position: relative; }
   .emom-fila .kgc span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--suave); font-size: 13px; pointer-events: none; }
   .emom-fila .kgc input { padding-right: 30px; }
+  .emom-fila select { height: 46px; margin: 0 !important; width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 0 6px; font-size: 15px; color: var(--texto); }
   .emom-fila .quitar { height: 46px; border-radius: 12px; border: 1px solid var(--borde); background: none; color: var(--suave); font-size: 16px; }
   .emom-anadir { justify-self: start; background: none; border: 1px dashed var(--malva); color: var(--malva); border-radius: 999px; padding: 10px 16px; font-weight: 600; font-size: 14px; }
   .segmentado.uno { grid-template-columns: 1fr; }
@@ -49,7 +50,7 @@
   .segmentado { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .segmentado button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px; font-weight: 800; font-size: 17px; }
   .segmentado button[aria-pressed="true"] { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
-  .enviar { width: 100%; margin-top: 32px; background: var(--acento); color: var(--acento-texto); border: 0; border-radius: 14px; padding: 18px; font-family: "Oswald", sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: .06em; }
+  .enviar { width: 100%; margin-top: 32px; background: var(--acento); color: var(--acento-texto); border: 0; border-radius: 14px; padding: 18px; font-family: "Oswald", sans-serif; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; }
   .enviar:disabled { opacity: .5; }
   .error { color: var(--error); margin-top: 14px; font-size: 15px; min-height: 1em; }
   .aviso { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; padding: 24px; text-align: center; color: var(--suave); }
@@ -59,7 +60,7 @@
   .ok p { color: var(--suave); margin-top: 8px; }
   .estado { position: relative; overflow: hidden; margin-top: 24px; background: linear-gradient(160deg, #3a3e44, #2a2d32); border: 1px solid var(--borde); border-radius: 20px; padding: 22px 18px 20px; text-align: center; }
   .estado-icono { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; background: radial-gradient(circle at 35% 30%, rgba(195,155,211,.35), rgba(195,155,211,.08)); box-shadow: inset 0 0 0 1px rgba(195,155,211,.45); }
-  .estado-etiqueta { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 600; color: var(--malva); }
+  .estado-etiqueta { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; font-size: 12px; font-weight: 600; color: var(--malva); }
   .estado-pos { font-family: "Oswald", sans-serif; font-size: 56px; line-height: 1; margin-top: 4px; color: var(--texto); font-variant-numeric: tabular-nums; }
   .estado-pos small { font-size: 20px; color: var(--suave); margin-left: 4px; }
   .estado-msg { margin: 12px auto 0; max-width: 30ch; font-size: 16px; line-height: 1.45; color: var(--suave); }
@@ -105,7 +106,7 @@
   .portada { padding: 32px 0 28px; }
   .portada-logo { display: block; width: 64px; height: auto; margin: 0 0 22px; }
   .portada-marca { font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 800; text-transform: uppercase; color: #fff; font-size: clamp(46px, 15vw, 64px); line-height: .95; letter-spacing: .02em; text-wrap: balance; }
-  .portada-lema { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; font-size: 20px; line-height: 1.3; }
+  .portada-lema { margin-top: 16px; display: flex; flex-direction: column; gap: 2px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; font-weight: 400; text-transform: uppercase; letter-spacing: .02em; font-size: 20px; line-height: 1.3; }
   .portada-lema span:nth-child(1) { color: var(--texto); }
   .portada-lema span:nth-child(2) { color: color-mix(in srgb, var(--lila) 70%, var(--texto)); }
   .portada-lema span:nth-child(3) { color: var(--lila); }
@@ -121,7 +122,7 @@
   .puntos-hoy { margin-top: 16px; color: var(--suave); font-size: 14px; line-height: 1.45; }
   .puntos-hoy b { color: var(--lila); }
   .validar-caja { margin-top: 22px; }
-  .validar { width: 100%; background: #3ddc84; color: #10301d; border: 0; border-radius: 14px; padding: 16px; font-family: "Oswald", sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: .06em; }
+  .validar { width: 100%; background: #3ddc84; color: #10301d; border: 0; border-radius: 14px; padding: 16px; font-family: "Oswald", sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: .02em; }
   .validar.confirmar { background: var(--oro); color: #1f2125; }
   .validar:disabled { opacity: .6; }
   .validar-nota { margin-top: 8px; color: var(--suave); font-size: 13px; }
@@ -130,7 +131,7 @@
   .ir-cartera { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; color: var(--texto);
     border: 1px solid rgba(195,155,211,.55); border-radius: 16px; padding: 14px 16px; text-align: left;
     background: linear-gradient(160deg, #43384d, #2a2d32 75%); box-shadow: 0 0 0 4px rgba(195,155,211,.08); }
-  .ir-cartera small { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .14em; font-size: 11px; color: var(--lila); }
+  .ir-cartera small { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; font-size: 11px; color: var(--lila); }
   .ir-cartera b { font-family: "Oswald", sans-serif; font-size: 30px; color: var(--lila); line-height: 1.1; }
   .ir-cartera-flecha { font-weight: 800; font-size: 15px; white-space: nowrap; }
   .aviso-wod { margin-top: 18px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; color: var(--suave); text-align: center; }
@@ -139,7 +140,7 @@
   .pl-medalla .candado { position: absolute; right: -3px; bottom: 0; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--fondo); border: 1px solid var(--borde); color: var(--suave); }
   .pl-medalla .candado svg { width: 11px; height: 11px; }
   .pl-info { flex: 1; min-width: 0; display: grid; gap: 4px; }
-  .pl-info small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+  .pl-info small { font-size: 11px; letter-spacing: .02em; text-transform: uppercase; color: var(--suave); }
   .pl-info b { font-size: 16px; font-weight: 700; }
   .pl-barra { height: 7px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 2px; }
   .pl-barra i { display: block; height: 100%; border-radius: inherit; background: var(--lila); transition: width .8s ease; }
@@ -235,7 +236,7 @@
         <button type="button" data-v="1" aria-pressed="false">✗ No completado</button>
       </div>
       <div class="emom-pesos">
-        <div class="emom-titulo">Pesos que has usado <span class="opcional">(opcional)</span></div>
+        <div class="emom-titulo">Pesos o calorías que has usado <span class="opcional">(opcional)</span></div>
         <div class="emom-lista" id="emomLista"></div>
         <button type="button" class="emom-anadir" id="emomAnadir">+ Añadir ejercicio</button>
       </div>
@@ -291,11 +292,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027j";
-import { db, hoy, TIPOS, tipoSinPodio, textoEjercicios, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027j";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027j";
-import { montarMenu } from "./menu.js?v=20261027j";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027j";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027m";
+import { db, hoy, TIPOS, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027m";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027m";
+import { montarMenu } from "./menu.js?v=20261027m";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -327,25 +328,26 @@ for (const [clave, m] of Object.entries(MATERIAL)) {
 let tipo = "tiempo";
 let emomValor = 2;   // EMOM: 2 = completado, 1 = no completado
 // ---------- EMOM: filas de ejercicio + kg que se van añadiendo ----------
-function filaEmom(nombre = "", kg = "") {
+function filaEmom(nombre = "", kg = "", unidad = "kg") {
   const f = document.createElement("div"); f.className = "emom-fila";
   const n = Object.assign(document.createElement("input"), { className: "e-nombre", maxLength: 30, placeholder: "Ejercicio (ej. Thruster)", value: nombre });
   n.setAttribute("aria-label", "Ejercicio");
-  const c = document.createElement("div"); c.className = "kgc";
-  const k = Object.assign(document.createElement("input"), { className: "e-kg", inputMode: "decimal", placeholder: "0", value: kg === "" ? "" : String(kg).replace(".", ",") });
-  k.setAttribute("aria-label", "Kilos");
-  c.append(k, Object.assign(document.createElement("span"), { textContent: "kg" }));
+  const k = Object.assign(document.createElement("input"), { className: "e-kg", inputMode: "decimal", placeholder: "0", value: kg === "" || kg == null ? "" : String(kg).replace(".", ",") });
+  k.setAttribute("aria-label", "Cantidad");
+  // Unidad de cada ejercicio: kilos, libras o calorías
+  const c = document.createElement("select"); c.className = "e-unidad"; c.setAttribute("aria-label", "Unidad");
+  for (const u of UNIDADES_EMOM) c.append(new Option(u, u, false, u === (unidad || "kg")));
   const q = Object.assign(document.createElement("button"), { type: "button", className: "quitar", textContent: "✕" });
   q.setAttribute("aria-label", "Quitar ejercicio");
   q.addEventListener("click", () => { f.remove(); if (!$("emomLista").children.length) $("emomLista").append(filaEmom()); $("emomAnadir").hidden = false; });
-  f.append(n, c, q);
+  f.append(n, k, c, q);
   return f;
 }
 function ponerEmom(valor = 2, ejercicios = []) {
   emomValor = valor >= 2 ? 2 : 1;
   $("emomHecho").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(+x.dataset.v === emomValor)));
   const l = $("emomLista"); l.replaceChildren();
-  (ejercicios.length ? ejercicios : [{}]).forEach((e) => l.append(filaEmom(e.nombre || "", e.kg ?? "")));
+  (ejercicios.length ? ejercicios : [{}]).forEach((e) => l.append(filaEmom(e.nombre || "", e.cantidad ?? e.kg ?? "", e.unidad || "kg")));
   $("emomAnadir").hidden = l.children.length >= 10;
 }
 function verBloqueOpen() { $("bloqueOpen").hidden = categoria !== "Open" || tipo === "emom"; }
@@ -615,7 +617,7 @@ $("tipo").addEventListener("click", (e) => {
 
 $("emomHecho").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) ponerEmom(+b.dataset.v, leerFilasEmom()); });
 $("emomAnadir").addEventListener("click", () => { const l = $("emomLista"); if (l.children.length >= 10) return; const f = filaEmom(); l.append(f); f.querySelector("input").focus(); $("emomAnadir").hidden = l.children.length >= 10; });
-function leerFilasEmom() { return [...$("emomLista").querySelectorAll(".emom-fila")].map((f) => ({ nombre: f.querySelector(".e-nombre").value, kg: f.querySelector(".e-kg").value.replace(",", ".") })); }
+function leerFilasEmom() { return [...$("emomLista").querySelectorAll(".emom-fila")].map((f) => ({ nombre: f.querySelector(".e-nombre").value, cantidad: f.querySelector(".e-kg").value.replace(",", "."), unidad: f.querySelector(".e-unidad").value })); }
 const entero = (id) => { const v = $(id).value.trim(); return v === "" ? 0 : (/^\d+$/.test(v) ? parseInt(v, 10) : NaN); };
 
 $("formulario").addEventListener("submit", async (e) => {
@@ -636,9 +638,10 @@ $("formulario").addEventListener("submit", async (e) => {
       const kt = f.querySelector(".e-kg").value.trim().replace(",", ".");
       if (!n && !kt) continue;
       if (!n) return ($("error").textContent = "Escribe el nombre del ejercicio de cada peso.");
-      const kg = kt === "" ? null : parseFloat(kt);
-      if (kt !== "" && (isNaN(kg) || kg <= 0 || kg > 500)) return ($("error").textContent = `Revisa los kg de ${n}.`);
-      ejercicios.push({ nombre: n[0].toUpperCase() + n.slice(1), ...(kg ? { kg: Math.round(kg * 10) / 10 } : {}) });
+      const unidad = f.querySelector(".e-unidad").value;
+      const cant = kt === "" ? null : parseFloat(kt);
+      if (kt !== "" && (isNaN(cant) || cant <= 0 || cant > 1000)) return ($("error").textContent = `Revisa la cantidad de ${n}.`);
+      ejercicios.push({ nombre: n[0].toUpperCase() + n.slice(1), ...(cant ? { cantidad: Math.round(cant * 10) / 10, unidad } : {}) });
     }
     ejercicios = ejercicios.slice(0, 10);
   } else if (tipo === "tiempo") {

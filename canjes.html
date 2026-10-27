@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -22,7 +22,7 @@
 
   /* Cartera */
   .cartera { position: relative; overflow: hidden; margin-top: 22px; border-radius: 20px; padding: 20px; border: 1px solid rgba(195,155,211,.5); background: linear-gradient(160deg, #43384d, #2a2d32 70%); }
-  .cartera-etiqueta { text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--lila); font-weight: 600; }
+  .cartera-etiqueta { text-transform: uppercase; letter-spacing: .02em; font-size: 12px; color: var(--lila); font-weight: 600; }
   .cartera-nombre { font-size: 17px; font-weight: 700; margin-top: 4px; padding-right: 130px; }
   .cartera-total { font-weight: 800; font-size: 54px; line-height: 1; margin-top: 10px; color: var(--lila); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .cartera-total small { font-size: 18px; color: var(--suave); margin-left: 6px; font-weight: 600; letter-spacing: 0; }
@@ -62,7 +62,7 @@
   .como b { color: var(--texto); }
   /* Saldo */
   .saldo { margin-top: 26px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 18px; border-bottom: 1px solid var(--borde); }
-  .saldo > span { color: var(--suave); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .saldo > span { color: var(--suave); font-size: 13px; letter-spacing: .02em; text-transform: uppercase; }
   .saldo b { font-family: "Inter", sans-serif; font-weight: 800; font-size: 40px; letter-spacing: -.02em; color: var(--lila); font-variant-numeric: tabular-nums; }
   .saldo b small { font-size: 15px; font-weight: 600; color: var(--suave); margin-left: 4px; letter-spacing: 0; }
 
@@ -131,7 +131,7 @@
 
   /* Formulario del coach */
   .nuevo { margin-top: 26px; border: 1px solid var(--borde); border-radius: 16px; padding: 18px; }
-  .nuevo-titulo { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); }
+  .nuevo-titulo { font-size: 13px; letter-spacing: .02em; text-transform: uppercase; color: var(--suave); }
   .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
   .campos .ancho { grid-column: 1 / -1; }
   .campos label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
@@ -233,11 +233,11 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027j";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027m";
 // ⚙️ Para abrir los canjes a los socios, cambia esto a true
 const CANJES_ABIERTOS = false;
-import { escucharCuenta } from "./cuenta.js?v=20261027j";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027j";
+import { escucharCuenta } from "./cuenta.js?v=20261027m";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });

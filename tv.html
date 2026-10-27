@@ -11,7 +11,7 @@
 <title>TV · Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -33,7 +33,7 @@
   header .pestanas button { font-size: 1.1vw; padding: .45vw 1.1vw; }
   header .meta strong { display: block; color: var(--texto); font-size: 2vw; font-family: "Oswald", sans-serif; }
   .columna { min-height: 0; display: flex; flex-direction: column; }
-  .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .08em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
+  .columna h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 2.2vw; letter-spacing: .02em; margin-bottom: 1vw; display: flex; justify-content: space-between; align-items: baseline; }
   .columna h2 small { font-size: 1.1vw; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
   ol { list-style: none; overflow-y: auto; scrollbar-width: none; display: grid; grid-template-columns: 1fr 1fr; gap: .6vw 1.5vw; align-content: start; min-height: 0; }
   ol::-webkit-scrollbar { display: none; }
@@ -54,7 +54,7 @@
   li .emoji { margin-left: .6vw; width: 2.2vw; height: 2.2vw; font-size: 1.8vw; vertical-align: middle; display: inline-block; line-height: 2.2vw; }
   li .res { font-family: "Oswald", sans-serif; font-size: 2vw; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
   li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
-  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
+  li .cat { display: block; font-family: "Inter", sans-serif; font-size: .9vw; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--malva); margin-top: .2vw; }
   /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
   li { border-color: color-mix(in srgb, var(--malva) 55%, transparent) !important; background: color-mix(in srgb, var(--malva) 7%, var(--panel)); }
   li.p1 { border-color: var(--malva) !important; box-shadow: 0 0 0 1px var(--malva), 0 0 18px color-mix(in srgb, var(--malva) 30%, transparent); } li.p1 .pos { color: var(--oro); }
@@ -75,7 +75,7 @@
   .escanear .total { margin-top: .5vw; }
   .descripcion { text-transform: uppercase; width: 100%; min-height: 0; overflow: hidden; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: .8vw; padding: 1vw 1.2vw; font-size: 1.25vw; line-height: 1.45; white-space: pre-line; color: var(--texto); }
   #descripcionTexto { display: block; column-gap: 1.6vw; }
-  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
+  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; color: var(--malva); font-size: 1.1vw; margin-bottom: .4vw; font-weight: 600; }
   aside { min-height: 0; }
   .descripcion { flex: 1 1 auto; font-size: 2.6vw; padding: 1.2vw 1.4vw; line-height: 1.35; }
   .descripcion b { font-size: 1.2vw; }
@@ -85,7 +85,7 @@
   dialog { margin: auto; background: var(--panel); color: var(--texto); border: 1px solid var(--borde); border-radius: 16px; padding: 28px; width: min(440px, 92vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
   dialog h3 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 24px; margin-bottom: 16px; }
-  dialog label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 14px 0 6px; letter-spacing: .06em; }
+  dialog label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 14px 0 6px; letter-spacing: .02em; }
   dialog input, dialog select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; }
   dialog .botones { display: flex; gap: 10px; margin-top: 22px; }
   dialog .botones button { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--borde); background: none; color: var(--texto); }
@@ -193,11 +193,11 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261027j";
-import { NOMBRE_BOX } from "./config.js?v=20261027j";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261027j";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261027m";
+import { NOMBRE_BOX } from "./config.js?v=20261027m";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261027m";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261027j";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV

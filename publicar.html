@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -25,12 +25,12 @@
   .estado-wod::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--borde); }
   .estado-wod.publicado { color: var(--texto); }
   .estado-wod.publicado::before { background: #3ddc84; }
-  label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 18px 0 7px; letter-spacing: .06em; }
+  label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--suave); margin: 18px 0 7px; letter-spacing: .02em; }
   input, select, textarea { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
   input:focus, select:focus, textarea:focus { border-color: var(--malva); }
   textarea { text-transform: uppercase; resize: vertical; line-height: 1.45; min-height: 190px; font-family: inherit; }
   .acciones { display: flex; gap: 10px; margin-top: 20px; align-items: center; flex-wrap: wrap; }
-  .guardar { flex: 1; min-width: 180px; background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 15px; font-family: "Oswald", sans-serif; font-size: 19px; text-transform: uppercase; letter-spacing: .06em; }
+  .guardar { flex: 1; min-width: 180px; background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 15px; font-family: "Oswald", sans-serif; font-size: 19px; text-transform: uppercase; letter-spacing: .02em; }
   .guardar:disabled { opacity: .5; }
   .msg { font-size: 14px; min-height: 1.2em; }
   .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
@@ -39,14 +39,14 @@
   .enlaces a span { color: var(--suave); font-weight: 400; font-size: 13px; }
   .resumen { margin-top: 22px; display: grid; gap: 8px; }
   .fila-resumen { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; font-size: 14px; }
-  .fila-resumen b { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .06em; }
+  .fila-resumen b { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; }
   .fila-resumen span { color: var(--suave); }
   .cierre { margin-top: 18px; border-top-color: var(--lila); }
   .cierre-titulo { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .04em; }
   .cierre-texto { color: var(--suave); font-size: 14px; line-height: 1.5; margin-top: 6px; }
   .cierre .guardar { background: var(--lila); }
   .podio-cat { margin-top: 16px; }
-  .podio-cat h4 { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; font-size: 14px; color: var(--malva); margin-bottom: 6px; }
+  .podio-cat h4 { font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; font-size: 14px; color: var(--malva); margin-bottom: 6px; }
   .podio-fila { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--fondo); margin-top: 4px; font-size: 15px; }
   .podio-fila .p { font-family: "Oswald", sans-serif; color: var(--suave); text-align: center; }
   .podio-fila.top .p { color: var(--oro); }
@@ -57,7 +57,7 @@
   .rev .n small { display: block; margin-left: 0; }
   .rev .n small { color: var(--suave); margin-left: 6px; }
   .rev .pt { font-weight: 800; color: var(--lila); white-space: nowrap; }
-  .rev .rv { font-size: 11px; font-weight: 700; color: var(--malva); text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
+  .rev .rv { font-size: 11px; font-weight: 700; color: var(--malva); text-transform: uppercase; letter-spacing: .02em; margin-left: 6px; }
   .rev button.ed.ok { color: #3ddc84; border-color: rgba(61,220,132,.45); }
   .validar-todos { margin-top: 12px; width: 100%; background: rgba(61,220,132,.12); color: #3ddc84; border: 1px solid rgba(61,220,132,.45); border-radius: 12px; padding: 12px; font-weight: 800; font-size: 15px; }
   .rev button.ed { background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin-left: 8px; }
@@ -148,12 +148,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027j";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027j";
+import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027m";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027m";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027j";
-import { NOMBRE_BOX } from "./config.js?v=20261027j";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027m";
+import { NOMBRE_BOX } from "./config.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;

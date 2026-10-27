@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027j";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027m";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -163,9 +163,14 @@ export const TIPOS = {
   emom:   { etiqueta: "EMOM", corto: "EMOM", menosEsMejor: false, sinPodio: true }
 };
 export const tipoSinPodio = (tipo) => !!TIPOS[tipo]?.sinPodio;
-// Pesos de un EMOM: "Thruster 40 kg · Pull-ups"
+// Pesos de un EMOM: "Thruster 40 kg · Remo 15 cal · Pull-ups"
+export const UNIDADES_EMOM = ["kg", "lb", "cal"];
 export function textoEjercicios(lista) {
-  return (lista || []).filter((e) => e?.nombre).map((e) => e.kg ? `${e.nombre} ${String(e.kg).replace(".", ",")} kg` : e.nombre).join(" · ");
+  // Cada ejercicio: { nombre, cantidad, unidad: "kg" | "lb" | "cal" } (los antiguos guardaban solo "kg")
+  return (lista || []).filter((e) => e?.nombre).map((e) => {
+    const n = e.cantidad ?? e.kg;
+    return n ? `${e.nombre} ${String(n).replace(".", ",")} ${e.unidad || "kg"}` : e.nombre;
+  }).join(" · ");
 }
 // Lo que se ve bajo la categoría: los pesos del EMOM o el material del Open
 export const detallePesos = (r) => (r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : ""));
@@ -421,7 +426,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261027j").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261027m").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

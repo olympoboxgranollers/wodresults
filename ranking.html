@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027j">
+<link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -32,14 +32,14 @@
   h1 { font-family: "Oswald", sans-serif; font-size: 40px; line-height: 1.05; text-transform: uppercase; margin-top: 6px; color: var(--malva); }
   .meta { color: var(--suave); margin-top: 8px; font-size: 15px; }
   header .pestanas { margin-top: 16px; }
-  .directo { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin-top: 10px; }
+  .directo { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--suave); margin-top: 10px; }
   .directo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #3ddc84; }
   button.directo { background: none; border: 0; padding: 0; cursor: default; }
   .directo.pausa { color: var(--texto); cursor: pointer; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; padding: 6px 12px; }
   .directo.pausa::before { background: var(--suave); }
   .descripcion { text-transform: uppercase; margin-top: 14px; background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--malva); border-radius: 12px; padding: 14px 16px; font-size: 16px; line-height: 1.5; white-space: pre-line; }
-  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--malva); font-size: 13px; margin-bottom: 4px; font-weight: 600; }
-  h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .08em; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
+  .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; color: var(--malva); font-size: 13px; margin-bottom: 4px; font-weight: 600; }
+  h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .02em; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
   h2 small { font-size: 13px; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
   .filtros { display: flex; gap: 8px; margin-bottom: 12px; }
   .filtros button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 14px; }
@@ -51,7 +51,7 @@
   li .emoji { margin-left: 6px; width: 24px; height: 24px; font-size: 20px; line-height: 24px; vertical-align: middle; display: inline-block; }
   li .res { font-family: "Oswald", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
   li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
-  li .cat { display: block; font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--malva); margin-top: 3px; }
+  li .cat { display: block; font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--malva); margin-top: 3px; }
   /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
   li { border-color: color-mix(in srgb, var(--malva) 55%, transparent) !important; background: color-mix(in srgb, var(--malva) 7%, var(--panel)); }
   li.con-perfil { cursor: pointer; }
@@ -249,10 +249,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027j";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027j";
-import { escucharCuenta } from "./cuenta.js?v=20261027j";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027j";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027m";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027m";
+import { escucharCuenta } from "./cuenta.js?v=20261027m";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";

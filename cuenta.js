@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027j";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027m";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
