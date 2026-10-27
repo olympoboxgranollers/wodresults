@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027c">
+<link rel="stylesheet" href="estilos.css?v=20261027e">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -242,10 +242,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027c";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027c";
-import { escucharCuenta } from "./cuenta.js?v=20261027c";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027c";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027e";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027e";
+import { escucharCuenta } from "./cuenta.js?v=20261027e";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027e";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -313,6 +313,7 @@ function pintarTvs() {
     if (t.vinculada) {
       const cl = document.createElement("div"); cl.className = "tv-clases";
       for (const [id, c] of Object.entries(CLASES)) {
+        if (c.proximamente) continue;
         const b = Object.assign(document.createElement("button"), { type: "button", textContent: c.nombre || id });
         b.setAttribute("aria-pressed", String((t.clase || "wod") === id));
         b.addEventListener("click", () => updateDoc(doc(db, "tvs", t.id), { clase: id }).catch(() => {}));
@@ -484,7 +485,7 @@ function verVista(v) {
   vista = v;
   $("verHoy").setAttribute("aria-pressed", String(v === "hoy")); $("verGeneral").setAttribute("aria-pressed", String(v === "general"));
   $("vistaHoy").hidden = v !== "hoy"; $("vistaGeneral").hidden = v !== "general";
-  $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy";
+  $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy" || soloOpen(clase);
   // Si ha cambiado el mes con la página abierta, se vuelve a escuchar el campo del mes nuevo
   if (v === "general" && dejarGeneral && campoGeneral !== campoMes()) { dejarGeneral(); dejarGeneral = null; }
   if (v === "general") { $("mesGeneral").textContent = "· " + nombreMes(); $("reinicioGeneral").textContent = textoReinicio(); }
@@ -675,6 +676,10 @@ function cambiarClase(nueva) {
   recordarClase(clase);
   ponerColorClase(clase);
   menu.repintar();
+  // En Crossbeginners todos son Open: sin filtros de categoría
+  filtro = "todos";
+  $("filtros").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === "todos")));
+  $("filtros").hidden = vista !== "hoy" || soloOpen(clase);
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   todos = []; resultados = [];
   $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("tipo").textContent = ""; $("descripcion").hidden = true;

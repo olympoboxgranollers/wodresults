@@ -362,3 +362,17 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .aviso-evento-txt span { font-size: 12.5px; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aviso-evento-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.07); color: var(--suave); font-size: 15px; }
 @keyframes aviso-sube { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+/* Clase bloqueada ("Próximamente"): pestaña apagada con un globo encima */
+.pestanas { padding-top: 12px; }
+.pestanas button.proximamente { position: relative; cursor: not-allowed; border-style: dashed; color: color-mix(in srgb, var(--texto) 45%, transparent); border-color: color-mix(in srgb, var(--c) 40%, transparent); }
+.pestanas button.proximamente::before { opacity: .6; }
+.globo-pronto {
+  position: absolute; top: -11px; right: -6px; z-index: 1;
+  background: var(--c); color: #1f2125; border-radius: 999px; padding: 2px 8px;
+  font-family: "Inter", sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .02em; line-height: 1.5;
+  white-space: nowrap; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.globo-pronto::after { content: ""; position: absolute; left: 50%; bottom: -4px; margin-left: -4px; border: 4px solid transparent; border-bottom: 0; border-top-color: var(--c); }
+.pestanas button.proximamente.toque { animation: pronto-toque .45s ease; }
+@keyframes pronto-toque { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }

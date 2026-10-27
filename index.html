@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027c">
+<link rel="stylesheet" href="estilos.css?v=20261027e">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -31,6 +31,8 @@
   .bloque .campo { text-align: center; font-size: 26px; font-weight: 800; }
   .bloque small { display: block; text-align: center; color: var(--suave); font-size: 13px; margin-top: 6px; }
   .segmentado.tres { grid-template-columns: 1fr 1fr 1fr; }
+  .segmentado.uno { grid-template-columns: 1fr; }
+  .nota-open { color: var(--suave); font-size: 13px; margin: 6px 2px 0; }
   .segmentado { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .segmentado button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 12px; padding: 14px; font-weight: 800; font-size: 17px; }
   .segmentado button[aria-pressed="true"] { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
@@ -184,6 +186,7 @@
       <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
       <button type="button" data-v="Open" aria-pressed="false">Open</button>
     </div>
+    <p class="nota-open" id="notaOpen" hidden>En esta clase no hay RX ni Scaled: todos los resultados van en Open.</p>
 
     <div class="bloque-open" id="bloqueOpen" hidden>
       <div class="open-titulo">¿Qué peso has usado? <span class="opcional">Marca el material y escribe los kg</span></div>
@@ -262,11 +265,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027c";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027c";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027c";
-import { montarMenu } from "./menu.js?v=20261027c";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027c";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027e";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027e";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027e";
+import { montarMenu } from "./menu.js?v=20261027e";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027e";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -464,7 +467,7 @@ $("validar").addEventListener("click", async () => {
 function rellenarConMiResultado() {
   const r = miDoc;
   if (!r) return;
-  categoria = r.categoria;
+  categoria = categoriasDe(clase).includes(r.categoria) ? r.categoria : categoriasDe(clase)[0];
   $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === categoria));
   $("bloqueOpen").hidden = categoria !== "Open";
   for (const clave of Object.keys(MATERIAL)) {
@@ -527,6 +530,16 @@ function cambiarClase(nueva) {
 
 const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)" };
 
+// Categorías de la clase: en Crossbeginners solo hay Open
+function ajustarCategorias() {
+  const cats = categoriasDe(clase);
+  categoria = cats[0];
+  $("categoria").querySelectorAll("button").forEach((x) => { x.hidden = !cats.includes(x.dataset.v); x.setAttribute("aria-pressed", x.dataset.v === categoria); });
+  $("categoria").classList.toggle("tres", cats.length === 3);
+  $("categoria").classList.toggle("uno", cats.length === 1);
+  $("notaOpen").hidden = !soloOpen(clase);
+  $("bloqueOpen").hidden = categoria !== "Open";
+}
 $("categoria").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
@@ -582,7 +595,11 @@ $("formulario").addEventListener("submit", async (e) => {
       if (isNaN(kg) || kg <= 0 || kg > 500) return ($("error").textContent = `Escribe los kg de ${MATERIAL[clave].nombre}.`);
       pesos[clave] = kg;
     }
-    if (!Object.keys(pesos).length) return ($("error").textContent = "En Open marca el material que has usado y escribe su peso.");
+    // En Crossbeginners el material es opcional (puede ser sin peso)
+    if (!Object.keys(pesos).length) {
+      if (soloOpen(clase)) pesos = null;
+      else return ($("error").textContent = "En Open marca el material que has usado y escribe su peso.");
+    }
   }
 
   $("enviar").disabled = true;
@@ -607,7 +624,7 @@ $("formulario").addEventListener("submit", async (e) => {
     if (sumadosAhora) $("puntosHoy").append(Object.assign(document.createElement("div"), { className: "sumados", textContent: `+${PUNTOS.registrar} puntos` }), document.createElement("br"));
     $("puntosHoy").append(
       sumadosAhora ? "Ya están en tu cartera. " : `Los ${PUNTOS.registrar} puntos de registrar de hoy ya están en tu cartera. `,
-      `Si acabas en el podio de ${categoria} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
+      sinPodio(clase) ? "En esta clase no hay puntos por podio." : `Si acabas en el podio de ${categoria} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
     $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
@@ -735,9 +752,7 @@ function limpiarFormulario() {
   sensacion = null;
   for (const clave of Object.keys(MATERIAL)) { elegido[clave] = false; const i = $("peso-" + clave); i.value = ""; i.disabled = true; i.parentElement.previousElementSibling.setAttribute("aria-pressed", "false"); }
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
-  categoria = "RX";
-  $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === "RX"));
-  $("bloqueOpen").hidden = true;
+  ajustarCategorias();
   if (dejarDeSeguir) { dejarDeSeguir(); dejarDeSeguir = null; }
   miResultado = null;
   $("estado").hidden = true; $("avisameInfo").hidden = true;
@@ -755,6 +770,7 @@ $("otro").addEventListener("click", () => {
 // Arranque: menú, pestañas de clase y la clase con la que se abre (la del QR o la última usada)
 const menu = montarMenu({ actual: "resultado", cuenta: false, protegida: false });
 crearPestanas($("pestanas"), clase, cambiarClase);
+ajustarCategorias();
 cambiarClase(clase);
 </script>
 </body>

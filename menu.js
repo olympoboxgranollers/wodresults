@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027c";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027c";
-import { COACH_EMAIL } from "./config.js?v=20261027c";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027e";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027e";
+import { COACH_EMAIL } from "./config.js?v=20261027e";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -138,7 +138,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027c").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027e").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -352,7 +352,7 @@ export function abrirEditor(r, tipo) {
   const sub = Object.assign(document.createElement("p"), { className: "editor-sub", textContent: r.validado ? "✓ Validado" + (r.revisado ? " · corregido por el coach" : "") : "Sin validar" });
   const lc = Object.assign(document.createElement("label"), { textContent: "Categoría" });
   const sel = document.createElement("select");
-  for (const c of ["RX", "Scaled", "Open"]) sel.append(new Option(c, c, false, c === r.categoria));
+  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === r.categoria));
   const lv = Object.assign(document.createElement("label"), { textContent: tipo === "tiempo" ? "Tiempo (min:seg)" : tipo === "rondas" ? "Rondas+reps (p. ej. 5+12)" : "Kilos" });
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
   const msg = Object.assign(document.createElement("div"), { className: "editor-msg" });

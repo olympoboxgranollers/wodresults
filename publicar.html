@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027c">
+<link rel="stylesheet" href="estilos.css?v=20261027e">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -147,12 +147,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027c";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027c";
+import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027e";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027e";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027c";
-import { NOMBRE_BOX } from "./config.js?v=20261027c";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027e";
+import { NOMBRE_BOX } from "./config.js?v=20261027e";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -230,7 +230,7 @@ function pintarResumen() {
     const fila = document.createElement("div"); fila.className = "fila-resumen";
     const b = document.createElement("b"); b.textContent = c.nombre; b.style.color = c.color;
     const s = document.createElement("span");
-    s.textContent = w ? `✓ Publicado · ${TIPOS[w.tipo]?.etiqueta || ""}${w.nombre && !w.nombre.endsWith(" del día") ? " · " + w.nombre : ""}` : "Sin publicar";
+    s.textContent = c.proximamente ? "Próximamente" : w ? `✓ Publicado · ${TIPOS[w.tipo]?.etiqueta || ""}${w.nombre && !w.nombre.endsWith(" del día") ? " · " + w.nombre : ""}` : "Sin publicar";
     fila.append(b, s);
     cont.append(fila);
   }
@@ -288,10 +288,11 @@ function pintarRevision() {
   const p = PUNTOS.podio;
   $("cierreTexto").textContent = cierre
     ? `${n} de hoy ya está cerrado: se han repartido ${fmtPuntos(cierre.puntosTotales)} puntos entre ${cierre.socios} socios.`
+    : sinPodio(clase) ? `En ${n} solo se dan los ${PUNTOS.registrar} puntos por registrar el resultado (se suman al momento); no hay puntos por podio.`
     : `Los ${PUNTOS.registrar} puntos de registrar se suman al momento; los del podio se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
   const cont = $("revision"); cont.replaceChildren();
   if (!w) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Publica el entrenamiento de esta clase para que los socios puedan subir su resultado." })); return; }
-  const filas = calcularPuntos(resHoy, w.tipo);
+  const filas = calcularPuntos(resHoy, w.tipo, clase);
   if (!filas.length) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Todavía no hay resultados." })); return; }
   for (const cat of ["RX", "Scaled", "Open"]) {
     const deCat = filas.filter((f) => f.categoria === cat);
@@ -349,7 +350,7 @@ function filaRevision(f, tipo) {
 function editor(r, tipo) {
   const box = document.createElement("div"); box.className = "editor";
   const sel = document.createElement("select");
-  for (const c of ["RX", "Scaled", "Open"]) sel.append(new Option(c, c, false, c === r.categoria));
+  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === r.categoria));
   sel.setAttribute("aria-label", "Categoría");
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
   val.setAttribute("aria-label", "Resultado");

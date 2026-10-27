@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027c";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027e";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -92,11 +92,19 @@ export async function sincronizarReloj() {
 
 // ---------- Clases del box ----------
 // Cada clase tiene su propio WOD del día, su ranking y su color
+// proximamente: se ve la pestaña bloqueada con el globo "Próximamente" (no se puede elegir)
+// soloOpen: en esa clase no hay RX ni Scaled, todos los resultados son Open
 export const CLASES = {
-  wod:       { nombre: "WOD",       color: "#c39bd3" },  // lila malva
-  hyrox:     { nombre: "Hyrox",     color: "#f2d03b" },  // amarillo
-  funcional: { nombre: "Funcional", color: "#33d1e0" }   // azul cian
+  wod:            { nombre: "WOD",            color: "#c39bd3" },                  // lila malva
+  hyrox:          { nombre: "Hyrox",          color: "#f2d03b", proximamente: true }, // amarillo
+  funcional:      { nombre: "Funcional",      color: "#33d1e0" },                  // azul cian
+  crossbeginners: { nombre: "Crossbeginners", color: "#ff8a3d", soloOpen: true, sinPodio: true }   // naranja
 };
+export const claseAbierta = (c) => !!CLASES[c] && !CLASES[c].proximamente;
+export const soloOpen = (c) => !!CLASES[c]?.soloOpen;
+// sinPodio: en esa clase solo se dan los puntos de registrar (no hay puntos por podio)
+export const sinPodio = (c) => !!CLASES[c]?.sinPodio;
+export const categoriasDe = (c) => (soloOpen(c) ? ["Open"] : ["RX", "Scaled", "Open"]);
 
 // Id del WOD de hoy para una clase, p. ej. "2026-10-23_hyrox"
 export const idWod = (clase) => `${hoy()}_${clase}`;
@@ -107,8 +115,8 @@ export const claseDe = (r) => r.clase || "wod";
 // Clase con la que se abre la página: la del enlace (?clase=hyrox), la última usada o WOD
 export function claseInicial() {
   const p = new URLSearchParams(location.search).get("clase");
-  if (CLASES[p]) return p;
-  try { const g = localStorage.getItem("wod-clase"); if (CLASES[g]) return g; } catch {}
+  if (claseAbierta(p)) return p;
+  try { const g = localStorage.getItem("wod-clase"); if (claseAbierta(g)) return g; } catch {}
   return "wod";
 }
 export function recordarClase(clase) { try { localStorage.setItem("wod-clase", clase); } catch {} }
@@ -127,6 +135,15 @@ export function crearPestanas(contenedor, actual, alCambiar) {
     b.type = "button"; b.dataset.v = clave; b.textContent = c.nombre;
     b.style.setProperty("--c", c.color);
     b.setAttribute("aria-pressed", clave === actual);
+    // Clase que aún no está abierta: bloqueada, con el globo "Próximamente"
+    if (c.proximamente) {
+      b.classList.add("proximamente"); b.setAttribute("aria-disabled", "true"); b.setAttribute("aria-pressed", "false");
+      b.title = `${c.nombre}: próximamente`;
+      b.append(Object.assign(document.createElement("span"), { className: "globo-pronto", textContent: "Próximamente" }));
+      b.addEventListener("click", () => { b.classList.remove("toque"); void b.offsetWidth; b.classList.add("toque"); });
+      contenedor.append(b);
+      continue;
+    }
     b.addEventListener("click", () => {
       contenedor.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
       alCambiar(clave);
@@ -317,12 +334,12 @@ export const campoMes = (fecha = hoy()) => "pm_" + String(fecha).slice(0, 7).rep
 export const nombreMes = (fecha = hoy()) => new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" });
 
 // Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
-export function calcularPuntos(resultados, tipo) {
+export function calcularPuntos(resultados, tipo, clase = null) {
   const filas = [];
   for (const cat of CATEGORIAS) {
     const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, cat);
     lista.forEach((r, i) => {
-      const extra = PUNTOS.podio[cat]?.[pos[i]] || 0;
+      const extra = sinPodio(clase) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
       filas.push({ r, categoria: cat, posicion: pos[i], puntos: PUNTOS.registrar + extra });
     });
   }
@@ -390,7 +407,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261027c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261027e").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
