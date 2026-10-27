@@ -12,12 +12,14 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027g">
+<link rel="stylesheet" href="estilos.css?v=20261027h">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
   /* En pantallas anchas: el WOD en una columna lateral y la clasificación al lado */
   .cuerpo { display: flex; flex-direction: column; }
+  .cuerpo.en-general .lateral { display: none; }
+  @media (min-width: 0px) { .cuerpo.en-general { grid-template-columns: 1fr !important; } }
   @media (min-width: 760px) {
     main { max-width: 1000px; }
     .cuerpo { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
@@ -191,6 +193,7 @@
     </button>
     <div class="marca" id="box">Resultados atletas</div>
     <h1 id="wodNombre">Wod del día</h1>
+    <h1 id="tituloGeneral" hidden>Puntos totales</h1>
     <div class="meta" id="tipo"></div>
     <button type="button" class="directo" id="directo">En directo</button>
     <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
@@ -246,10 +249,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027g";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027g";
-import { escucharCuenta } from "./cuenta.js?v=20261027g";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027g";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027h";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027h";
+import { escucharCuenta } from "./cuenta.js?v=20261027h";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027h";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -489,6 +492,11 @@ function verVista(v) {
   vista = v;
   $("verHoy").setAttribute("aria-pressed", String(v === "hoy")); $("verGeneral").setAttribute("aria-pressed", String(v === "general"));
   $("vistaGeneral").hidden = v !== "general";
+  // En General la cabecera dice "Puntos totales" en lugar del WOD del día
+  $("tituloGeneral").hidden = v !== "general";
+  $("wodNombre").hidden = $("tipo").hidden = $("directo").hidden = v === "general";
+  // y sin la descripción del WOD (no tiene que ver con los puntos del mes)
+  $("vistaHoy").classList.toggle("en-general", v === "general");
   // En General solo cambia lo de debajo de Clasificación (la lista y los filtros del día)
   $("lista").hidden = v !== "hoy"; $("nAtletas").hidden = v !== "hoy";
   $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy" || soloOpen(clase);
