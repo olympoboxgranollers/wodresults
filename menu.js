@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027m";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027m";
-import { COACH_EMAIL } from "./config.js?v=20261027m";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027o";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027o";
+import { COACH_EMAIL } from "./config.js?v=20261027o";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -160,7 +160,8 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && !esCuentaCoach(u) && !esCuentaTV(u) && ficha) { revisarLogros(u, ficha); avisarLogrosNuevos(u, ficha); }
     if (u && !esCuentaCoach(u) && !esCuentaTV(u)) vigilarEventosNuevos(actual);
     // Sin perfil de atleta no se puede usar la app: se pide una vez (el coach no lo necesita)
-    if (u && !esCuentaTV(u) && ficha !== undefined && (esCuentaCoach(u) ? (!ficha || !ficha.nombre) : (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado))) pedirPerfil(u, ficha);
+    // En la TV y en la Pantalla nunca se pide el perfil (se ven en grande en el box)
+    if (u && !tv && !/\/(tv|pantalla)\.html$/.test(location.pathname) && !esCuentaTV(u) && ficha !== undefined && (esCuentaCoach(u) ? (!ficha || !ficha.nombre) : (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado))) pedirPerfil(u, ficha);
     else if (dlgPerfil?.open) dlgPerfil.close();
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
@@ -174,7 +175,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027m").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027o").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -280,20 +281,35 @@ function vigilarEventosNuevos(paginaActual) {
     }
   }, () => {});
 }
+// Aviso de evento: ventana en el centro de la pantalla, con fondo oscuro detrás para que se lea bien
 function mostrarAvisoEvento(e, tipo, dias, voy, marcar) {
-  const caja = document.createElement("div"); caja.className = "aviso-evento"; caja.setAttribute("role", "status");
-  const fecha = new Date(e.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+  const dlg = document.createElement("dialog"); dlg.className = "aviso-evento";
+  const f = new Date(e.fecha + "T12:00:00");
+  const fecha = f.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
   const cuando = dias === 0 ? "es hoy" : dias === 1 ? "es mañana" : `faltan ${dias} días`;
-  const etiqueta = tipo === "nuevo" ? "🎉 Nuevo evento" : tipo === "final" ? (voy ? `✓ Te apuntaste · ${cuando}` : `⏰ ¡${cuando[0].toUpperCase() + cuando.slice(1)}!`) : `📅 Recuerda · ${cuando}`;
-  const txt = document.createElement("a"); txt.href = "eventos.html"; txt.className = "aviso-evento-txt";
-  txt.append(Object.assign(document.createElement("small"), { textContent: etiqueta }), Object.assign(document.createElement("b"), { textContent: e.titulo }),
-    Object.assign(document.createElement("span"), { textContent: fecha + (e.puntos && !voy ? ` · +${fmtPuntos(e.puntos)} pts si vienes` : "") }));
-  const cerrar = Object.assign(document.createElement("button"), { type: "button", className: "aviso-evento-x", textContent: "✕" });
-  cerrar.setAttribute("aria-label", "Cerrar aviso");
-  cerrar.addEventListener("click", () => { marcar(); caja.remove(); });
-  txt.addEventListener("click", marcar);
-  caja.append(txt, cerrar);
-  document.body.append(caja);
+  const etiqueta = tipo === "nuevo" ? "Nuevo evento" : tipo === "final" ? (voy ? `Te apuntaste · ${cuando[0].toUpperCase() + cuando.slice(1)}` : `¡${cuando[0].toUpperCase() + cuando.slice(1)}!`) : `Recuerda · ${cuando[0].toUpperCase() + cuando.slice(1)}`;
+  const h = (tag, cls, txt) => Object.assign(document.createElement(tag), { className: cls, textContent: txt });
+  const cerrarX = h("button", "aviso-evento-x", "✕"); cerrarX.type = "button"; cerrarX.setAttribute("aria-label", "Cerrar aviso");
+  // Calendario con el día y el mes
+  const cal = document.createElement("div"); cal.className = "aviso-evento-cal";
+  cal.append(h("b", "", String(f.getDate())), h("span", "", (m => m[0].toUpperCase() + m.slice(1))(f.toLocaleDateString("es-ES", { month: "short" }).replace(".", ""))));
+  const cuerpo = document.createElement("div"); cuerpo.className = "aviso-evento-txt";
+  cuerpo.append(h("small", "", etiqueta), h("b", "", e.titulo || "Evento"),
+    h("span", "", fecha[0].toUpperCase() + fecha.slice(1) + (e.hora ? ` · ${e.hora}` : "") + (e.lugar ? ` · ${e.lugar}` : "")));
+  if (e.descripcion) cuerpo.append(h("p", "aviso-evento-desc", e.descripcion));
+  if (e.puntos && !voy) cuerpo.append(h("div", "aviso-evento-pts", `+${fmtPuntos(e.puntos)} puntos si vienes`));
+  const acc = document.createElement("div"); acc.className = "aviso-evento-acc";
+  const ver = h("a", "aviso-evento-ver", voy ? "Ver evento" : "Ver y apuntarme"); ver.href = "eventos.html";
+  const luego = h("button", "aviso-evento-luego", "Ahora no"); luego.type = "button";
+  acc.append(luego, ver);
+  const cerrar = () => { marcar(); dlg.close(); dlg.remove(); };
+  cerrarX.addEventListener("click", cerrar); luego.addEventListener("click", cerrar);
+  ver.addEventListener("click", marcar);
+  dlg.addEventListener("cancel", (ev) => { ev.preventDefault(); cerrar(); });
+  dlg.addEventListener("click", (ev) => { if (ev.target === dlg) cerrar(); });
+  dlg.append(cerrarX, cal, cuerpo, acc);
+  document.body.append(dlg);
+  try { dlg.showModal(); } catch { dlg.setAttribute("open", ""); }
 }
 
 // ---------- Paneles plegables del coach (crear eventos, logros, productos…) ----------

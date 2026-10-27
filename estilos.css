@@ -352,16 +352,25 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 @keyframes logro-medalla { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
 @media (prefers-reduced-motion: reduce) { .dialogo-logro[open], .dialogo-logro .logro-medalla { animation: none; } }
 
-/* ---------- Aviso de evento nuevo ---------- */
-.aviso-evento { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); z-index: 45;
-  width: min(440px, calc(100vw - 24px)); display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-radius: 18px;
-  background: rgba(30, 32, 36, .96); border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent); box-shadow: 0 12px 30px rgba(0,0,0,.45); animation: aviso-sube .4s ease; }
-.aviso-evento-txt { flex: 1; min-width: 0; display: grid; gap: 1px; text-decoration: none; color: var(--texto); }
-.aviso-evento-txt small { font-size: 11px; letter-spacing: .02em; text-transform: uppercase; color: var(--lila); font-weight: 700; }
-.aviso-evento-txt b { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.aviso-evento-txt span { font-size: 12.5px; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.aviso-evento-x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(255,255,255,.07); color: var(--suave); font-size: 15px; }
-@keyframes aviso-sube { from { transform: translate(-50%, 20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+/* ---------- Aviso de evento: ventana centrada ---------- */
+.aviso-evento { margin: auto; width: min(400px, calc(100vw - 32px)); padding: 26px 22px 20px; border-radius: 24px; position: relative; overflow: visible;
+  background: #2a2c31; color: var(--texto); border: 2px solid var(--lila); box-shadow: 0 24px 60px rgba(0,0,0,.6); text-align: center; animation: aviso-entra .35s ease; }
+.aviso-evento::backdrop { background: rgba(8, 8, 10, .78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.aviso-evento-x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255,255,255,.08); color: var(--texto); font-size: 15px; }
+.aviso-evento-cal { width: 72px; height: 78px; margin: 0 auto 14px; border-radius: 18px; display: grid; place-content: center; background: var(--lila); color: #1f2125; }
+.aviso-evento-cal b { font-size: 32px; font-weight: 800; line-height: 1; }
+.aviso-evento-cal span { font-size: 13px; font-weight: 700; margin-top: 2px; }
+.aviso-evento-txt { display: grid; gap: 6px; }
+.aviso-evento-txt small { justify-self: center; font-size: 12px; font-weight: 700; color: #1f2125; background: color-mix(in srgb, var(--lila) 85%, #fff); border-radius: 999px; padding: 3px 12px; }
+.aviso-evento-txt b { font-size: 24px; font-weight: 800; line-height: 1.2; color: #fff; }
+.aviso-evento-txt span { font-size: 14px; color: #d6d3da; line-height: 1.4; }
+.aviso-evento-desc { margin: 6px 0 0; font-size: 14px; line-height: 1.5; color: #c9c6cd; }
+.aviso-evento-pts { justify-self: center; margin-top: 6px; padding: 6px 14px; border-radius: 999px; background: #24362d; color: #7ee2a8; font-size: 14px; font-weight: 700; }
+.aviso-evento-acc { display: flex; gap: 10px; margin-top: 20px; }
+.aviso-evento-luego { flex: 1; background: none; border: 1px solid #4a4452; color: var(--texto); border-radius: 999px; padding: 12px; font-size: 15px; font-weight: 600; }
+.aviso-evento-ver { flex: 1.4; display: grid; place-items: center; background: var(--lila); color: #1f2125; border-radius: 999px; padding: 12px; font-size: 15px; font-weight: 700; text-decoration: none; }
+.aviso-evento-x:focus { outline: none; } .aviso-evento-x:focus-visible { outline: 2px solid var(--lila); }
+@keyframes aviso-entra { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* Clase bloqueada ("Próximamente"): pestaña apagada con un globo encima */
 .pestanas { padding-top: 12px; }
@@ -411,3 +420,11 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
    (nada en MAYÚSCULAS). Solo la marca de arriba (logo Olympo Box) se queda como está. */
 *:not(.marca) { text-transform: none !important; }
 *:not(.marca)::before, *:not(.marca)::after { text-transform: none !important; }
+
+/* Barra de abajo: borde lila para que se distinga del fondo */
+.menu {
+  border: 2.5px solid color-mix(in srgb, var(--lila) 85%, transparent) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.35), 0 0 16px color-mix(in srgb, var(--lila) 18%, transparent) !important;
+}
+.menu-tv { border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
+
