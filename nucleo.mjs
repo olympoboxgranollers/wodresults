@@ -92,6 +92,11 @@ export function hayQueRevisar(est, cliente, hoy, forzado = false, ahora = new Da
   if (String(est.revisado || "").slice(0, 10) < hoy) return true;      // como mínimo una vez al día
   const t = Date.parse(est.revisado || "");
   if (!t || ahora.getTime() - t >= RELEER_HORAS * 3600e3) return true;   // y otra vez a las 12 h
+  const horas = (ahora.getTime() - t) / 3600e3;
+  // Reservas aún abiertas: se pueden cancelar (o borrar desde el admin) sin que cambie su "última reserva",
+  // así que se vuelven a mirar más a menudo: cada 2 h si tiene clase hoy y cada 6 h si la tiene otro día
+  if (est.pendientes > 0 && est.proximoDia && est.proximoDia <= hoy && horas >= 2) return true;
+  if (est.pendientes > 0 && horas >= 6) return true;
   if (est.pendientes > 0 && est.proximoDia && est.proximoDia < hoy) return true;  // ya pasó una clase pendiente
   const ultimaReserva = cliente.class_data?.reservation_date || null;
   if (ultimaReserva !== (est.ultimaReserva || null)) return true;   // ha reservado algo nuevo
