@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261026h";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027a";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -312,6 +312,9 @@ export const fmtPuntos = (n) => (Math.round(n * 10) / 10).toLocaleString("es-ES"
 export const idResultado = (clase, uid) => `${hoy()}_${clase}_${uid}`;
 export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
 export const idRegistro = (clase, fecha = hoy()) => `${fecha}_${clase}_reg`;
+// Ranking general del mes: cada mes tiene su propio campo de puntos ("pm_2026_10"), así se reinicia solo el día 1
+export const campoMes = (fecha = hoy()) => "pm_" + String(fecha).slice(0, 7).replace("-", "_");
+export const nombreMes = (fecha = hoy()) => new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" });
 
 // Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
 export function calcularPuntos(resultados, tipo) {
@@ -387,7 +390,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261026h").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261027a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

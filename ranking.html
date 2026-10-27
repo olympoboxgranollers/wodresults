@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261026h">
+<link rel="stylesheet" href="estilos.css?v=20261027a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -100,6 +100,8 @@
   .general li.yo { background: color-mix(in srgb, var(--lila) 12%, var(--panel)); }
   .general .nom { display: flex; align-items: center; gap: 6px; }
   .general .nom .insignia { --t: 22px; }
+  .mes-general { color: var(--lila); text-transform: capitalize; }
+  .nota-general b { color: var(--texto); font-weight: 600; }
   .nota-general { color: var(--suave); font-size: 13px; line-height: 1.5; margin: -4px 0 12px; }
   .recalcular { background: none; border: 1px solid var(--borde); color: var(--suave); border-radius: 999px; padding: 6px 14px; font-size: 13px; margin-bottom: 12px; }
   /* Chat */
@@ -203,8 +205,8 @@
   </div>
 
   <section class="general" id="vistaGeneral" hidden>
-    <h2>Ranking general <small id="nGeneral"></small></h2>
-    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día. No cuentan logros, eventos ni canjes.</p>
+    <h2>Ranking general <span id="mesGeneral" class="mes-general"></span> <small id="nGeneral"></small></h2>
+    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día de este mes. No cuentan logros, eventos ni canjes. <b id="reinicioGeneral"></b></p>
     <button type="button" class="recalcular" id="recalcular" hidden>Recalcular desde el historial</button>
     <ol id="listaGeneral"></ol>
   </section>
@@ -240,10 +242,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus } from "./comun.js?v=20261026h";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261026h";
-import { escucharCuenta } from "./cuenta.js?v=20261026h";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed } from "./comun.js?v=20261026h";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027a";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027a";
+import { escucharCuenta } from "./cuenta.js?v=20261027a";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -471,34 +473,45 @@ async function reaccionar(r, emoji) {
 }
 
 // ---------- Hoy / General ----------
-let vista = "hoy", dejarGeneral = null, generales = [];
+// El ranking general es del mes en curso: cada mes usa su propio campo de puntos y empieza de cero el día 1
+let vista = "hoy", dejarGeneral = null, generales = [], campoGeneral = campoMes();
+function textoReinicio() {
+  const [a, m, d] = hoy().split("-").map(Number);
+  const quedan = new Date(a, m, 0).getDate() - d + 1;
+  return quedan <= 1 ? "Se reinicia esta noche a las 00:00." : `Se reinicia el día 1 (quedan ${quedan} días).`;
+}
 function verVista(v) {
   vista = v;
   $("verHoy").setAttribute("aria-pressed", String(v === "hoy")); $("verGeneral").setAttribute("aria-pressed", String(v === "general"));
   $("vistaHoy").hidden = v !== "hoy"; $("vistaGeneral").hidden = v !== "general";
   $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy";
+  // Si ha cambiado el mes con la página abierta, se vuelve a escuchar el campo del mes nuevo
+  if (v === "general" && dejarGeneral && campoGeneral !== campoMes()) { dejarGeneral(); dejarGeneral = null; }
+  if (v === "general") { $("mesGeneral").textContent = "· " + nombreMes(); $("reinicioGeneral").textContent = textoReinicio(); }
   if (v === "general" && !dejarGeneral) {
-    dejarGeneral = onSnapshot(query(collection(db, "usuarios"), orderBy("puntosRanking", "desc"), limit(100)), (s) => {
-      generales = s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => (u.puntosRanking || 0) > 0);
+    campoGeneral = campoMes();
+    const campo = campoGeneral;
+    dejarGeneral = onSnapshot(query(collection(db, "usuarios"), orderBy(campo, "desc"), limit(100)), (s) => {
+      generales = s.docs.map((d) => { const u = { uid: d.id, ...persona(d.data()) }; u.puntosMes = u[campo] || 0; return u; }).filter((u) => u.puntosMes > 0).sort((a, b) => b.puntosMes - a.puntosMes);
       pintarGeneral();
     }, () => { $("listaGeneral").innerHTML = '<div class="vacio">No se ha podido cargar el ranking.</div>'; });
   }
 }
 $("verHoy").addEventListener("click", () => verVista("hoy"));
 $("verGeneral").addEventListener("click", () => verVista("general"));
+// En el ranking general solo sale el nombre: las insignias se ven al entrar en el perfil
 function pintarGeneral() {
   const ol = $("listaGeneral"); ol.replaceChildren();
   $("nGeneral").textContent = generales.length ? `${generales.length} atletas` : "";
-  if (!generales.length) { ol.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no hay puntos en el ranking general." })); return; }
+  if (!generales.length) { ol.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: `Todavía no hay puntos en ${nombreMes()}. ¡Registra tu resultado y estrena el ranking!` })); return; }
   let puesto = 0, ant = null;
   generales.forEach((u, i) => {
-    if (u.puntosRanking !== ant) { puesto = i + 1; ant = u.puntosRanking; }
+    if (u.puntosMes !== ant) { puesto = i + 1; ant = u.puntosMes; }
     const li = document.createElement("li");
     if (puesto <= 3) li.classList.add("p" + puesto);
     if (yo && u.uid === yo.uid) li.classList.add("yo");
     const nom = Object.assign(document.createElement("span"), { className: "nom", textContent: u.nombre || "Atleta" });
-    const top = insigniasDe(u)[0]; if (top) nom.append(crearInsignia(top, 22));
-    const pts = Object.assign(document.createElement("span"), { className: "pts", textContent: fmtPuntos(u.puntosRanking) });
+    const pts = Object.assign(document.createElement("span"), { className: "pts", textContent: fmtPuntos(u.puntosMes) });
     pts.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
     li.append(Object.assign(document.createElement("span"), { className: "pos", textContent: puesto }), nom, pts);
     li.classList.add("con-perfil");
@@ -508,14 +521,17 @@ function pintarGeneral() {
 }
 // Coach: calcula el ranking general con el historial de puntos (registrar + podio) de cada socio
 $("recalcular").addEventListener("click", async () => {
-  const b = $("recalcular"); b.disabled = true; b.textContent = "Calculando…";
+  const b = $("recalcular"); b.disabled = true; b.textContent = "Calculando…"; campoGeneral = campoMes();
   try {
     const socios = (await getDocs(collection(db, "usuarios"))).docs;
     let lote = writeBatch(db), n = 0;
     for (const s of socios) {
       const movs = await getDocs(collection(db, "usuarios", s.id, "movimientos"));
-      const total = movs.docs.map((d) => d.data()).filter((m) => m.tipo === "registro" || m.tipo === "podio").reduce((a, m) => a + (m.puntos || 0), 0);
-      lote.update(doc(db, "usuarios", s.id), { puntosRanking: total }); n++;
+      const validos = movs.docs.map((d) => d.data()).filter((m) => m.tipo === "registro" || m.tipo === "podio");
+      const total = validos.reduce((a, m) => a + (m.puntos || 0), 0);
+      // Puntos de este mes (ranking general mensual)
+      const delMes = validos.filter((m) => campoMes(m.fecha || "") === campoGeneral).reduce((a, m) => a + (m.puntos || 0), 0);
+      lote.update(doc(db, "usuarios", s.id), { puntosRanking: total, [campoGeneral]: delMes }); n++;
       if (n % 400 === 0) { await lote.commit(); lote = writeBatch(db); }
     }
     await lote.commit();

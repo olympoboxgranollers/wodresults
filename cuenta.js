@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito } from "./comun.js?v=20261026h";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027a";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -162,7 +162,8 @@ export async function sumarRegistro(user, clase, ficha) {
   lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
   // Las clases hechas salen solo de AimHarder (las reservas): registrar un resultado NO suma clase
   // puntosRanking: solo registrar y podio (para el ranking general)
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ultimoRegistro: mid });
+  // y el campo del mes (ranking general mensual)
+  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), [campoMes(mid)]: increment(PUNTOS.registrar), ultimoRegistro: mid });
   await lote.commit();
   return true;
 }
