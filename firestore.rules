@@ -9,8 +9,12 @@ service cloud.firestore {
         && request.auth.token.email == 'olympoboxgranollers@gmail.com'
         && request.auth.token.email_verified == true;
     }
-    // Cuenta de persona (correo o Google). Las TV conectadas entran como "anónimas" y no cuentan aquí.
-    function conCuenta() { return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    // Cuenta de persona (correo o Google) con el email verificado (Google lo trae verificado; con correo hay que pulsar el enlace).
+    // Las TV conectadas entran como "anónimas" y no cuentan aquí.
+    function conCuenta() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && request.auth.token.email_verified == true;
+    }
     function esAnonimo() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
     // TV del box conectada desde el móvil del coach o de un entrenador: solo puede LEER el ranking del día
     function esTV() {

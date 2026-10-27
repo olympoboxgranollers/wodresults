@@ -7,10 +7,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Olympo Box">
-<meta name="theme-color" content="#2f3237">
+<meta name="theme-color" content="#0C0D10">
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
@@ -79,6 +79,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
+<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
 </head>
 <body>
 <main>
@@ -152,7 +153,7 @@ import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, re
 import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027m";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027m";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027v";
 import { NOMBRE_BOX } from "./config.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);

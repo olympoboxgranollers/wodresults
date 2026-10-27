@@ -1,0 +1,316 @@
+/* ================================================================
+   OLYMPO DESIGN SYSTEM v1 · capa de diseño
+   Se carga la última en cada página: solo cambia el aspecto, nada de la lógica.
+   Para volver al diseño anterior basta con quitar el <link> a este archivo.
+   Magenta y violeta sobre negro con undertone violeta.
+   Saira (títulos y números) · Saira Condensed (etiquetas) · Hanken Grotesk (texto).
+   ================================================================ */
+
+:root {
+  /* Superficies (obsidiana) */
+  --fondo: #0C0D10;
+  --panel: #161019;
+  --borde: #2A2233;
+  --ol-tarjeta: #131019;
+  --ol-elev2: #1E1524;
+  --ol-elev3: #251A2E;
+  --ol-linea: #241C2E;
+  --ol-borde-fuerte: #3D3049;
+
+  /* Texto */
+  --texto: #F4EEF6;
+  --suave: #A99FB2;
+  --ol-tenue: #8E8398;
+
+  /* Marca */
+  --lila: #E0369A;            /* primary: relleno y logro */
+  --ol-magenta-texto: #F06BB4; /* primary para texto sobre negro (AA) */
+  --ol-violeta: #7E2A9E;
+  --ol-secundario: #B074CF;
+  --acento: #E0369A;
+  --acento-texto: #0C0D10;
+  --ol-grad: linear-gradient(115deg, #F06BB4, #E0369A 55%, #B22E88);
+  --ol-grad-logro: linear-gradient(115deg, #F06BB4, #7E2A9E);
+  --ol-grad-tu: linear-gradient(105deg, rgba(240,107,180,.20), rgba(126,42,158,.16));
+
+  /* Funcionales */
+  --ol-exito: #37B58A;
+  --ol-aviso: #E0A02B;
+  --error: #E0485B;
+
+  /* Forma */
+  --ol-r-chip: 6px;
+  --ol-r-boton: 12px;
+  --ol-r-tarjeta: 16px;
+
+  /* Tipografías */
+  --ol-display: "Saira", "Hanken Grotesk", system-ui, sans-serif;
+  --ol-cond: "Saira Condensed", "Saira", system-ui, sans-serif;
+  --ol-cuerpo: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+html, body { background: var(--fondo); color: var(--texto); }
+::selection { background: #E0369A; color: #0C0D10; }
+a { color: var(--ol-magenta-texto); }
+
+/* ---------- Tipografía ---------- */
+/* Texto: Hanken Grotesk (sustituye a la regla de Poppins en toda la app) */
+html body, html body * { font-family: var(--ol-cuerpo) !important; }
+
+/* Display: Saira Black itálica en mayúsculas (títulos de página y marca) */
+html body header h1, html body .ok h2, html body .portada-marca, html body .canjes-titulo, html body .dialogo-logro h3,
+html body .dialogo-perfil h3, html body .acceso-titulo, html body .cierre-titulo, html body .dialogo-editor h3, html body dialog h3 {
+  font-family: var(--ol-display) !important; font-weight: 900 !important; font-style: italic;
+  letter-spacing: -.025em !important; text-transform: uppercase !important; line-height: .95 !important;
+}
+html body header h1 { font-size: clamp(36px, 11vw, 48px); }
+/* El nombre del atleta se ve tal como lo escribe */
+html body header h1#nombre, html body .hero h1, html body .carta h1 { text-transform: none !important; font-style: normal; font-weight: 800 !important; letter-spacing: -.02em !important; }
+
+/* Headline: Saira ExtraBold */
+html body h2, html body h3, html body h4, html body .titulo-b {
+  font-family: var(--ol-display) !important; font-weight: 800 !important; letter-spacing: -.02em !important;
+}
+
+/* La marca de arriba: Saira Black itálica, como el wordmark */
+html body .marca { font-family: var(--ol-display) !important; font-weight: 900 !important; font-style: italic; letter-spacing: -.01em !important; text-transform: uppercase; }
+
+/* Números: Saira Black con cifras tabulares (el marcador no baila) */
+html body :is(.estado-pos, .cartera-total, li .res, li .pos, .saldo b, .ir-cartera b, .sumados, .general .pts, .puesto b,
+  .carta-datos b, .cart-saldo b, .barra-marca .kg, .cart-mov .p, .aviso-evento-cal b, .tv-codigo, .podio-fila .p, .rev .p,
+  .doble > span, .bloque .campo, .dato b, .cuenta-atras b) {
+  font-family: var(--ol-display) !important; font-weight: 900 !important; font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+html body :is(.estado-pos, .sumados, .puesto b, .saldo b, .ir-cartera b) { font-style: italic; }
+html body :is(.estado-pos small, .general .pts small, .barra-marca .kg small, .cart-saldo b small) { font-family: var(--ol-cuerpo) !important; font-weight: 500 !important; font-style: normal; }
+
+/* Labels y overlines: Saira Condensed en MAYÚSCULAS con tracking (+14%) */
+html body :is(
+  main label:not(.marca-check):not(.interruptor):not(.foto-boton):not(.check):not(.boton-foto):not(.acceso-recordar),
+  dialog label:not(.marca-check):not(.interruptor):not(.foto-boton):not(.check):not(.boton-foto):not(.acceso-recordar),
+  .estado-etiqueta, .ir-cartera small, .pl-info small, .cart-saldo span, .puesto span, .aviso-etiqueta, .logro-etq, .perfil-marca,
+  .descripcion b, .wod-desc b, .podio-cat h4, li .cat, .chip, .canjes-globo, .aviso-evento-txt small, .carta-datos span, .estante-nom span,
+  .cartera-etiqueta, .nuevo-badge, .globo-pronto, .globo-menu, .directo, .fila-resumen b, .emom-titulo, .open-titulo, .reac-titulo) {
+  font-family: var(--ol-cond) !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .14em !important;
+}
+html body :is(main label, dialog label) { font-size: 12px; color: var(--suave); }
+html body :is(main label, dialog label) :is(small, .opcional) { text-transform: none !important; letter-spacing: 0 !important; font-family: var(--ol-cuerpo) !important; }
+html body :is(.descripcion b, .wod-desc b, .estado-etiqueta, .logro-etq, .ir-cartera small, .podio-cat h4) { color: var(--ol-magenta-texto); }
+
+/* Botones, pestañas y menú: Saira Condensed Bold en mayúsculas */
+html body :is(button, .boton, .aviso-evento-ver, .canjes-link, a.ir-cartera .ir-cartera-flecha):not(.reac button):not(.acceso-links button):not(.insignia):not(.dialogo-cerrar):not(.aviso-evento-x):not(.zoom-cerrar) {
+  font-family: var(--ol-cond) !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: .06em !important;
+}
+html body .menu-texto { font-family: var(--ol-cond) !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .1em !important; font-size: 10.5px !important; }
+/* Los emojis y los textos largos de las opciones se quedan tal cual */
+html body :is(.sensaciones button, .fila-material button, .resultados-busqueda a, .mis-marcas, .acceso-links button, .acceso-google, .cart-mas) {
+  text-transform: none !important; letter-spacing: 0 !important; font-family: var(--ol-cuerpo) !important; font-weight: 600 !important;
+}
+
+/* ---------- Botones ---------- */
+/* Primario: el degradado es exclusivo del botón principal */
+html body :is(.acceso-entrar, .enviar, .editor-btns .si, .editor .btns .si, .dialogo-perfil button, .dialogo-logro button, .aviso-evento-ver,
+  .canjes-ok, .boton, .entrega .guardar, .confirmar .guardar, .nuevo-acciones .guardar, .item-acciones .canjear, .pedido .acc .ok,
+  .ev-acc .asistire, .nueva-marca button, .rm-guardar, .chat-form button, .tv-conectar, .form-ent button) {
+  background: var(--ol-grad) !important; color: #0C0D10 !important; border: 0 !important; border-radius: var(--ol-r-boton) !important;
+  box-shadow: none; transition: filter .15s, transform .1s;
+}
+html body :is(.acceso-entrar, .enviar, .dialogo-perfil button, .dialogo-logro button, .canjes-ok, .boton, .rm-guardar):hover { filter: brightness(1.08); }
+html body button:active:not(:disabled) { transform: translateY(1px); }
+html body .enviar { font-size: 19px !important; padding: 17px !important; }
+html body .chat-form button { border-radius: 50% !important; }
+html body .dialogo-perfil button:disabled, html body .enviar:disabled { background: #161019 !important; color: #5B5265 !important; border: 1px solid #241C2E !important; opacity: 1; }
+
+/* Publicar: el botón conserva el color de la clase (WOD, Hyrox, Funcional…) */
+html body .guardar:not(.entrega .guardar):not(.confirmar .guardar):not(.nuevo-acciones .guardar) { color: #0C0D10; border-radius: var(--ol-r-boton); }
+
+/* Secundario y ghost */
+html body :is(.secundario, .editor-btns button:not(.si):not(.borrar):not(.validar), .ev-acc button:not(.asistire), .calendarios a, .calendarios button,
+  .aviso-evento-luego, .fila-editar .editar-perfil, .emom-fila .quitar) {
+  background: var(--ol-elev2) !important; border: 1px solid var(--ol-borde-fuerte) !important; color: var(--texto) !important; border-radius: var(--ol-r-boton) !important;
+}
+html body :is(.cuenta-barra .salir, .ver-ranking, .emom-anadir, .cart-mas) { color: var(--ol-magenta-texto) !important; border-color: #4A2E52 !important; background: transparent !important; }
+html body .cuenta-barra .salir { color: var(--suave) !important; border-color: var(--ol-borde-fuerte) !important; }
+
+/* Peligro y éxito */
+html body .editor-btns .borrar { color: var(--error) !important; border: 1px solid #4A2226 !important; background: transparent !important; }
+html body :is(.editor-btns .validar, .rev button.ed.ok, .validar-todos) { color: var(--ol-exito) !important; border: 1px solid #1E4033 !important; background: #10201A !important; }
+html body .validar:not(.editor-btns .validar) { background: var(--ol-exito) !important; color: #06140E !important; border-radius: var(--ol-r-boton) !important; }
+html body .validar.confirmar { background: var(--ol-aviso) !important; color: #0C0D10 !important; }
+
+/* Foco: anillo magenta de 2px */
+html body :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #F06BB4 !important; outline-offset: 2px; }
+
+/* ---------- Campos ---------- */
+html body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea, .campo) {
+  background-color: var(--fondo) !important; border: 1.5px solid var(--borde) !important; border-radius: 10px; color: var(--texto);
+}
+html body :is(input, select, textarea, .campo):focus { border-color: #E0369A !important; box-shadow: 0 0 0 3px rgba(224,54,154,.2); outline: none; }
+html body .campo, html body .bloque .campo { font-family: var(--ol-display) !important; font-weight: 700; font-variant-numeric: tabular-nums; }
+html body .bloque .campo { font-weight: 900 !important; }
+html body input::placeholder, html body textarea::placeholder { color: #5B5265; }
+html body :is(input[type="checkbox"], input[type="radio"]) { accent-color: #E0369A; }
+
+/* ---------- Pestañas de clase y selectores ---------- */
+html body .pestanas button { border-radius: 999px; font-size: 13px; }
+html body .pestanas button[aria-pressed="true"] { color: #0C0D10; }
+html body .pestanas button[aria-pressed="true"]::before { background: #0C0D10; }
+html body :is(.segmentado button, .filtros button, .seg button, .anios button) {
+  background: var(--ol-elev2) !important; border: 1px solid var(--ol-borde-fuerte) !important; color: var(--suave) !important; border-radius: var(--ol-r-boton) !important;
+}
+html body :is(.segmentado button, .filtros button, .seg button, .anios button)[aria-pressed="true"] {
+  background: var(--ol-elev3) !important; border-color: #E0369A !important; color: var(--texto) !important; box-shadow: inset 0 0 0 1px #E0369A;
+}
+html body .filtros button[aria-pressed="true"] { border-color: var(--malva) !important; box-shadow: inset 0 0 0 1px var(--malva); }
+html body :is(.sensaciones button, .fila-material button)[aria-pressed="true"] { border-color: #E0369A !important; background: color-mix(in srgb, #E0369A 16%, var(--fondo)) !important; }
+
+/* ---------- Chips y badges ---------- */
+html body .chip { border-radius: 999px; background: var(--ol-elev2); border: 1px solid var(--ol-borde-fuerte); color: var(--suave); font-size: 11px; padding: 4px 10px; }
+html body :is(.canjes-globo, .aviso-evento-txt small) { background: var(--ol-grad-logro) !important; color: #0C0D10 !important; border-radius: 999px; }
+html body .nuevo-badge { border-color: var(--ol-aviso) !important; color: var(--ol-aviso) !important; }
+html body .por-confirmar { color: var(--ol-aviso) !important; }
+html body .globo-pronto, html body .globo-menu { color: #0C0D10; }
+
+/* ---------- Tarjetas y paneles: elevación por luz con tint violeta ---------- */
+html body :is(.acceso, .panel, .aviso, .aviso-wod, .bloque-open, .progreso-logro, .atleta-fijo, .aviso-coach, .descripcion, .wod-desc,
+  .sobre, .proximo, .marcas-caja, .vitrina, #perfilForm, .datos, .rm-caja, .cartera-b, .ver-cartera, .hero, .dialogo-editor, .dialogo-perfil) {
+  background: var(--ol-tarjeta) !important; border: 1px solid var(--ol-linea) !important; border-radius: var(--ol-r-tarjeta); box-shadow: none !important;
+}
+html body :is(.acceso, .dialogo-editor) { border-top: 1px solid var(--ol-linea) !important; background: linear-gradient(180deg, #1A0E1F, #131019 120px) !important; }
+html body :is(.descripcion, .wod-desc) { border-left: 3px solid var(--malva) !important; border-radius: 10px; color: #C9C0D2; }
+html body .aviso-coach { border-color: #4A2E52 !important; }
+html body .aviso-coach b { color: var(--ol-magenta-texto); }
+
+/* Barra de cuenta */
+html body .cuenta-barra { background: var(--ol-tarjeta); border: 1px solid var(--ol-linea); }
+html body .cuenta-barra .pts { background: var(--ol-grad-logro); color: #0C0D10; border: 0; font-family: var(--ol-display) !important; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Estado de tu puesto: "tú estás aquí" con el degradado */
+html body .estado { background: linear-gradient(160deg, #1A0E1F, #131019 70%) !important; border: 1px solid #3A1E45 !important; border-radius: 18px; }
+html body .estado-icono { background: radial-gradient(circle at 35% 30%, rgba(240,107,180,.35), rgba(126,42,158,.12)) !important; box-shadow: inset 0 0 0 1px rgba(224,54,154,.45) !important; }
+html body .estado.lider { border-color: rgba(224,160,43,.55) !important; background: linear-gradient(160deg, #2A1C10, #131019 70%) !important; }
+html body .estado.destronado { border-color: rgba(224,72,91,.5) !important; }
+html body .ir-cartera, html body .cartera {
+  background: linear-gradient(160deg, #2A1233, #131019 75%) !important; border: 1px solid #4A2E52 !important; box-shadow: none !important;
+}
+html body :is(.ir-cartera b, .ir-cartera small, .sumados, .saldo b, .puntos-hoy b, .cart-saldo b, .puesto b) { color: var(--ol-magenta-texto) !important; }
+html body .ya-registrado { background: color-mix(in srgb, var(--malva) 10%, var(--ol-tarjeta)) !important; }
+html body .validado { color: var(--ol-exito) !important; border-color: #1E4033 !important; background: #10201A !important; }
+html body .avisame { background: #201A0F !important; color: var(--ol-aviso) !important; border-color: #40331E !important; }
+
+/* Barras de progreso: la carga se gana */
+html body .pl-barra, html body .mini-barra .b, html body .barra-marca .pista { background: var(--ol-elev2) !important; }
+html body .pl-barra i, html body .barra-marca:not(.normal) .pista div { background: var(--ol-grad-logro) !important; }
+html body .barra-marca.normal .pista div { background: #6B2287 !important; }
+
+/* ---------- Ranking (lista) ---------- */
+html body ol li:not(.canjes-pasos li) { border-radius: var(--ol-r-boton); }
+html body li .nom { font-weight: 600; }
+html body li .cat { font-size: 10.5px; }
+html body li.p1 .pos { color: var(--ol-aviso) !important; }
+html body li.yo, html body .general li.yo { background: var(--ol-grad-tu), var(--ol-tarjeta) !important; border-color: #E0369A !important; }
+html body .directo::before { background: var(--ol-exito) !important; animation: ol-vivo 1.4s ease-in-out infinite; }
+@keyframes ol-vivo { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+html body :is(.resultados-busqueda, .elegir-reac, .chat) { background: var(--ol-elev2) !important; border-color: var(--ol-borde-fuerte) !important; }
+html body .reac button { background: var(--ol-tarjeta) !important; border-color: var(--ol-linea) !important; }
+html body .chat-boton .no-leidos { background: #E0369A; color: #0C0D10; }
+
+/* ---------- Canjes ---------- */
+html body ol.ranking li { border-color: var(--ol-linea) !important; }
+html body .aviso-ok { background: #10201A !important; color: var(--ol-exito) !important; }
+html body .canjes-pasos li { background: var(--ol-tarjeta) !important; border: 1px solid var(--ol-linea) !important; }
+html body .canjes-pasos b { color: var(--ol-magenta-texto); }
+
+/* ---------- Perfil ---------- */
+html body:has(.hero) {
+  background-color: var(--fondo) !important;
+  background-image: radial-gradient(120% 60% at 82% -10%, rgba(126,42,158,.30), transparent 55%), radial-gradient(90% 60% at 8% 110%, rgba(224,54,154,.16), transparent 55%) !important;
+  background-size: auto !important; background-attachment: fixed;
+}
+html body .hero-fondo { background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--nc, #7E2A9E) 22%, transparent), transparent 60%) !important; }
+html body .aro .avatar { border-color: var(--fondo) !important; }
+html body .carta { background: linear-gradient(160deg, #F06BB4, #E0369A 45%, #7E2A9E) !important; box-shadow: 0 0 30px rgba(224,54,154,.18) !important; }
+html body .carta-in { background: #131019 !important; }
+html body .carta .avatar.grande { background: var(--ol-elev3) !important; color: var(--ol-magenta-texto); }
+html body :is(.carta-datos, .carta-datos div + div, .cart-top, .cart-mas, .marcas-caja .mis-marcas) { border-color: var(--ol-borde-fuerte) !important; }
+html body :is(.carta .hero-sub, .carta-datos span, .puesto span, .cart-saldo span, .estante-nom span) { color: var(--suave) !important; }
+html body .mis-marcas { background: var(--ol-tarjeta) !important; border-color: var(--ol-linea) !important; }
+html body .gustos { background: var(--ol-tarjeta) !important; border-color: var(--ol-linea) !important; }
+html body #filaFav, html body .cart-hoy:not(.cero) { background: #10201A !important; }
+html body #filaFav span, html body .gusto.fav b, html body .cart-hoy:not(.cero), html body .cart-mov .p { color: var(--ol-exito) !important; }
+html body #filaOdio { background: #1A0E10 !important; }
+html body #filaOdio span, html body .gusto.odio b, html body .cart-mov .p.menos { color: var(--error) !important; }
+html body .estante-tabla { background: var(--ol-elev3) !important; }
+html body .estante-nom, html body .resto-faltan .medalla { background: var(--ol-elev2) !important; }
+html body .siguiente { border-color: var(--ol-borde-fuerte) !important; }
+html body .cita::before { color: #E0369A; font-family: var(--ol-display) !important; }
+html body .cuenta-atras div { background: var(--ol-elev2) !important; }
+html body .dato + .dato { border-color: var(--ol-linea) !important; }
+
+/* ---------- Mensajes ---------- */
+html body :is(.msg.ok, .acceso-msg.ok, .cerrado-ok, .persona .ok, .estado-wod.publicado, .estado-tv.ok) { color: var(--ol-exito) !important; }
+html body .estado-wod.publicado::before, html body .sync.ok b::before { background: var(--ol-exito); color: var(--ol-exito) !important; }
+html body .estado-tv.mal { color: var(--error) !important; }
+html body .pos.emom-si, html body .res.emom-si { color: var(--ol-exito) !important; -webkit-text-fill-color: var(--ol-exito) !important; }
+html body .pos.emom-no, html body .res.emom-no { color: var(--error) !important; -webkit-text-fill-color: var(--error) !important; }
+
+/* ---------- Ventanas ---------- */
+html body :is(dialog)::backdrop { background: rgba(12, 13, 16, .82) !important; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+html body .dialogo-logro {
+  background: radial-gradient(circle at 50% 25%, rgba(224,54,154,.28), #131019 70%) !important; border: 1px solid #4A2E52 !important; border-radius: 22px;
+}
+html body .dialogo-logro .logro-etq { color: var(--ol-magenta-texto); }
+html body .aviso-evento { background: var(--ol-tarjeta) !important; border: 1px solid #4A2E52 !important; border-radius: 22px; }
+html body .aviso-evento-cal { background: var(--ol-grad) !important; color: #0C0D10 !important; border-radius: var(--ol-r-tarjeta); }
+html body .aviso-evento-txt span, html body .aviso-evento-desc { color: #C9C0D2 !important; }
+html body .aviso-evento-pts { background: #10201A !important; color: var(--ol-exito) !important; }
+html body .aviso-evento-x, html body .dialogo-cerrar { background: var(--ol-elev2) !important; border: 1px solid var(--ol-borde-fuerte) !important; color: var(--suave) !important; }
+html body .aviso-flotante {
+  background: rgba(19, 16, 25, .94); border-color: rgba(224,54,154,.45);
+  box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 0 4px rgba(224,54,154,.08), 0 0 40px rgba(224,54,154,.15);
+}
+html body .aviso-etiqueta { color: var(--ol-magenta-texto); }
+html body .aviso-icono { background: radial-gradient(circle at 35% 30%, rgba(240,107,180,.35), rgba(126,42,158,.1)); box-shadow: inset 0 0 0 1px rgba(224,54,154,.45); }
+
+/* ---------- Menú de abajo ---------- */
+html body .menu {
+  background: rgba(12, 13, 16, .86) !important; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 1px solid var(--ol-linea) !important; border-radius: 18px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+html body .menu-item { color: var(--ol-tenue); border-radius: var(--ol-r-boton) !important; }
+html body .menu-item:hover { color: var(--texto); }
+html body .menu-item.activo { background: rgba(224,54,154,.14) !important; color: var(--ol-magenta-texto) !important; box-shadow: inset 0 0 0 1px rgba(224,54,154,.35) !important; }
+html body .menu-cuenta { color: var(--ol-magenta-texto); }
+html body .menu-tv { border-color: var(--ol-linea) !important; }
+
+/* ---------- Portada (sin sesión) ---------- */
+html body .portada-marca { font-size: clamp(52px, 17vw, 76px) !important; line-height: .86 !important; }
+html body .portada-lema span { font-family: var(--ol-cond) !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .2em !important; font-size: 15px; }
+html body .portada-lema span:nth-child(2) { color: var(--ol-magenta-texto); }
+html body .portada-lema span:nth-child(3) {
+  background: var(--ol-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+html body .fecha-hoy { font-family: var(--ol-cond) !important; letter-spacing: .1em; text-transform: uppercase !important; font-size: 12px; color: var(--ol-tenue); }
+
+/* ---------- Modo Tele (pantalla.html / tv.html) ---------- */
+html:has(#qr) { background: #0C0D10 !important; }
+html:has(#qr) body::before { background-color: #0C0D10 !important; opacity: .35 !important; }
+html:has(#qr) body::after {
+  background:
+    radial-gradient(60vw 40vw at 85% -10%, rgba(126,42,158,.34), transparent 60%),
+    radial-gradient(45vw 35vw at 5% 105%, color-mix(in srgb, var(--malva) 22%, transparent), transparent 65%) !important;
+}
+html:has(#qr) header .marca { color: var(--texto) !important; text-shadow: none !important; }
+html:has(#qr) header h1 { font-size: 4.6vw; color: var(--malva); }
+html:has(#qr) .columna h2 { font-family: var(--ol-cond) !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: .14em !important; }
+html:has(#qr) li { background: color-mix(in srgb, var(--malva) 6%, #131019) !important; }
+html:has(#qr) li .res { font-size: 2.4vw; font-style: italic; }
+html:has(#qr) aside .cta { font-family: var(--ol-display) !important; font-weight: 900 !important; font-style: italic; text-transform: uppercase !important; }
+html body .tv-espera { background: radial-gradient(ellipse at 50% 20%, #2A1233, #0C0D10 70%) !important; }
+html body .tv-espera p { color: var(--suave) !important; }
+html body .tv-codigo { color: var(--ol-magenta-texto) !important; text-shadow: 0 0 40px rgba(224,54,154,.4) !important; font-style: italic; }
+html body .tv-punto { background: #E0369A !important; }
+html body .ajustes { font-family: var(--ol-cond) !important; }
+
+@media (prefers-reduced-motion: reduce) { html body .directo::before { animation: none; } }

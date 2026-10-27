@@ -33,6 +33,7 @@ Sincronización con AimHarder: carpeta `sync/` y `.github/workflows/aimharder.ym
    - La carpeta `.github` está oculta en Mac: *Add file → Create new file* → nombre `.github/workflows/aimharder.yml` → pega el contenido de `sync/aimharder.yml`.
 2. **Firebase → Firestore → Reglas** → pega `firestore.rules` → **Publicar**.
 3. **Firebase → Authentication** → Google y Correo/contraseña activados; dominio `olympoboxgranollers.github.io` autorizado.
+   - Las cuentas con correo/contraseña tienen que **verificar el email** (pulsar el enlace que les llega) antes de poder usar la app o recibir clases de AimHarder; las de Google ya vienen verificadas. El texto del email se cambia en *Authentication → Plantillas → Verificación de dirección de correo electrónico*.
 4. En la TV, abre `pantalla.html` con la cuenta del coach (Google) y pulsa ⛶.
 5. Después de cada actualización, recarga con Ctrl+Shift+R.
 

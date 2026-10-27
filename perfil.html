@@ -8,10 +8,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Olympo Box">
-<meta name="theme-color" content="#2f3237">
+<meta name="theme-color" content="#0C0D10">
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
@@ -252,6 +252,7 @@
   .cart-mas { width: 100%; margin-top: 6px; background: none; border: 0; border-top: 1px solid #3a3d44; color: var(--lila); border-radius: 0; padding: 10px 0 2px; font-size: 13px; font-weight: 600; }
   .resto-faltan .medalla { background: #2a2c31; border: 1px solid rgba(255,255,255,.06); }
 </style>
+<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
 </head>
 <body>
 <main>
@@ -358,7 +359,7 @@
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261027m";
-import { escucharCuenta } from "./cuenta.js?v=20261027m";
+import { escucharCuenta } from "./cuenta.js?v=20261027v";
 import { montarMenu } from "./menu.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);

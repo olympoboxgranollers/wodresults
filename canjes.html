@@ -8,10 +8,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Olympo Box">
-<meta name="theme-color" content="#2f3237">
+<meta name="theme-color" content="#0C0D10">
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css?v=20261027m">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
@@ -151,6 +151,7 @@
   .proximamente p { color: var(--suave); font-size: 14px; line-height: 1.5; max-width: 34ch; }
   body.canjes-cerrados #tituloCanjeables, body.canjes-cerrados #lista { display: none !important; }
 </style>
+<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
 </head>
 <body>
 <main>
@@ -236,7 +237,7 @@ import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where
 import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027m";
 // ⚙️ Para abrir los canjes a los socios, cambia esto a true
 const CANJES_ABIERTOS = false;
-import { escucharCuenta } from "./cuenta.js?v=20261027m";
+import { escucharCuenta } from "./cuenta.js?v=20261027v";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027m";
 
 const $ = (id) => document.getElementById(id);

@@ -95,7 +95,7 @@ export async function sincronizarReloj() {
 // proximamente: se ve la pestaña bloqueada con el globo "Próximamente" (no se puede elegir)
 // soloOpen: en esa clase no hay RX ni Scaled, todos los resultados son Open
 export const CLASES = {
-  wod:            { nombre: "WOD",            color: "#c39bd3" },                  // lila malva
+  wod:            { nombre: "WOD",            color: "#E0369A" },                  // magenta de marca
   hyrox:          { nombre: "Hyrox",          color: "#f2d03b", proximamente: true }, // amarillo
   funcional:      { nombre: "Funcional",      color: "#33d1e0" },                  // azul cian
   crossbeginners: { nombre: "Crossbeginners", color: "#ff8a3d", soloOpen: true, sinPodio: true }   // naranja

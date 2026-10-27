@@ -1,7 +1,7 @@
 // Cuentas de socio: entrar con Google o con email y contraseña.
 // Cada socio tiene su ficha en usuarios/{uid} con su nombre y sus puntos.
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, setPersistence, browserLocalPersistence, browserSessionPersistence,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, reload, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027m";
@@ -31,13 +31,19 @@ const ERRORES = {
 };
 export const textoError = (e) => ERRORES[e?.code] || "No se ha podido completar. Inténtalo de nuevo.";
 
+// Como con Google: una cuenta solo vale si ha demostrado que el email es suyo (pulsando el enlace que le llega)
+export const sinVerificar = (user) => !!user && !user.isAnonymous && !user.emailVerified;
+// Avisa a quien esté escuchando cuando un socio acaba de verificar (onAuthStateChanged no salta con reload)
+const alVerificar = new Set();
+
 // Escucha quién ha entrado y su ficha (nombre y puntos). alCambiar({ user, ficha })
 export function escucharCuenta(alCambiar) {
   let dejarFicha = null;
-  onAuthStateChanged(auth, (user) => {
+  const cambio = (user) => {
     if (dejarFicha) { dejarFicha(); dejarFicha = null; }
-    // Las TV conectadas entran como anónimas: para la app es como no tener sesión
-    if (!user || user.isAnonymous) return alCambiar({ user: null, ficha: null });
+    // Las TV conectadas entran como anónimas y las cuentas sin verificar el email no valen todavía:
+    // para la app es como no tener sesión (el panel de acceso le pide que lo verifique)
+    if (!user || user.isAnonymous || sinVerificar(user)) return alCambiar({ user: null, ficha: null });
     alCambiar({ user, ficha: undefined });  // undefined = cargando
     dejarFicha = onSnapshot(doc(db, "usuarios", user.uid),
       (s) => {
@@ -47,7 +53,9 @@ export function escucharCuenta(alCambiar) {
         alCambiar({ user, ficha: raw ? persona(raw) : null });
       },
       () => alCambiar({ user, ficha: null }));
-  });
+  };
+  onAuthStateChanged(auth, cambio);
+  alVerificar.add(cambio);
 }
 
 // Crea la ficha la primera vez o cambia el nombre si lo ha cambiado
@@ -93,7 +101,16 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
       <button type="button" class="acceso-modo">¿No tienes cuenta? <b>Crear cuenta</b></button>
       <button type="button" class="acceso-olvido">He olvidado la contraseña</button>
     </div>
-    <div class="acceso-msg" role="status"></div>`;
+    <div class="acceso-msg" role="status"></div>
+    <div class="acceso-verificar" hidden>
+      <p class="acceso-texto">Te hemos enviado un enlace a <b class="acceso-mail"></b>. Ábrelo para activar tu cuenta (mira también en Spam) y después pulsa «Ya lo he verificado».</p>
+      <button type="button" class="acceso-entrar acceso-hecho">Ya lo he verificado</button>
+      <div class="acceso-links">
+        <button type="button" class="acceso-reenviar">No me ha llegado: <b>reenviar email</b></button>
+        <button type="button" class="acceso-otra">Entrar con otra cuenta</button>
+      </div>
+      <div class="acceso-msg acceso-msg-verificar" role="status"></div>
+    </div>`;
   const q = (s) => contenedor.querySelector(s);
   q(".acceso-titulo").textContent = titulo;
   q(".acceso-texto").textContent = texto;
@@ -102,6 +119,33 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
   const nombre = q(".acceso-nombre");
   const msg = (t, ok = false) => { q(".acceso-msg").textContent = t; q(".acceso-msg").classList.toggle("ok", ok); };
   let crear = false;
+
+  // Cuenta de email sin verificar: en vez del formulario se enseña cómo activarla
+  const msgV = (t, ok = false) => { q(".acceso-msg-verificar").textContent = t; q(".acceso-msg-verificar").classList.toggle("ok", ok); };
+  const pintarModo = (user) => {
+    const pendiente = sinVerificar(user);
+    for (const el of contenedor.children) if (!el.classList.contains("acceso-titulo")) el.hidden = pendiente !== el.classList.contains("acceso-verificar");
+    q(".acceso-texto").hidden = pendiente || !texto;
+    q(".acceso-titulo").textContent = pendiente ? "Verifica tu email" : titulo;
+    if (pendiente) { q(".acceso-mail").textContent = user.email; msgV(""); }
+  };
+  onAuthStateChanged(auth, pintarModo);
+  q(".acceso-hecho").addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      await reload(user);
+      if (!user.emailVerified) return msgV("Todavía no consta como verificado. Abre el enlace del email y vuelve a probar.");
+      await user.getIdToken(true);  // token nuevo con email_verified, para que las reglas de Firebase lo acepten
+      pintarModo(user);
+      for (const cb of alVerificar) cb(user);
+    } catch (e) { msgV(textoError(e)); }
+  });
+  q(".acceso-reenviar").addEventListener("click", async () => {
+    try { await sendEmailVerification(auth.currentUser); msgV("Email reenviado. Puede tardar un par de minutos.", true); }
+    catch (e) { msgV(textoError(e)); }
+  });
+  q(".acceso-otra").addEventListener("click", () => salir());
 
   const recordar = q(".acceso-recordar input");
   // La opción se guarda al marcarla (no al pulsar Google): la ventana de Google tiene que abrirse
@@ -144,7 +188,8 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
         if (!n) return msg("Escribe tu nombre y apellido.");
         const cred = await createUserWithEmailAndPassword(auth, em, pw);
         await updateProfile(cred.user, { displayName: n });
-        await setDoc(doc(db, "usuarios", cred.user.uid), { nombre: n, puntos: 0 });
+        // La ficha se crea al verificar el email (el perfil de atleta ya sale con este nombre)
+        await sendEmailVerification(cred.user);
       } else {
         await signInWithEmailAndPassword(auth, em, pw);
       }

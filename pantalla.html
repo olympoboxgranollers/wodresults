@@ -7,10 +7,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Olympo Box">
-<meta name="theme-color" content="#2f3237">
+<meta name="theme-color" content="#0C0D10">
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilos.css?v=20261027m">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -155,6 +155,7 @@
   .estado-tv.ok { color: #3ddc84; }
   .estado-tv.mal { color: #ff8a80; opacity: .9; }
 </style>
+<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
 </head>
 <body>
 <dialog id="dialogo">
@@ -216,7 +217,7 @@
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261027m";
 import { NOMBRE_BOX } from "./config.js?v=20261027m";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261027m";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261027v";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261027m";
 

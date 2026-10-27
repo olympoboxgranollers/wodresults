@@ -1,7 +1,7 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027o";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027o";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027v";
 import { COACH_EMAIL } from "./config.js?v=20261027o";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos

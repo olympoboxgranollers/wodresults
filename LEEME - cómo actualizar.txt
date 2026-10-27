@@ -1,0 +1,20 @@
+CÓMO ACTUALIZAR OLYMPO BOX
+
+1) GITHUB
+   - Entra en github.com/olympoboxgranollers/wodresults (la página principal, sin entrar en carpetas).
+   - Add file -> Upload files.
+   - Arrastra TODO lo que hay dentro de la carpeta "1 - Subir a GitHub".
+   - Pulsa Commit changes.
+
+2) FIREBASE - REGLAS
+   - console.firebase.google.com -> tu proyecto -> Firestore Database -> pestaña Reglas.
+   - Abre "2 - Pegar en Firebase/reglas-firestore.txt" con el Bloc de notas o TextEdit.
+   - Copia TODO (Ctrl+A, Ctrl+C).
+   - En Firebase pincha dentro del editor, Ctrl+A (selecciona todo lo que hay) y Ctrl+V (pega).
+   - Comprueba que lo último del editor es la llave } y que no hay nada debajo.
+   - Pulsa Publicar.
+
+3) FIREBASE - ACCESO ANÓNIMO (para conectar la TV)
+   - Authentication -> Método de inicio de sesión -> Agregar proveedor -> Anónimo -> Habilitar -> Guardar.
+
+4) Espera 2 minutos y recarga la app (Ctrl+Shift+R).

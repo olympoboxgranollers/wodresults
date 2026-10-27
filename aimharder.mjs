@@ -35,7 +35,8 @@ const almacen = {
     let token;
     do {
       const r = await auth.listUsers(1000, token);
-      for (const u of r.users) if (u.email) fuera.push({ uid: u.uid, email: u.email });
+      // Solo cuentas con el email verificado: si no, cualquiera podría registrarse con el email de otro socio y quedarse sus clases
+      for (const u of r.users) if (u.email && u.emailVerified && !u.disabled) fuera.push({ uid: u.uid, email: u.email });
       token = r.pageToken;
     } while (token);
     return fuera;
