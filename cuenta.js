@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027a";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261027c";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -158,12 +158,16 @@ export async function sumarRegistro(user, clase, ficha) {
   const mid = idRegistro(clase);
   const ref = doc(db, "usuarios", user.uid, "movimientos", mid);
   if ((await getDoc(ref)).exists()) return false;
-  const lote = writeBatch(db);
-  lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
   // Las clases hechas salen solo de AimHarder (las reservas): registrar un resultado NO suma clase
-  // puntosRanking: solo registrar y podio (para el ranking general)
-  // y el campo del mes (ranking general mensual)
-  lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), [campoMes(mid)]: increment(PUNTOS.registrar), ultimoRegistro: mid });
-  await lote.commit();
+  // puntosRanking: solo registrar y podio (para el ranking general) y el campo del mes (ranking general mensual)
+  const guardar = async (conMes) => {
+    const lote = writeBatch(db);
+    lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
+    lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ...(conMes ? { [campoMes(mid)]: increment(PUNTOS.registrar) } : {}), ultimoRegistro: mid });
+    await lote.commit();
+  };
+  // Si las reglas de Firebase aún no aceptan el campo del mes, se suman igual los puntos (sin el del mes)
+  try { await guardar(true); }
+  catch (e) { console.warn("Sin el campo del mes (¿reglas sin publicar?)", e); await guardar(false); }
   return true;
 }

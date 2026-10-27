@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027a">
+<link rel="stylesheet" href="estilos.css?v=20261027c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -262,11 +262,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027a";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027a";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027a";
-import { montarMenu } from "./menu.js?v=20261027a";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027a";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027c";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027c";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027c";
+import { montarMenu } from "./menu.js?v=20261027c";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -356,13 +356,13 @@ escucharCuenta((c) => {
   $("acceso").hidden = !!user;
   $("barraCuenta").hidden = !user;
   const esCoach = !!user && user.email?.toLowerCase() === COACH_EMAIL.toLowerCase();
-  $("avisoCoach").hidden = !esCoach;
-  $("formulario").hidden = !user || esCoach || !$("hecho").hidden;
+  // El coach también puede registrar su resultado como un atleta más
+  $("avisoCoach").hidden = true;
+  $("formulario").hidden = !user || !$("hecho").hidden;
   if (!user) { $("hecho").hidden = true; return; }
   // Si venías de otra página (ranking, puntos…), vuelve a ella al entrar
   const volver = new URLSearchParams(location.search).get("volver");
   if (volver && /^[a-z]+\.html(\?[\w=&-]*)?$/.test(volver) && !volver.startsWith("index.html")) { location.replace(volver); return; }
-  if (esCoach) { $("hecho").hidden = true; }
   $("quienNombre").textContent = ficha?.nombre || user.displayName || user.email;
   $("misPuntos").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
   $("carteraTotal").textContent = `${fmtPuntos(ficha?.puntos || 0)} pts`;
@@ -520,7 +520,7 @@ function cambiarClase(nueva) {
   $("sinWod").textContent = `El coach todavía no ha configurado el entrenamiento de ${CLASES[clase].nombre} de hoy. Espera un momento y vuelve a intentarlo.`;
   limpiarFormulario();
   $("hecho").hidden = true;
-  if (user && user.email?.toLowerCase() !== COACH_EMAIL.toLowerCase()) $("formulario").hidden = false;
+  if (user) $("formulario").hidden = false;
   escucharWod();
   escucharMiResultado();
 }
