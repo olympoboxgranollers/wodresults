@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027h">
+<link rel="stylesheet" href="estilos.css?v=20261027j">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -233,11 +233,11 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027h";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027j";
 // ⚙️ Para abrir los canjes a los socios, cambia esto a true
 const CANJES_ABIERTOS = false;
-import { escucharCuenta } from "./cuenta.js?v=20261027h";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027h";
+import { escucharCuenta } from "./cuenta.js?v=20261027j";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027j";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });

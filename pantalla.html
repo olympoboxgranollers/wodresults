@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027h">
+<link rel="stylesheet" href="estilos.css?v=20261027j">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -167,6 +167,7 @@
       <option value="tiempo">Por tiempo (menos es mejor)</option>
       <option value="rondas">AMRAP: rondas + reps (más es mejor)</option>
       <option value="kg">Carga en kg (más es mejor)</option>
+      <option value="emom">EMOM: completado o no + pesos (solo puntos por registrar, sin podio)</option>
     </select>
     <label for="wDesc">El WOD (lo que se ve en pantalla)</label>
     <textarea id="wDesc" rows="7" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
@@ -213,11 +214,11 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261027h";
-import { NOMBRE_BOX } from "./config.js?v=20261027h";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261027h";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261027j";
+import { NOMBRE_BOX } from "./config.js?v=20261027j";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261027j";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261027h";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261027j";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
@@ -347,15 +348,19 @@ function pintar() {
   const pos = posiciones(lista);
   lista.forEach((r, i) => {
     const li = document.createElement("li");
-    if (pos[i] <= 3) li.classList.add("p" + pos[i]);
+    const sinPos = tipoSinPodio(r.tipo || tipo);   // EMOM: sin puestos ni podio
+    if (pos[i] <= 3 && !sinPos) li.classList.add("p" + pos[i]);
     if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");
-    const num = document.createElement("span"); num.className = "pos"; num.textContent = pos[i];
+    const num = document.createElement("span"); num.className = "pos"; num.textContent = sinPos ? (r.valor >= 2 ? "✓" : "✗") : pos[i];
+    const claseEmom = sinPos ? (r.valor >= 2 ? "emom-si" : "emom-no") : "";
+    if (claseEmom) num.classList.add(claseEmom);
     const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
     const em = crearEmoji(r.sensacion);
     if (em) nom.append(em);
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
+    if (claseEmom) res.classList.add(claseEmom);
     const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
-    const tp = r.categoria === "Open" ? textoPesos(r.pesos) : "";
+    const tp = detallePesos(r);
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);

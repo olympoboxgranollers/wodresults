@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027h">
+<link rel="stylesheet" href="estilos.css?v=20261027j">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -108,6 +108,7 @@
       <option value="tiempo">Por tiempo (menos es mejor)</option>
       <option value="rondas">AMRAP: rondas + reps (más es mejor)</option>
       <option value="kg">Carga en kg (más es mejor)</option>
+      <option value="emom">EMOM: completado o no + pesos (solo puntos por registrar, sin podio)</option>
     </select>
     <label for="wDesc">El entrenamiento (lo que se ve en pantalla)</label>
     <textarea id="wDesc" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
@@ -147,12 +148,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027h";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027h";
+import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261027j";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261027j";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027h";
-import { NOMBRE_BOX } from "./config.js?v=20261027h";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027j";
+import { NOMBRE_BOX } from "./config.js?v=20261027j";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -288,6 +289,7 @@ function pintarRevision() {
   const p = PUNTOS.podio;
   $("cierreTexto").textContent = cierre
     ? `${n} de hoy ya está cerrado: se han repartido ${fmtPuntos(cierre.puntosTotales)} puntos entre ${cierre.socios} socios.`
+    : w && TIPOS[w.tipo]?.sinPodio ? `Hoy es un EMOM: solo se dan los ${PUNTOS.registrar} puntos por registrar el resultado (se suman al momento); no hay podio.`
     : sinPodio(clase) ? `En ${n} solo se dan los ${PUNTOS.registrar} puntos por registrar el resultado (se suman al momento); no hay puntos por podio.`
     : `Los ${PUNTOS.registrar} puntos de registrar se suman al momento; los del podio se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
   const cont = $("revision"); cont.replaceChildren();
@@ -322,7 +324,7 @@ function pintarRevision() {
 function filaRevision(f, tipo) {
   const r = f.r;
   const fila = document.createElement("div"); fila.className = "rev";
-  const p = Object.assign(document.createElement("span"), { className: "p", textContent: f.posicion + "º" });
+  const p = Object.assign(document.createElement("span"), { className: "p", textContent: TIPOS[tipo]?.sinPodio ? (r.valor >= 2 ? "✓" : "✗") : f.posicion + "º" });
   const nm = document.createElement("span"); nm.className = "n";
   nm.append(r.nombre, Object.assign(document.createElement("small"), { textContent: formatearValor(r.valor, r.tipo) }));
   if (r.revisado) nm.append(Object.assign(document.createElement("span"), { className: "rv", textContent: "corregido" }));
@@ -355,7 +357,7 @@ function editor(r, tipo) {
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
   val.setAttribute("aria-label", "Resultado");
   const ayuda = Object.assign(document.createElement("div"), { className: "ayuda",
-    textContent: tipo === "tiempo" ? "Resultado en minutos:segundos, p. ej. 9:12" : tipo === "rondas" ? "Rondas+reps, p. ej. 5+12" : "Kilos, p. ej. 85" });
+    textContent: tipo === "emom" ? "¿Completado? Escribe Sí o No" : tipo === "tiempo" ? "Resultado en minutos:segundos, p. ej. 9:12" : tipo === "rondas" ? "Rondas+reps, p. ej. 5+12" : "Kilos, p. ej. 85" });
   const btns = document.createElement("div"); btns.className = "btns";
   const guardar = Object.assign(document.createElement("button"), { type: "button", className: "si", textContent: "Guardar" });
   const borrar = Object.assign(document.createElement("button"), { type: "button", className: "borrar", textContent: "Borrar" });

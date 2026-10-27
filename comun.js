@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027h";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027j";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -157,10 +157,21 @@ export function crearPestanas(contenedor, actual, alCambiar) {
 export const TIPOS = {
   tiempo: { etiqueta: "Por tiempo", corto: "Tiempo", menosEsMejor: true },
   rondas: { etiqueta: "AMRAP (rondas + reps)", corto: "Rondas", menosEsMejor: false },
-  kg:     { etiqueta: "Carga (kg)", corto: "Kg", menosEsMejor: false }
+  kg:     { etiqueta: "Carga (kg)", corto: "Kg", menosEsMejor: false },
+  // EMOM: se marca si se ha completado (valor 2) o no (valor 1) y los pesos de cada ejercicio (texto libre).
+  // Solo suma los puntos de registrar: no hay podio ni líder.
+  emom:   { etiqueta: "EMOM", corto: "EMOM", menosEsMejor: false, sinPodio: true }
 };
+export const tipoSinPodio = (tipo) => !!TIPOS[tipo]?.sinPodio;
+// Pesos de un EMOM: "Thruster 40 kg · Pull-ups"
+export function textoEjercicios(lista) {
+  return (lista || []).filter((e) => e?.nombre).map((e) => e.kg ? `${e.nombre} ${String(e.kg).replace(".", ",")} kg` : e.nombre).join(" · ");
+}
+// Lo que se ve bajo la categoría: los pesos del EMOM o el material del Open
+export const detallePesos = (r) => (r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : ""));
 
 export function formatearValor(valor, tipo) {
+  if (tipo === "emom") return valor >= 2 ? "✓ Completado" : "✗ No completado";
   if (tipo === "tiempo") {
     const m = Math.floor(valor / 60);
     const s = Math.round(valor % 60);
@@ -255,6 +266,7 @@ export function clasificacionDe(resultados, tipo, categoria) {
 // Ids de quienes van primeros en cada categoría
 export function lideres(resultados, tipo) {
   const mapa = {};
+  if (tipoSinPodio(tipo)) return mapa;   // en un EMOM no hay líder
   for (const cat of CATEGORIAS) {
     const { lista, pos } = clasificacionDe(resultados, tipo, cat);
     mapa[cat] = lista.filter((_, i) => pos[i] === 1);
@@ -339,7 +351,7 @@ export function calcularPuntos(resultados, tipo, clase = null) {
   for (const cat of CATEGORIAS) {
     const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, cat);
     lista.forEach((r, i) => {
-      const extra = sinPodio(clase) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
+      const extra = sinPodio(clase) || tipoSinPodio(tipo) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
       filas.push({ r, categoria: cat, posicion: pos[i], puntos: PUNTOS.registrar + extra });
     });
   }
@@ -349,6 +361,7 @@ export function calcularPuntos(resultados, tipo, clase = null) {
 // Convierte lo que escribe el coach al editar ("9:12", "5+12", "85") al valor guardado
 export function leerValor(texto, tipo) {
   const t = String(texto).trim().replace(",", ".");
+  if (tipo === "emom") return /^(s[ií]|completado|✓|1|ok)/i.test(t) ? 2 : /^(no|✗|0)/i.test(t) ? 1 : NaN;
   if (tipo === "tiempo") {
     const m = t.match(/^(\d{1,3}):(\d{1,2})$/);
     if (!m || +m[2] > 59) return NaN;
@@ -362,6 +375,7 @@ export function leerValor(texto, tipo) {
   return n > 0 && n <= 1000 ? n : NaN;
 }
 export function escribirValor(valor, tipo) {
+  if (tipo === "emom") return valor >= 2 ? "Sí" : "No";
   if (tipo === "tiempo") return `${Math.floor(valor / 60)}:${String(valor % 60).padStart(2, "0")}`;
   if (tipo === "rondas") return `${Math.floor(valor / 1000)}+${valor % 1000}`;
   return String(valor);
@@ -407,7 +421,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261027h").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261027j").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

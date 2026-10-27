@@ -400,3 +400,9 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .canjes-acc { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
 .canjes-link { color: var(--lila); font-size: 14px; font-weight: 600; text-decoration: none; }
 .canjes-ok { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 11px 24px; font-weight: 700; font-size: 15px; }
+
+/* EMOM: tick verde si lo ha completado, cruz roja si no */
+.pos.emom-si, .res.emom-si { color: #4ade80 !important; -webkit-text-fill-color: #4ade80 !important; }
+.pos.emom-no, .res.emom-no { color: #ff5c5c !important; -webkit-text-fill-color: #ff5c5c !important; }
+.pos.emom-si, .pos.emom-no { font-weight: 800 !important; }
+.res.emom-si .cat, .res.emom-no .cat { -webkit-text-fill-color: initial !important; }
