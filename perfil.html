@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#2f3237">
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027e">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css?v=20261027g">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -152,26 +152,97 @@
   .zoom-foto img { display: block; width: 100%; border-radius: 20px; }
   .vacio { color: var(--suave); padding: 24px 0; text-align: center; font-size: 15px; grid-column: 1 / -1; }
 
-  /* ---------- Estilo cristal (como iOS) con borde lila malva en cada sección ---------- */
-  .sobre, .proximo, .datos, .rm-caja, .mis-marcas, .medalla, #perfilForm {
-    position: relative; isolation: isolate;
-    background: linear-gradient(145deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.05) 42%, rgba(195,155,211,.07) 100%) !important;
-    -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
-    border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(0,0,0,.25), 0 10px 28px rgba(0,0,0,.32), 0 0 18px color-mix(in srgb, var(--lila) 14%, transparent);
-  }
-  /* Reflejo superior del cristal */
-  .sobre::before, .proximo::before, .datos::before, .rm-caja::before, .mis-marcas::before, .medalla::before, #perfilForm::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
-    background: linear-gradient(180deg, rgba(255,255,255,.10), transparent 38%);
-  }
-  /* Cabecera sin burbuja: foto, nombre y Editar perfil directamente sobre el fondo */
-  .hero { background: none !important; border: 0 !important; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; padding-top: 14px; }
-  .hero .hero-fondo { display: none; }
-  .datos .dato + .dato { border-left-color: color-mix(in srgb, var(--lila) 22%, transparent); }
-  .cuenta-atras div { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
-  .medalla.falta { border-color: color-mix(in srgb, var(--lila) 28%, transparent) !important; }
-  .mis-marcas:active, .proximo:active { transform: scale(.99); }
+  /* ---------- Diseño "Carta de atleta" ---------- */
+  .sobre, .proximo, .marcas-caja, .vitrina, .siguiente, #perfilForm { background: #2a2c31 !important; border: 1px solid rgba(255,255,255,.06) !important; border-radius: 22px; box-shadow: 0 10px 26px rgba(0,0,0,.28); }
+  .titulo-b { font-family: "Oswald", sans-serif; font-size: 22px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin: 30px 0 12px; }
+  /* Carta: borde lila, puesto grande, medalla, foto, nombre y datos */
+  .carta { margin-top: 18px; padding: 2px; border-radius: 26px; background: var(--lila); box-shadow: 0 14px 34px rgba(0,0,0,.4), 0 0 26px color-mix(in srgb, var(--lila) 22%, transparent); }
+  .carta-in { border-radius: 24px; background: #26232b; padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+  .carta-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; min-height: 74px; }
+  .puesto { display: flex; flex-direction: column; gap: 4px; }
+  .puesto b { font-family: "Oswald", sans-serif; font-size: 54px; font-weight: 700; line-height: 1; color: var(--lila); }
+  .puesto span { font-size: 11px; letter-spacing: .14em; color: #b9b5bf; text-transform: uppercase; }
+  .carta-medalla { flex: none; }
+  .carta-quien { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .carta .avatar.grande { width: 84px !important; height: 84px !important; border-radius: 22px !important; border: 0 !important; background: #3d3446 !important; color: var(--lila); font-size: 32px !important; flex: none; }
+  .carta h1 { margin: 0; font-family: "Oswald", sans-serif; font-size: 30px; font-weight: 600; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; color: var(--texto); overflow-wrap: anywhere; }
+  .carta .hero-sub { font-size: 12px; color: #b9b5bf; margin-top: 4px; }
+  .carta-datos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #3f3946; padding-top: 14px; text-align: center; }
+  .carta-datos div { display: flex; flex-direction: column; }
+  .carta-datos div + div { border-left: 1px solid #3f3946; }
+  .carta-datos b { font-family: "Oswald", sans-serif; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .carta-datos span { font-size: 11px; color: #b9b5bf; }
+  .fila-editar { display: flex; justify-content: center; }
+  .fila-editar .editar-perfil { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; border: 1px solid #4a4452; background: none; font-size: 13px; font-weight: 500; color: var(--texto); }
+  /* Sobre mí con cita y favorito / odiado en color */
+  .sobre { margin-top: 22px; padding: 22px 20px 20px; }
+  .sobre-titulo { font-size: 12px !important; font-weight: 700; letter-spacing: .16em !important; text-shadow: none !important; }
+  .sobre-titulo::before { display: none !important; }
+  .cita { display: flex; gap: 10px; margin-top: 10px; }
+  .cita::before { content: "\201C"; font-family: "Oswald", sans-serif; font-size: 52px; line-height: .8; color: var(--lila); }
+  .cita .bio { margin: 0; font-size: 16px; font-style: italic; line-height: 1.55; }
+  .ficha-filas { margin-top: 16px !important; gap: 8px !important; }
+  .ficha-fila { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 14px; }
+  .ficha-fila span { display: flex; align-items: center; gap: 8px; font-size: 13px !important; font-weight: 500 !important; }
+  .ficha-fila span svg { flex: none; }
+  .ficha-fila b { font-size: 15px !important; font-weight: 600 !important; color: var(--texto) !important; text-align: right; }
+  .ficha-fila.vacia b { font-weight: 400 !important; color: var(--suave) !important; font-size: 13px !important; }
+  #filaFav { background: #24362d; } #filaFav span { color: #7ee2a8 !important; }
+  #filaOdio { background: #3d2a2c; } #filaOdio span { color: #ff9d9d !important; }
+  .proximo { margin-top: 14px; }
+  /* Marcas en barras */
+  .marcas-caja { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .barra-marca { display: flex; flex-direction: column; gap: 6px; }
+  .barra-marca .cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .barra-marca .nom { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barra-marca .nom i { font-style: normal; color: #ffd24a; }
+  .barra-marca.normal .nom { color: #c9c6cd; }
+  .barra-marca .kg { font-family: "Oswald", sans-serif; font-size: 26px; font-weight: 600; white-space: nowrap; }
+  .barra-marca .kg small { font-size: 14px; color: var(--suave); margin-left: 3px; font-family: "Poppins", sans-serif; }
+  .barra-marca .pista { height: 10px; border-radius: 999px; background: #3a3d44; overflow: hidden; }
+  .barra-marca .pista div { height: 100%; border-radius: 999px; background: var(--lila); transform-origin: left; animation: crecer .9s cubic-bezier(.2,.8,.2,1) both; }
+  .barra-marca.normal .pista div { background: #7a6a84; }
+  @keyframes crecer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .marcas-vacio { color: var(--suave); font-size: 14px; text-align: center; padding: 6px 0; }
+  .marcas-caja .mis-marcas { margin: 0 !important; padding: 12px 0 0 !important; width: 100%; background: none !important; border: 0 !important; border-top: 1px solid #3a3d44 !important; border-radius: 0 !important; box-shadow: none !important; color: var(--texto); font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; }
+  /* Vitrina: medallas sobre una repisa, la mejor en el centro y más grande */
+  .vitrina { padding: 20px 10px 0; overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+  .estante + .estante { margin-top: 20px; }
+  .estante-med { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; justify-items: center; }
+  .estante-tabla { height: 10px; margin: 6px -10px 0; background: #3a3440; }
+  .estante-nom { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); text-align: center; padding: 10px 0 14px; margin: 0 -10px; background: #312d37; }
+  .estante:last-child .estante-nom { border-radius: 0 0 22px 22px; }
+  .estante-nom div { display: flex; flex-direction: column; padding: 0 4px; }
+  .estante-nom b { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .estante-nom span { font-size: 11px; color: #b9b5bf; }
+  .vitrina .vacio { padding: 10px 0 24px; }
+  /* Siguiente medalla con aro de progreso */
+  .siguiente { padding: 18px; display: flex; align-items: center; gap: 16px; background: transparent !important; border: 1px dashed #5a5562 !important; box-shadow: none !important; }
+  .sig-aro { position: relative; width: 84px; height: 84px; flex: none; display: grid; place-items: center; }
+  .sig-aro svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .sig-info { display: flex; flex-direction: column; gap: 2px; }
+  .sig-info b { font-size: 16px; font-weight: 600; }
+  .sig-info span { font-size: 13px; color: var(--suave); }
+  .resto-faltan { margin-top: 12px; }
+  /* Mi cartera */
+  .cartera-b { padding: 18px; border-radius: 22px; background: #2a2c31; border: 1px solid rgba(255,255,255,.06); box-shadow: 0 10px 26px rgba(0,0,0,.28); scroll-margin-top: 20px; }
+  .cart-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #3a3d44; }
+  .cart-saldo { display: flex; flex-direction: column; }
+  .cart-saldo span { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #b9b5bf; }
+  .cart-saldo b { font-family: "Oswald", sans-serif; font-size: 44px; font-weight: 700; line-height: 1.05; color: var(--lila); font-variant-numeric: tabular-nums; }
+  .cart-saldo b small { font-family: "Poppins", sans-serif; font-size: 15px; font-weight: 500; color: var(--suave); margin-left: 6px; }
+  .cart-hoy { padding: 6px 12px; border-radius: 999px; background: #24362d; color: #7ee2a8; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .cart-hoy.cero { background: rgba(255,255,255,.05); color: var(--suave); font-weight: 500; }
+  .cart-movs { display: flex; flex-direction: column; }
+  .cart-mov { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .cart-mov:last-child { border-bottom: 0; }
+  .cart-mov .t { font-size: 14px; font-weight: 500; }
+  .cart-mov .d { font-size: 12px; color: var(--suave); margin-top: 2px; }
+  .cart-mov .p { font-family: "Oswald", sans-serif; font-size: 18px; font-weight: 600; color: #7ee2a8; white-space: nowrap; }
+  .cart-mov .p.menos { color: #ff9d9d; }
+  .cart-vacio { color: var(--suave); font-size: 14px; padding: 14px 0 4px; text-align: center; }
+  .cart-mas { width: 100%; margin-top: 8px; background: none; border: 1px solid #3b3e45; color: var(--texto); border-radius: 14px; padding: 11px; font-size: 14px; font-weight: 600; }
+  .resto-faltan .medalla { background: #2a2c31; border: 1px solid rgba(255,255,255,.06); }
 </style>
 </head>
 <body>
@@ -181,20 +252,31 @@
   </header>
   <button type="button" class="volver" id="volver">← Volver</button>
 
-  <section class="hero" id="hero">
-    <div class="hero-fondo"></div>
-    <div class="aro" id="aro"><div class="avatar grande" id="avatar">·</div></div>
-    <h1 id="nombre">Cargando…</h1>
-    <div class="hero-sub" id="heroSub"></div>
-    <button type="button" class="editar-perfil" id="editarPerfil" hidden>✎ Editar perfil</button>
+  <section class="carta" id="hero">
+    <div class="carta-in">
+      <div class="carta-top">
+        <div class="puesto"><b id="dPuesto">–</b><span>Ranking de puntos</span></div>
+        <div class="carta-medalla" id="cartaMedalla"></div>
+      </div>
+      <div class="carta-quien">
+        <div class="avatar grande" id="avatar">·</div>
+        <div><h1 id="nombre">Cargando…</h1><div class="hero-sub" id="heroSub"></div></div>
+      </div>
+      <div class="carta-datos">
+        <div><b id="dPuntos">–</b><span>puntos</span></div>
+        <div><b id="dClases">–</b><span>clases</span></div>
+        <div><b id="dLogros">–</b><span>logros</span></div>
+      </div>
+    </div>
   </section>
+  <div class="fila-editar"><button type="button" class="editar-perfil" id="editarPerfil" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button></div>
 
   <section class="sobre" id="sobre" hidden>
     <div class="sobre-titulo" id="sobreTitulo">Sobre mí</div>
-    <p class="bio" id="bio" hidden></p>
+    <div class="cita" id="cita" hidden><p class="bio" id="bio"></p></div>
     <div class="ficha-filas">
-      <div class="ficha-fila" id="filaFav"><span>Ejercicio favorito</span><b id="fFav"></b></div>
-      <div class="ficha-fila" id="filaOdio"><span>Ejercicio más odiado</span><b id="fOdio"></b></div>
+      <div class="ficha-fila" id="filaFav"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>Ejercicio favorito</span><b id="fFav"></b></div>
+      <div class="ficha-fila" id="filaOdio"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6"/><path d="m15 9-6 6"/></svg>Ejercicio más odiado</span><b id="fOdio"></b></div>
     </div>
   </section>
 
@@ -206,6 +288,17 @@
     </div>
     <div class="cuenta-atras" id="cuentaAtras"></div>
   </a>
+
+  <!-- Cartera de puntos (solo en tu propio perfil) -->
+  <h2 class="titulo-b" id="tituloCartera" hidden>Mi cartera</h2>
+  <section class="cartera-b" id="cartera" hidden>
+    <div class="cart-top">
+      <div class="cart-saldo"><span>Saldo</span><b id="cSaldo">0<small>pts</small></b></div>
+      <div class="cart-hoy" id="cHoy"></div>
+    </div>
+    <div class="cart-movs" id="cMovs"></div>
+    <button type="button" class="cart-mas" id="cMas" hidden>Ver más movimientos</button>
+  </section>
 
   <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
     <div class="foto-fila">
@@ -223,18 +316,14 @@
   </form>
 
 
-  <div class="datos">
-    <div class="dato"><b id="dPuntos">–</b><span>puntos</span></div>
-    <div class="dato"><b id="dPuesto">–</b><span>en el ranking</span></div>
-    <div class="dato"><b id="dLogros">–</b><span>logros</span></div>
-    <div class="dato"><b id="dClases">–</b><span>clases</span></div>
-  </div>
 
   <dialog class="zoom-foto" id="zoomFoto"><img id="zoomImg" alt=""></dialog>
 
-  <h2 class="rm-titulo">Marcas personales</h2>
-  <div class="rm" id="rmDestacadas"></div>
-  <button type="button" class="mis-marcas" id="misMarcas">Mis marcas <span id="nMarcas"></span></button>
+  <h2 class="titulo-b">Marcas personales</h2>
+  <div class="marcas-caja">
+    <div id="rmDestacadas" style="display:flex;flex-direction:column;gap:16px"></div>
+    <button type="button" class="mis-marcas" id="misMarcas">Mis marcas <span id="nMarcas"></span></button>
+  </div>
 
   <dialog class="dlg-marcas" id="dlgMarcas">
     <h3><span id="dlgTitulo">Mis marcas</span><button type="button" id="dlgCerrar" aria-label="Cerrar">✕</button></h3>
@@ -248,22 +337,23 @@
     <div class="msg" id="mMsg"></div>
   </dialog>
 
-  <h2>Logros conseguidos</h2>
-  <div class="rejilla" id="conseguidos"></div>
+  <h2 class="titulo-b">Vitrina de logros</h2>
+  <div class="vitrina" id="conseguidos"></div>
 
-  <h2 id="tituloFaltan" hidden>Le faltan</h2>
-  <div class="rejilla" id="faltan"></div>
+  <h2 class="titulo-b" id="tituloFaltan" hidden>Le faltan</h2>
+  <div class="siguiente" id="siguiente" hidden></div>
+  <div class="rejilla resto-faltan" id="faltan"></div>
 </main>
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261027e";
-import { escucharCuenta } from "./cuenta.js?v=20261027e";
-import { montarMenu } from "./menu.js?v=20261027e";
+import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261027g";
+import { escucharCuenta } from "./cuenta.js?v=20261027g";
+import { montarMenu } from "./menu.js?v=20261027g";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
-$("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "canjes.html")));
+$("volver").addEventListener("click", () => (history.length > 1 ? history.back() : (location.href = "ranking.html")));
 
 const uid = new URLSearchParams(location.search).get("uid");
 let ficha = null, catalogo = [], yo = null, foto = null, dejarFoto = null, fotoNueva;
@@ -304,7 +394,7 @@ async function calcularPuesto(f) {
     const mas = (await getCountFromServer(query(collection(db, "usuarios"), where("puntos", ">", f.puntos)))).data().count;
     const ocultosMas = (await getDocs(query(collection(db, "usuarios"), where("ocultarPuntos", "==", true)))).docs.filter((d) => (d.data().puntos || 0) > f.puntos).length;
     if (puestoDe.clave !== clave) return;
-    puestoDe.txt = (mas - ocultosMas + 1) + "º";
+    puestoDe.txt = "#" + (mas - ocultosMas + 1);
     $("dPuesto").textContent = puestoDe.txt;
   } catch { /* sin conexión: se queda en – */ }
 }
@@ -332,26 +422,116 @@ function pintar() {
   $("dClases").textContent = ficha.clases || 0;
 
   pintarMarcas(esYo);
+  pintarCartera(esYo);
 
-  const c = $("conseguidos"); c.replaceChildren();
-  if (!mias.length) c.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no tiene logros." }));
-  for (const m of mias) {
-    const d = document.createElement("div"); d.className = "medalla";
-    d.append(crearInsignia(m, 88), Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: m.nombre }));
-    if (m.fecha) d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" }) }));
-    c.append(d);
+  pintarVitrina(mias);
+  pintarFaltan(esYo);
+}
+
+// ---------- Mi cartera: saldo, puntos de hoy y últimos movimientos (solo el propio socio) ----------
+let carteraDe = null, dejarCartera = null, movs = [], limiteMovs = 10, yaFuiACartera = false;
+function pintarCartera(esYo) {
+  $("cartera").hidden = $("tituloCartera").hidden = !esYo;
+  if (!esYo) { if (dejarCartera) { dejarCartera(); dejarCartera = null; carteraDe = null; } return; }
+  $("cSaldo").firstChild.textContent = fmtPuntos(ficha.puntos || 0);
+  if (carteraDe !== ficha.uid) { carteraDe = ficha.uid; limiteMovs = 10; escucharMovs(); }
+}
+function escucharMovs() {
+  if (dejarCartera) dejarCartera();
+  dejarCartera = onSnapshot(query(collection(db, "usuarios", carteraDe, "movimientos"), orderBy("fecha", "desc"), limit(limiteMovs)), (s) => {
+    movs = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) }));
+    $("cMas").hidden = s.size < limiteMovs;
+    pintarMovs();
+  }, () => { $("cMovs").replaceChildren(Object.assign(document.createElement("div"), { className: "cart-vacio", textContent: "No se han podido cargar tus movimientos." })); });
+}
+$("cMas").addEventListener("click", () => { limiteMovs += 20; escucharMovs(); });
+function textoMov(m) {
+  const c = CLASES[m.clase] || CLASES.wod;
+  const dia = m.fecha ? new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }) : "";
+  if (m.tipo === "insignia") return [`Logro · ${m.nombre || ""}`, dia];
+  if (m.tipo === "canje") return [`Canje · ${m.objeto || "Objeto"}`, dia + (m.estado === "pendiente" ? " · pendiente de recoger" : "")];
+  if (m.tipo === "evento") return [`Evento · ${m.nombre || ""}`, dia];
+  if (m.tipo === "reserva") return [`Clases en AimHarder · ${m.nombre || ""}`, dia];
+  if (m.tipo === "registro") return [`${c.nombre} · Resultado registrado`, dia];
+  if (m.tipo === "podio") return [`${c.nombre} · ${m.posicion}º en ${m.categoria}`, dia + " · podio" + (m.resultado ? " · " + m.resultado : "")];
+  return [m.nombre || "Movimiento", dia];
+}
+function pintarMovs() {
+  const hoyStr = hoy();
+  const deHoy = movs.filter((m) => m.fecha === hoyStr).reduce((a, m) => a + (m.puntos || 0), 0);
+  $("cHoy").textContent = deHoy ? `${deHoy > 0 ? "+" : "−"}${fmtPuntos(Math.abs(deHoy))} hoy` : "0 hoy";
+  $("cHoy").classList.toggle("cero", !deHoy);
+  const cont = $("cMovs"); cont.replaceChildren();
+  if (!movs.length) cont.append(Object.assign(document.createElement("div"), { className: "cart-vacio", textContent: "Aún no tienes movimientos. Registra tu resultado y suma los primeros puntos." }));
+  for (const m of movs) {
+    const [t, d] = textoMov(m);
+    const fila = document.createElement("div"); fila.className = "cart-mov";
+    const izq = document.createElement("div");
+    izq.append(Object.assign(document.createElement("div"), { className: "t", textContent: t }), Object.assign(document.createElement("div"), { className: "d", textContent: d }));
+    const p = Object.assign(document.createElement("div"), { className: "p" + ((m.puntos || 0) < 0 ? " menos" : ""), textContent: ((m.puntos || 0) < 0 ? "−" : "+") + fmtPuntos(Math.abs(m.puntos || 0)) });
+    fila.append(izq, p); cont.append(fila);
   }
+  // Si vienes de "Ver mi cartera", baja hasta aquí
+  if (!yaFuiACartera && location.hash === "#cartera") { yaFuiACartera = true; setTimeout(() => $("cartera").scrollIntoView({ behavior: "smooth", block: "start" }), 150); }
+}
+
+// ---------- Vitrina: estantes de 3 medallas, la más importante en el centro y más grande ----------
+function pintarVitrina(mias) {
+  const c = $("conseguidos");
+  const clave = JSON.stringify(mias.map((m) => [m.id, m.imagen, m.nivel, m.fecha]));
+  if (c.dataset.k === clave) return;
+  c.dataset.k = clave; c.replaceChildren();
+  if (!mias.length) { c.append(Object.assign(document.createElement("div"), { className: "vacio", textContent: "Todavía no tiene logros." })); return; }
+  for (let i = 0; i < mias.length; i += 3) {
+    const grupo = mias.slice(i, i + 3);
+    // Orden en el estante: 2º · 1º · 3º (el mejor en el centro)
+    const pos = grupo.length === 1 ? [null, grupo[0], null] : grupo.length === 2 ? [grupo[1], grupo[0], null] : [grupo[1], grupo[0], grupo[2]];
+    const est = document.createElement("div"); est.className = "estante";
+    const meds = document.createElement("div"); meds.className = "estante-med";
+    const noms = document.createElement("div"); noms.className = "estante-nom";
+    pos.forEach((m, k) => {
+      const celda = document.createElement("div"); const nom = document.createElement("div");
+      if (m) {
+        celda.append(crearInsignia(m, k === 1 ? 100 : 82));
+        nom.append(Object.assign(document.createElement("b"), { textContent: m.nombre }));
+        if (m.fecha) nom.append(Object.assign(document.createElement("span"), { textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" }) }));
+      }
+      meds.append(celda); noms.append(nom);
+    });
+    est.append(meds, Object.assign(document.createElement("div"), { className: "estante-tabla" }), noms);
+    c.append(est);
+  }
+}
+
+// ---------- Siguiente medalla (la de clases más cercana) y el resto de logros que le faltan ----------
+function pintarFaltan(esYo) {
   const tiene = ficha.insignias || {};
   const faltan = catalogo.filter((l) => !tiene[l.id]);
+  const n = ficha.clases || 0;
+  const deClases = faltan.filter((l) => esLogroDeClases(l) && umbralClases(l) > 0).sort((a, b) => umbralClases(a) - umbralClases(b));
+  const sig = deClases[0] || null;
   $("tituloFaltan").hidden = !faltan.length;
+  $("tituloFaltan").textContent = sig ? "Siguiente medalla" : (esYo ? "Te faltan" : "Le faltan");
+  const caja = $("siguiente"); caja.hidden = !sig; caja.replaceChildren();
+  if (sig) {
+    const meta = umbralClases(sig), hecho = Math.min(n, meta), r = 38, L = 2 * Math.PI * r;
+    const aro = document.createElement("div"); aro.className = "sig-aro";
+    aro.innerHTML = `<svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="${r}" fill="none" stroke="#3a3d44" stroke-width="5"/><circle cx="42" cy="42" r="${r}" fill="none" stroke="${NIVELES[nivelDe(sig.nivel)]?.color || "var(--lila)"}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(L * hecho / meta).toFixed(1)} ${L.toFixed(1)}"/></svg>`;
+    const med = crearInsignia(sig, 60); med.classList.add("bloqueada"); aro.append(med);
+    const info = document.createElement("div"); info.className = "sig-info";
+    const nv = NIVELES[nivelDe(sig.nivel)]?.nombre;
+    info.append(Object.assign(document.createElement("b"), { textContent: sig.nombre + (nv ? ` · ${nv}` : "") }),
+      Object.assign(document.createElement("span"), { textContent: `${hecho} de ${meta} · ${meta - hecho === 1 ? "queda 1 clase" : `quedan ${meta - hecho} clases`}` }));
+    caja.append(aro, info);
+  }
   const f = $("faltan"); f.replaceChildren();
   for (const l of faltan) {
+    if (l === sig) continue;
     const d = document.createElement("div"); d.className = "medalla falta";
-    const med = crearInsignia(l, 88); med.classList.add("bloqueada");
+    const med = crearInsignia(l, 72); med.classList.add("bloqueada");
     d.append(med, Object.assign(document.createElement("div"), { className: "medalla-nombre", textContent: l.nombre }));
-    // Contador en los logros de clases: cuántas lleva y cuántas le faltan
     if (esLogroDeClases(l) && umbralClases(l) > 0) {
-      const meta = umbralClases(l), n = ficha.clases || 0;
+      const meta = umbralClases(l);
       d.append(Object.assign(document.createElement("div"), { className: "medalla-fecha", textContent: `${Math.min(n, meta)}/${meta} clases` }));
     }
     f.append(d);
@@ -363,15 +543,17 @@ function pintarCabecera(esYo) {
   const mias = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel } : m; });
   const orden = ["bronce", "plata", "oro", "diamante", "olimpo"];
   const mejor = mias.map((m) => nivelDe(m.nivel)).filter(Boolean).sort((a, b) => orden.indexOf(b) - orden.indexOf(a))[0] || "";
-  const hero = $("hero");
-  if (mejor) { hero.style.setProperty("--nc", NIVELES[mejor].color); hero.style.setProperty("--tcl", NIVELES[mejor].texto); }
-  else { hero.style.removeProperty("--nc"); hero.style.removeProperty("--tcl"); }
+  // Esquina de la carta: su medalla de más nivel (la de clases si tiene)
+  const conCat = insigniasDe(ficha).map((m) => { const c = catalogo.find((x) => x.id === m.id); return c ? { ...m, nivel: c.nivel, imagen: c.imagen || m.imagen || "", clases: umbralClases(c) } : m; });
+  const top = conCat.filter((m) => m.imagen).sort((a, b) => (orden.indexOf(nivelDe(b.nivel)) - orden.indexOf(nivelDe(a.nivel))) || ((b.clases || 0) - (a.clases || 0)))[0];
+  const clave = top ? top.id + top.imagen : "";
+  if ($("cartaMedalla").dataset.k !== clave) { $("cartaMedalla").dataset.k = clave; $("cartaMedalla").replaceChildren(...(top ? [crearInsignia(top, 74)] : [])); }
   const desde = ficha.alta ? new Date(ficha.alta + "T12:00:00").toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : "";
   $("heroSub").textContent = (esYo ? "Tu perfil" : "Atleta") + " de Olympo Box" + (desde ? ` · desde ${desde}` : "");
   // Sobre mí: su frase y sus ejercicios contados como parte de la descripción
   const nombrePila = (ficha.nombre || "").split(" ")[0];
   $("sobreTitulo").textContent = esYo ? "Sobre mí" : `Sobre ${nombrePila}`;
-  $("bio").hidden = !ficha.bio; $("bio").textContent = ficha.bio || "";
+  $("cita").hidden = !ficha.bio; $("bio").textContent = ficha.bio || "";
   const pon = (fila, el, v) => { $(fila).classList.toggle("vacia", !v); $(el).textContent = v || (esYo ? "Sin rellenar · pulsa Editar perfil" : "—"); };
   pon("filaFav", "fFav", formatoEjercicio(ficha.favorito)); pon("filaOdio", "fOdio", formatoEjercicio(ficha.odiado));
   $("sobre").hidden = false;
@@ -503,17 +685,32 @@ function destacadasDe(f, lista) {
 }
 function pintarMarcas(esYo) {
   const lista = marcasDe(ficha), dest = destacadasDe(ficha, lista);
-  const caja = $("rmDestacadas"); caja.replaceChildren();
-  for (let i = 0; i < 2; i++) {
-    const m = lista.find((x) => x.id === dest[i]);
-    const c = document.createElement("div"); c.className = "rm-caja" + (m ? "" : " vacia");
-    c.append(Object.assign(document.createElement("span"), { textContent: m ? nombreMarca(m.nombre) : (esYo ? (marcasDe(ficha).length > i ? "Elige otra con ★" : "Añade una marca") : "—") }));
-    const b = document.createElement("b"); if (m) b.innerHTML = kgTxt(m.kg); else b.textContent = "–";
-    c.append(b); caja.append(c);
+  const caja = $("rmDestacadas");
+  // Primero sus 2 destacadas (★) y luego las más pesadas, hasta 4; la barra va según la más pesada
+  const elegidas = [...dest.map((id) => lista.find((m) => m.id === id)).filter(Boolean),
+    ...lista.filter((m) => !dest.includes(m.id)).sort((a, b) => b.kg - a.kg)].slice(0, 4);
+  const clave = JSON.stringify(elegidas.map((m) => [m.id, m.kg])) + dest.join() + esYo;
+  if (caja.dataset.k !== clave) {
+    caja.dataset.k = clave; caja.replaceChildren();
+    if (!elegidas.length) caja.append(Object.assign(document.createElement("div"), { className: "marcas-vacio", textContent: esYo ? "Aún no tienes marcas. Añade la primera." : "Todavía no tiene marcas." }));
+    const max = Math.max(...elegidas.map((m) => m.kg), 1);
+    for (const m of elegidas) {
+      const fila = document.createElement("div"); fila.className = "barra-marca" + (dest.includes(m.id) ? "" : " normal");
+      const cab = document.createElement("div"); cab.className = "cab";
+      const nom = document.createElement("span"); nom.className = "nom";
+      if (dest.includes(m.id)) nom.append(Object.assign(document.createElement("i"), { textContent: "★" }));
+      nom.append(nombreMarca(m.nombre || m.id));
+      const kg = document.createElement("b"); kg.className = "kg"; kg.innerHTML = kgTxt(m.kg);
+      cab.append(nom, kg);
+      const pista = document.createElement("div"); pista.className = "pista";
+      const lleno = document.createElement("div"); lleno.style.width = Math.max(6, Math.round(m.kg / max * 100)) + "%";
+      pista.append(lleno);
+      fila.append(cab, pista); caja.append(fila);
+    }
   }
-  $("misMarcas").firstChild.textContent = esYo ? "Mis marcas " : "Ver todas sus marcas ";
+  $("misMarcas").firstChild.textContent = esYo ? "Gestionar mis marcas " : "Ver todas sus marcas ";
   $("nMarcas").textContent = lista.length ? `${lista.length} →` : (esYo ? "Añadir →" : "");
-  $("misMarcas").hidden = !esYo && lista.length <= 2;
+  $("misMarcas").hidden = !esYo && lista.length <= 4;
   if ($("dlgMarcas").open) pintarDialogo();
 }
 let seguroBorrar = null;

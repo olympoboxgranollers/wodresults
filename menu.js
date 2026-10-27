@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027e";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027e";
-import { COACH_EMAIL } from "./config.js?v=20261027e";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261027g";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261027g";
+import { COACH_EMAIL } from "./config.js?v=20261027g";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -52,8 +52,35 @@ const icono = (n) => {
   return s;
 };
 
+// Ventana que explica los canjes mientras están cerrados
+let dlgCanjes = null;
+function explicarCanjes(coach) {
+  if (!dlgCanjes) {
+    dlgCanjes = document.createElement("dialog");
+    dlgCanjes.className = "dialogo-perfil dialogo-canjes";
+    dlgCanjes.addEventListener("click", (e) => { if (e.target === dlgCanjes) dlgCanjes.close(); });
+    document.body.append(dlgCanjes);
+  }
+  const d = dlgCanjes; d.replaceChildren();
+  const h = (tag, cls, txt) => Object.assign(document.createElement(tag), { className: cls, textContent: txt });
+  const lista = document.createElement("ul"); lista.className = "canjes-pasos";
+  [["Suma puntos", `+${PUNTOS.reserva} por cada clase que reservas en AimHarder, +${PUNTOS.registrar} por registrar tu resultado, y extra por el podio, los logros y los eventos.`],
+   ["Elige tu premio", "En Canjes verás los productos y premios del box y cuántos puntos cuesta cada uno."],
+   ["Canjéalo", "Pulsas Canjear, se descuentan los puntos de tu cartera y el coach te lo entrega en el box."]]
+    .forEach(([t, x], i) => { const li = document.createElement("li"); li.append(h("b", "", `${i + 1}. ${t}`), h("span", "", x)); lista.append(li); });
+  const acc = document.createElement("div"); acc.className = "canjes-acc";
+  const ok = h("button", "canjes-ok", "Entendido"); ok.type = "button"; ok.addEventListener("click", () => d.close());
+  if (coach) { const a = h("a", "canjes-link", "Entrar igualmente (admin)"); a.href = "canjes.html"; acc.append(a); }
+  else { const a = h("a", "canjes-link", "Ver mi cartera"); a.href = "perfil.html#cartera"; acc.append(a); }
+  acc.append(ok);
+  d.append(h("div", "canjes-globo", "Próximamente"), h("h3", "canjes-titulo", "Canjes"),
+    h("p", "canjes-texto", "Muy pronto podrás cambiar tus puntos por premios del box. Tus puntos ya cuentan: sigue sumando y tenlos listos para cuando abramos."),
+    lista, acc);
+  d.showModal();
+}
+
 const PAGINAS = [
-  { id: "canjes",    href: "canjes.html",   texto: "Canjes" },
+  { id: "canjes",    href: "canjes.html",   texto: "Canjes", proximamente: true },   // bloqueado hasta abrir los canjes
   { id: "ranking",   href: "ranking.html",  texto: "Ranking" },
   { id: "resultado", href: "index.html",    texto: "Resultado" },
   { id: "logros",    href: "logros.html",   texto: "Logros", coach: true },   // los socios ven sus logros en su perfil
@@ -98,8 +125,17 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     for (const p of PAGINAS) {
       if (p.coach && !coach) continue;
       if (p.staff && !esStaff(user)) continue;
-      if (p.id === "resultado" && coach) continue;  // el coach no registra resultados
       if (p.socio && coach) continue;               // el coach no tiene perfil de atleta
+      // Apartado aún cerrado: globo "Próximamente" y, al tocarlo, una ventana que explica en qué consiste
+      if (p.proximamente) {
+        const b = Object.assign(document.createElement("button"), { type: "button", className: "menu-item menu-pronto" + (p.id === actual ? " activo" : "") });
+        b.setAttribute("aria-label", `${p.texto}: próximamente`);
+        b.append(icono(p.id), Object.assign(document.createElement("span"), { className: "menu-texto", textContent: p.texto }),
+          Object.assign(document.createElement("span"), { className: "globo-menu", textContent: "Próximamente" }));
+        b.addEventListener("click", () => explicarCanjes(coach));
+        nav.append(b);
+        continue;
+      }
       const a = document.createElement("a");
       a.href = p.href + (clase && p.id !== "perfil" ? "?clase=" + clase : "");
       a.className = "menu-item" + (p.id === actual ? " activo" : "");
@@ -138,7 +174,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027e").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261027g").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);

@@ -376,3 +376,27 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .globo-pronto::after { content: ""; position: absolute; left: 50%; bottom: -4px; margin-left: -4px; border: 4px solid transparent; border-bottom: 0; border-top-color: var(--c); }
 .pestanas button.proximamente.toque { animation: pronto-toque .45s ease; }
 @keyframes pronto-toque { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* Menú: apartado cerrado con globo "Próximamente" */
+.menu { overflow: visible !important; }
+.menu-item.menu-pronto { color: color-mix(in srgb, var(--texto) 40%, transparent); }
+.globo-menu {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%); z-index: 2;
+  background: var(--lila); color: #1f2125; border-radius: 999px; padding: 2px 7px;
+  font-size: 8.5px; font-weight: 700; letter-spacing: .02em; line-height: 1.5; white-space: nowrap; pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.globo-menu::after { content: ""; position: absolute; left: 50%; bottom: -3px; margin-left: -3px; border: 3px solid transparent; border-bottom: 0; border-top-color: var(--lila); }
+/* Ventana que explica los canjes */
+.dialogo-canjes { text-align: left; }
+.dialogo-canjes::backdrop { background: rgba(0,0,0,.7); }
+.canjes-globo { display: inline-block; background: var(--lila); color: #1f2125; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+.canjes-titulo { font-size: 26px; font-weight: 800; margin-top: 10px; }
+.canjes-texto { color: var(--suave); font-size: 14px; line-height: 1.5; margin-top: 6px; }
+.canjes-pasos { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
+.canjes-pasos li { display: grid !important; grid-template-columns: 1fr !important; align-items: start !important; min-height: 0 !important; box-shadow: none !important; gap: 2px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--borde); }
+.canjes-pasos b { font-size: 14px; color: var(--lila); }
+.canjes-pasos span { font-size: 13px; color: var(--texto); line-height: 1.45; }
+.canjes-acc { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.canjes-link { color: var(--lila); font-size: 14px; font-weight: 600; text-decoration: none; }
+.canjes-ok { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 11px 24px; font-weight: 700; font-size: 15px; }

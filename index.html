@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027e">
+<link rel="stylesheet" href="estilos.css?v=20261027g">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -160,7 +160,7 @@
 
   <div class="cuenta-barra" id="barraCuenta" hidden>
     <span class="quien">Hola, <b id="quienNombre"></b></span>
-    <a class="pts" id="misPuntos" href="canjes.html">0 pts</a>
+    <a class="pts" id="misPuntos" href="perfil.html#cartera">0 pts</a>
     <button type="button" class="salir" id="salir">Salir</button>
   </div>
   <div id="acceso" hidden></div>
@@ -249,7 +249,7 @@
         <span class="pl-texto"><strong id="plLlevas"></strong><span id="plFaltan"></span></span>
       </span>
     </a>
-    <a class="ir-cartera" id="irCartera" href="canjes.html">
+    <a class="ir-cartera" id="irCartera" href="perfil.html#cartera">
       <span class="ir-cartera-txt"><small>Tu cartera</small><b id="carteraTotal">0 pts</b></span>
       <span class="ir-cartera-flecha">Ver mi cartera →</span>
     </a>
@@ -265,11 +265,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027e";
-import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027e";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027e";
-import { montarMenu } from "./menu.js?v=20261027e";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027e";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027g";
+import { db, hoy, TIPOS, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027g";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027g";
+import { montarMenu } from "./menu.js?v=20261027g";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027g";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;

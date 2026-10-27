@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027e">
+<link rel="stylesheet" href="estilos.css?v=20261027g">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -60,6 +60,9 @@
   @media (prefers-reduced-motion: reduce) { li.nuevo { animation: none; } }
   /* Vistas: hoy / general + buscador */
   .vistas { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
+  .seg-clasif { display: flex !important; width: 100%; margin: 0 0 12px; }
+  .seg-clasif button { flex: 1; padding: 9px 16px !important; }
+  .titulo-general { font-size: 18px; font-weight: 700; margin: 4px 0 6px; }
   .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--panel); border: 1px solid var(--borde); }
   .seg button { border: 0; background: none; color: var(--suave); font-weight: 600; font-size: 14px; padding: 7px 16px; border-radius: 999px; }
   .seg button[aria-pressed="true"] { background: var(--lila); color: #1f2125; }
@@ -194,22 +197,12 @@
   </header>
 
   <div class="vistas">
-    <div class="seg" role="tablist" aria-label="Ranking">
-      <button type="button" id="verHoy" aria-pressed="true">Hoy</button>
-      <button type="button" id="verGeneral" aria-pressed="false">General</button>
-    </div>
     <div class="buscar">
       <input id="buscar" type="search" placeholder="Buscar atleta por nombre…" autocomplete="off" aria-label="Buscar el perfil de un atleta">
       <div class="resultados-busqueda" id="resBusqueda" hidden></div>
     </div>
   </div>
 
-  <section class="general" id="vistaGeneral" hidden>
-    <h2>Ranking general <span id="mesGeneral" class="mes-general"></span> <small id="nGeneral"></small></h2>
-    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día de este mes. No cuentan logros, eventos ni canjes. <b id="reinicioGeneral"></b></p>
-    <button type="button" class="recalcular" id="recalcular" hidden>Recalcular desde el historial</button>
-    <ol id="listaGeneral"></ol>
-  </section>
 
   <div class="cuerpo" id="vistaHoy">
   <aside class="lateral">
@@ -217,6 +210,11 @@
   </aside>
   <section>
   <h2>Clasificación <small id="nAtletas"></small></h2>
+  <!-- Hoy / General justo debajo de Clasificación -->
+  <div class="seg seg-clasif" role="tablist" aria-label="Ranking">
+    <button type="button" id="verHoy" aria-pressed="true">Hoy</button>
+    <button type="button" id="verGeneral" aria-pressed="false">General</button>
+  </div>
   <div class="filtros" id="filtros">
     <button type="button" data-v="todos" aria-pressed="true">Todos</button>
     <button type="button" data-v="RX" aria-pressed="false">RX</button>
@@ -224,6 +222,12 @@
     <button type="button" data-v="Open" aria-pressed="false">Open</button>
   </div>
   <ol id="lista"></ol>
+  <section class="general" id="vistaGeneral" hidden>
+    <h3 class="titulo-general">Ranking general <span id="mesGeneral" class="mes-general"></span> <small id="nGeneral"></small></h3>
+    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día de este mes. No cuentan logros, eventos ni canjes. <b id="reinicioGeneral"></b></p>
+    <button type="button" class="recalcular" id="recalcular" hidden>Recalcular desde el historial</button>
+    <ol id="listaGeneral"></ol>
+  </section>
   </section>
   </div>
 </main>
@@ -242,10 +246,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027e";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027e";
-import { escucharCuenta } from "./cuenta.js?v=20261027e";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027e";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261027g";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261027g";
+import { escucharCuenta } from "./cuenta.js?v=20261027g";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261027g";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -484,7 +488,9 @@ function textoReinicio() {
 function verVista(v) {
   vista = v;
   $("verHoy").setAttribute("aria-pressed", String(v === "hoy")); $("verGeneral").setAttribute("aria-pressed", String(v === "general"));
-  $("vistaHoy").hidden = v !== "hoy"; $("vistaGeneral").hidden = v !== "general";
+  $("vistaGeneral").hidden = v !== "general";
+  // En General solo cambia lo de debajo de Clasificación (la lista y los filtros del día)
+  $("lista").hidden = v !== "hoy"; $("nAtletas").hidden = v !== "hoy";
   $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy" || soloOpen(clase);
   // Si ha cambiado el mes con la página abierta, se vuelve a escuchar el campo del mes nuevo
   if (v === "general" && dejarGeneral && campoGeneral !== campoMes()) { dejarGeneral(); dejarGeneral = null; }
