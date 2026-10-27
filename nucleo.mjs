@@ -84,11 +84,17 @@ export function contarReservas(reservas, estado, hoy) {
 }
 
 // ¿Hace falta volver a mirar a este cliente?
-export function hayQueRevisar(est, cliente, hoy) {
-  if (!est) return true;
+// Cada socio se relee entero como mínimo cada 12 h (dos veces al día): así entran también
+// las reservas que el coach hace desde el admin de AimHarder, que no cambian su "última reserva"
+export const RELEER_HORAS = 12;
+export function hayQueRevisar(est, cliente, hoy, forzado = false, ahora = new Date()) {
+  if (!est || forzado) return true;
+  if (String(est.revisado || "").slice(0, 10) < hoy) return true;      // como mínimo una vez al día
+  const t = Date.parse(est.revisado || "");
+  if (!t || ahora.getTime() - t >= RELEER_HORAS * 3600e3) return true;   // y otra vez a las 12 h
+  if (est.pendientes > 0 && est.proximoDia && est.proximoDia < hoy) return true;  // ya pasó una clase pendiente
   const ultimaReserva = cliente.class_data?.reservation_date || null;
   if (ultimaReserva !== (est.ultimaReserva || null)) return true;   // ha reservado algo nuevo
-  if (est.pendientes > 0 && est.proximoDia && est.proximoDia < hoy) return true;  // ya pasó una clase pendiente
   return false;
 }
 
@@ -155,7 +161,10 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   // Primero los que aún no tienen el recuento por reservas (los de más clases antes, que son los que más se notan);
   // después, los que hace más que no se miran
   const migrado = (p) => !!usuarios.get(p.uid)?.conteoV2 && !!estados[p.cliente.id];
-  pares.sort((a, b) => (migrado(a) - migrado(b))
+  // Socios que el coach ha pedido recontar ya desde Logros (van los primeros)
+  const forzados = new Set(almacen.leerForzados ? await almacen.leerForzados() : []);
+  const hechosForzados = [];
+  pares.sort((a, b) => (forzados.has(b.uid) - forzados.has(a.uid)) || (migrado(a) - migrado(b))
     || (!migrado(a) ? (usuarios.get(b.uid)?.clases || 0) - (usuarios.get(a.uid)?.clases || 0) : 0)
     || String(estados[a.cliente.id]?.revisado || "").localeCompare(String(estados[b.cliente.id]?.revisado || "")));
   let n = 0;
@@ -164,7 +173,7 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     if (n >= maxSocios) break;
     const est = estados[cliente.id];
     const usuario = usuarios.get(uid);
-    if (!prueba && !hayQueRevisar(est, cliente, hoy)) {
+    if (!prueba && !hayQueRevisar(est, cliente, hoy, forzados.has(uid), ahora)) {
       // Nada nuevo en AimHarder: solo se corrige el número si en la app no coincide (sin gastar peticiones)
       // Las clases de la app = las asistidas en AimHarder + el ajuste del coach (si le dio un logro de clases a mano)
       // Si el coach fijó a mano el total (clasesFijadas), se ajusta para quedarse en ese número
@@ -188,6 +197,7 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
       continue;
     }
     n++; res.revisados++;
+    if (forzados.has(uid)) hechosForzados.push(uid);
     const r = contarReservas(reservas, est, hoy);
     if (prueba) { res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes }); continue; }
     estados[cliente.id] = { uid, ...r.estado, total: r.total, pendientes: r.pendientes, proximoDia: r.proximoDia, ultimaReserva: cliente.class_data?.reservation_date || null, revisado: ahora.toISOString() };
@@ -206,6 +216,7 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   }
 
   if (!prueba) await almacen.guardarPrivado({ estados, versionConteo: VERSION });
+  if (!prueba && hechosForzados.length && almacen.limpiarForzados) await almacen.limpiarForzados(hechosForzados);
   res.cupo = { ...aim.cupo };
   await almacen.guardarEstado({
     ultima: ahora.toISOString(), ok: true, prueba, vinculados: res.vinculados, revisados: res.revisados, actualizados: res.actualizados, logros: res.logros,

@@ -62,6 +62,7 @@
   .campos label { display: grid; gap: 6px; font-size: 12px; color: var(--suave); }
   .campos input, .campos select { width: 100%; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 15px; color: var(--texto); }
   .fila { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .boton.secundario { background: none; color: var(--lila); border: 1px solid color-mix(in srgb, var(--lila) 55%, transparent); width: 100%; }
   .boton { background: var(--lila); color: #1f2125; border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 700; font-size: 15px; }
   .boton:disabled { opacity: .5; }
   .boton.sec { background: none; color: var(--lila); border: 1px solid color-mix(in srgb, var(--lila) 50%, transparent); }
@@ -138,6 +139,7 @@
         <label class="ancho">Socio<select id="cSocio"></select></label>
         <label>Clases hechas<input id="cNum" inputmode="numeric" placeholder="0"></label>
         <div style="display:flex;align-items:end"><button type="button" class="boton" id="cGuardar" style="width:100%">Guardar</button></div>
+        <div class="ancho"><button type="button" class="boton secundario" id="cRecontar">↻ Recontar desde AimHarder</button></div>
       </div>
       <div class="sync" id="sync"><b>AimHarder</b> <span id="syncTxt">Comprobando la sincronización…</span></div>
       <p style="margin-top:16px">Si quieres poner las clases reales de AimHarder, exporta la asistencia y pega aquí una línea por socio con su nombre y el total de clases (por ejemplo <b>Ana García; 102</b>). También vale pegar las columnas copiadas de Excel.</p>
@@ -175,7 +177,7 @@
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261026h";
 import { escucharCuenta } from "./cuenta.js?v=20261026h";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261026h";
@@ -414,6 +416,15 @@ $("cSocio").addEventListener("change", () => {
   m.textContent = s.aimharder
     ? (typeof s.clasesAim === "number" ? `AimHarder: ${s.clasesAim} reservas` : "AimHarder: vinculado") + (aj ? ` · ajuste manual: ${aj > 0 ? "+" : ""}${aj}` : "") + ` · total: ${s.clases || 0}`
     : `Sin vincular con AimHarder (no suma clases)${aj ? ` · ajuste manual: ${aj > 0 ? "+" : ""}${aj}` : ""}`;
+});
+// Pide que la próxima sincronización vuelva a leer a este socio de AimHarder la primera
+$("cRecontar").addEventListener("click", async () => {
+  const s = socios.find((x) => x.uid === $("cSocio").value), m = $("cMsg");
+  if (!s) { m.className = "msg error"; m.textContent = "Elige un socio."; return; }
+  try {
+    await setDoc(doc(db, "ajustes", "sincronizar"), { uids: arrayUnion(s.uid) }, { merge: true });
+    m.className = "msg ok"; m.textContent = `✓ ${s.nombre} se recontará en la próxima sincronización (a y 17, o lánzala ya en GitHub → Actions → Run workflow).`;
+  } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido pedir el recuento."; }
 });
 $("cGuardar").addEventListener("click", async () => {
   const s = socios.find((x) => x.uid === $("cSocio").value);

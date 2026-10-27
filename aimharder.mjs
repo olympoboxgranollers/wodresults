@@ -60,7 +60,10 @@ const almacen = {
     lote.update(db.doc(`usuarios/${uid}`), cambios);
     await lote.commit();
   },
-  async guardarEstado(obj) { await estado.set(obj); }
+  async guardarEstado(obj) { await estado.set(obj); },
+  // Socios que el coach pide recontar ya (Logros → Clases realizadas → «Recontar desde AimHarder»)
+  async leerForzados() { const s = await db.doc("ajustes/sincronizar").get(); return s.exists ? (s.data().uids || []) : []; },
+  async limpiarForzados(uids) { await db.doc("ajustes/sincronizar").set({ uids: FieldValue.arrayRemove(...uids) }, { merge: true }); }
 };
 
 const prueba = process.env.PRUEBA === "true";
