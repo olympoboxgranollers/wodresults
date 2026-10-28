@@ -53,6 +53,61 @@ const icono = (n) => {
   return s;
 };
 
+// ---------- Avisos de amistad: te han mandado una solicitud o han aceptado la tuya ----------
+// Se recuerda en este móvil qué avisos ya se han visto para no repetirlos
+const colaAmigos = [];
+function avisosAmistad(miUid, lista) {
+  const clave = "amigos-avisos-" + miUid;
+  let vistos = null;
+  try { vistos = JSON.parse(localStorage.getItem(clave) || "null"); } catch {}
+  const primeraVez = !vistos; vistos = vistos || {};
+  for (const a of lista) {
+    const otro = (a.uids || []).find((x) => x !== miUid);
+    const nombre = a.nombres?.[otro] || "Un socio";
+    if (a.estado === "pendiente" && a.para === miUid && vistos[a.id] !== "pendiente") {
+      vistos[a.id] = "pendiente"; colaAmigos.push({ tipo: "solicitud", id: a.id, otro, nombre });
+    } else if (a.estado === "aceptada" && a.de === miUid && vistos[a.id] !== "aceptada") {
+      vistos[a.id] = "aceptada";
+      if (!primeraVez) colaAmigos.push({ tipo: "aceptada", id: a.id, otro, nombre });   // las antiguas no se avisan
+    } else if (a.estado === "aceptada" && !vistos[a.id]) vistos[a.id] = "aceptada";
+  }
+  try { localStorage.setItem(clave, JSON.stringify(vistos)); } catch {}
+  siguienteAvisoAmigo();
+}
+function siguienteAvisoAmigo() {
+  if (document.querySelector(".aviso-amigo") || !colaAmigos.length) return;
+  const a = colaAmigos.shift();
+  const dlg = document.createElement("dialog"); dlg.className = "aviso-evento aviso-amigo";
+  const h = (tag, cls, txt) => Object.assign(document.createElement(tag), { className: cls, textContent: txt });
+  const ini = a.nombre.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const x = h("button", "aviso-evento-x", "✕"); x.type = "button"; x.setAttribute("aria-label", "Cerrar");
+  const cuerpo = document.createElement("div"); cuerpo.className = "aviso-evento-txt";
+  const acc = document.createElement("div"); acc.className = "aviso-evento-acc";
+  const cerrar = () => { dlg.close(); dlg.remove(); setTimeout(siguienteAvisoAmigo, 250); };
+  if (a.tipo === "solicitud") {
+    cuerpo.append(h("small", "", "Solicitud de amistad"), h("b", "", a.nombre), h("span", "", "Quiere ser tu amigo en Olympo Box"));
+    const luego = h("button", "aviso-evento-luego", "Ahora no"); luego.type = "button"; luego.addEventListener("click", cerrar);
+    const si = h("button", "aviso-evento-ver", "Aceptar"); si.type = "button";
+    si.addEventListener("click", async () => {
+      si.disabled = true;
+      try { await updateDoc(doc(db, "amistades", a.id), { estado: "aceptada" }); si.textContent = "✓ Ahora sois amigos"; setTimeout(cerrar, 900); }
+      catch (e) { console.error(e); si.disabled = false; si.textContent = "Reintentar"; }
+    });
+    acc.append(luego, si);
+  } else {
+    cuerpo.append(h("small", "", "¡Nuevo amigo!"), h("b", "", a.nombre), h("span", "", "Ha aceptado tu solicitud de amistad"));
+    const ok = h("button", "aviso-evento-luego", "Cerrar"); ok.type = "button"; ok.addEventListener("click", cerrar);
+    const ver = h("a", "aviso-evento-ver", "Ver su perfil"); ver.href = "perfil.html?uid=" + encodeURIComponent(a.otro);
+    acc.append(ok, ver);
+  }
+  x.addEventListener("click", cerrar);
+  dlg.addEventListener("cancel", (ev) => { ev.preventDefault(); cerrar(); });
+  dlg.addEventListener("click", (ev) => { if (ev.target === dlg) cerrar(); });
+  dlg.append(x, h("div", "aviso-amigo-ini", ini), cuerpo, acc);
+  document.body.append(dlg);
+  try { dlg.showModal(); } catch { dlg.setAttribute("open", ""); }
+}
+
 // Ventana que explica los canjes mientras están cerrados
 let dlgCanjes = null;
 function explicarCanjes(coach) {
@@ -182,6 +237,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
       solicitudesPendientes = 0;
       if (u && !esCuentaCoach(u) && !esCuentaTV(u)) dejarSolicitudes = onSnapshot(query(collection(db, "amistades"), where("uids", "array-contains", u.uid)), (s) => {
         solicitudesPendientes = s.docs.filter((d) => d.data().estado === "pendiente" && d.data().para === u.uid).length; pintar();
+        avisosAmistad(u.uid, s.docs.map((d) => ({ id: d.id, ...d.data() })));
       }, () => {});
     }
     if (u && dialogo?.open) dialogo.close();

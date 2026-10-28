@@ -172,7 +172,8 @@
   .carta-datos div + div { border-left: 1px solid #3f3946; }
   .carta-datos b { font-family: "Oswald", sans-serif; font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .carta-datos span { font-size: 11px; color: #b9b5bf; }
-  .fila-editar { display: flex; justify-content: center; }
+  .fila-editar { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .salir-perfil { color: #ff8a96 !important; border-color: color-mix(in srgb, #E0485B 60%, transparent) !important; }
   .fila-editar .editar-perfil { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; border: 1px solid #4a4452; background: none; font-size: 13px; font-weight: 500; color: var(--texto); }
   /* Sobre mí con cita y favorito / odiado en color */
   .sobre { margin-top: 22px; padding: 22px 20px 20px; }
@@ -295,7 +296,7 @@
     </div>
   </section>
   <div class="fila-amigo" id="filaAmigo" hidden></div>
-  <div class="fila-editar"><button type="button" class="editar-perfil" id="editarPerfil" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button></div>
+  <div class="fila-editar"><button type="button" class="editar-perfil" id="editarPerfil" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button><button type="button" class="editar-perfil salir-perfil" id="salirPerfil" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button></div>
   <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
     <div class="foto-fila">
       <div class="avatar" id="pVista">·</div>
@@ -391,7 +392,7 @@
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028b";
-import { escucharCuenta } from "./cuenta.js?v=20261028b";
+import { escucharCuenta, salir } from "./cuenta.js?v=20261028b";
 import { montarMenu, esCuentaCoach } from "./menu.js?v=20261028b";
 import { escucharAmistades, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261028b";
 
@@ -442,6 +443,15 @@ async function calcularPuesto(f) {
     $("dPuesto").textContent = puestoDe.txt;
   } catch { /* sin conexión: se queda en – */ }
 }
+
+// Salir de la cuenta desde el perfil (pide confirmación con un segundo toque)
+let seguroSalir = false;
+$("salirPerfil").addEventListener("click", async () => {
+  const b = $("salirPerfil");
+  if (!seguroSalir) { seguroSalir = true; b.lastChild.textContent = "¿Seguro? Toca otra vez"; setTimeout(() => { seguroSalir = false; b.lastChild.textContent = "Salir"; }, 3000); return; }
+  try { await salir(); } catch (e) { console.error(e); }
+  location.replace("index.html");
+});
 
 // ---------- Amigos: botón en el perfil de otro socio ----------
 let rels = new Map(), relsDe = null, dejarRels = null;
@@ -520,6 +530,7 @@ function pintar() {
   $("dPuntos").classList.toggle("oculto-txt", oculto);
   $("dPuntos").title = oculto ? "Ha ocultado sus puntos" : (ficha.ocultarPuntos ? "Tus puntos están ocultos para los demás" : "");
   $("editarPerfil").hidden = !esYo || !$("perfilForm").hidden;
+  $("salirPerfil").hidden = !esYo;
   // Puesto en el ranking de puntos (empates comparten puesto)
   $("dPuesto").textContent = puestoDe.txt;
   calcularPuesto(ficha);

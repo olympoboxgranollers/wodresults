@@ -57,19 +57,19 @@ a { color: var(--ol-magenta-texto); }
 /* Texto: Hanken Grotesk (sustituye a la regla de Poppins en toda la app) */
 html body, html body * { font-family: var(--ol-cuerpo) !important; }
 
-/* Display: Saira Black itálica en mayúsculas (títulos de página y marca) */
+/* Display: Saira ExtraBold recta (sin cursiva) en mayúsculas para los títulos de cada sección */
 html body header h1, html body .ok h2, html body .portada-marca, html body .canjes-titulo, html body .dialogo-logro h3,
 html body .dialogo-perfil h3, html body .acceso-titulo, html body .cierre-titulo, html body .dialogo-editor h3, html body dialog h3 {
-  font-family: var(--ol-display) !important; font-weight: 900 !important; font-style: italic;
-  letter-spacing: -.025em !important; text-transform: uppercase !important; line-height: .95 !important;
+  font-family: var(--ol-display) !important; font-weight: 800 !important; font-style: normal !important;
+  letter-spacing: -.02em !important; text-transform: uppercase !important; line-height: 1 !important;
 }
 html body header h1 { font-size: clamp(36px, 11vw, 48px); }
 /* El nombre del atleta se ve tal como lo escribe */
-html body header h1#nombre, html body .hero h1, html body .carta h1 { text-transform: none !important; font-style: normal; font-weight: 800 !important; letter-spacing: -.02em !important; }
+html body header h1#nombre, html body .hero h1, html body .carta h1 { font-family: var(--ol-display) !important; text-transform: none !important; font-style: normal; font-weight: 800 !important; letter-spacing: -.02em !important; }
 
 /* Headline: Saira ExtraBold */
 html body h2, html body h3, html body h4, html body .titulo-b {
-  font-family: var(--ol-display) !important; font-weight: 800 !important; letter-spacing: -.02em !important;
+  font-family: var(--ol-display) !important; font-weight: 800 !important; letter-spacing: -.02em !important; font-style: normal !important;
 }
 
 /* La marca de arriba: Saira Black itálica, como el wordmark */
