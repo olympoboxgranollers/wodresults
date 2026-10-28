@@ -12,7 +12,7 @@
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027m">
+<link rel="stylesheet" href="estilos.css?v=20261028a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -252,7 +252,7 @@
   .cart-mas { width: 100%; margin-top: 6px; background: none; border: 0; border-top: 1px solid #3a3d44; color: var(--lila); border-radius: 0; padding: 10px 0 2px; font-size: 13px; font-weight: 600; }
   .resto-faltan .medalla { background: #2a2c31; border: 1px solid rgba(255,255,255,.06); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
 </head>
 <body>
 <main>
@@ -358,9 +358,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261027m";
-import { escucharCuenta } from "./cuenta.js?v=20261027v";
-import { montarMenu } from "./menu.js?v=20261027m";
+import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028a";
+import { escucharCuenta } from "./cuenta.js?v=20261028a";
+import { montarMenu } from "./menu.js?v=20261028a";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
@@ -472,7 +472,7 @@ function escucharMovs() {
 $("cMas").addEventListener("click", () => { limiteMovs += 10; escucharMovs(); });
 function textoMov(m) {
   const c = CLASES[m.clase] || CLASES.wod;
-  const dia = m.fecha ? new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }) : "";
+  const dia = m.fecha ? mayus(new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })) : "";
   if (m.tipo === "insignia") return [`Logro · ${m.nombre || ""}`, dia];
   if (m.tipo === "canje") return [`Canje · ${m.objeto || "Objeto"}`, dia + (m.estado === "pendiente" ? " · pendiente de recoger" : "")];
   if (m.tipo === "evento") return [`Evento · ${m.nombre || ""}`, dia];
@@ -519,7 +519,7 @@ function pintarVitrina(mias) {
       if (m) {
         celda.append(crearInsignia(m, k === 1 ? 100 : 82));
         nom.append(Object.assign(document.createElement("b"), { textContent: m.nombre }));
-        if (m.fecha) nom.append(Object.assign(document.createElement("span"), { textContent: new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" }) }));
+        if (m.fecha) nom.append(Object.assign(document.createElement("span"), { textContent: mayus(new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { month: "short", year: "numeric" })) }));
       }
       meds.append(celda); noms.append(nom);
     });
@@ -569,7 +569,7 @@ function pintarCabecera(esYo) {
   const orden = ["bronce", "plata", "oro", "diamante", "olimpo"];
   const mejor = mias.map((m) => nivelDe(m.nivel)).filter(Boolean).sort((a, b) => orden.indexOf(b) - orden.indexOf(a))[0] || "";
   const desde = ficha.alta ? new Date(ficha.alta + "T12:00:00").toLocaleDateString("es-ES", { month: "long", year: "numeric" }) : "";
-  $("heroSub").textContent = (esYo ? "Tu perfil" : "Atleta") + " de Olympo Box" + (desde ? ` · desde ${desde}` : "");
+  $("heroSub").textContent = (esYo ? "Tu perfil" : "Atleta") + " de Olympo Box" + (desde ? ` · Desde ${desde}` : "");
   // Sobre mí: su frase y sus ejercicios contados como parte de la descripción
   const nombrePila = (ficha.nombre || "").split(" ")[0];
   $("sobreTitulo").textContent = esYo ? "Sobre mí" : `Sobre ${nombrePila}`;
@@ -603,9 +603,9 @@ function pintarProximo() {
   if (!proximo) return;
   const f = new Date(proximo.fecha + "T12:00:00");
   $("proxDia").textContent = f.getDate();
-  $("proxMes").textContent = f.toLocaleDateString("es-ES", { month: "short" }).replace(".", "");
+  $("proxMes").textContent = mayus(f.toLocaleDateString("es-ES", { month: "short" }).replace(".", ""));
   $("proxTitulo").textContent = proximo.titulo;
-  $("proxCuando").textContent = f.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" }) + (proximo.hora ? ` · ${proximo.hora}` : (proximo.momento ? ` · ${proximo.momento.toLowerCase()}` : "")) + (proximo.porConfirmar ? " · por confirmar" : "");
+  $("proxCuando").textContent = mayus(f.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })) + (proximo.hora ? ` · ${proximo.hora}` : (proximo.momento ? ` · ${proximo.momento.toLowerCase()}` : "")) + (proximo.porConfirmar ? " · por confirmar" : "");
   tic();
 }
 function tic() {

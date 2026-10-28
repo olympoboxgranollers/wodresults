@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027m">
+<link rel="stylesheet" href="estilos.css?v=20261028a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -151,7 +151,7 @@
   .proximamente p { color: var(--suave); font-size: 14px; line-height: 1.5; max-width: 34ch; }
   body.canjes-cerrados #tituloCanjeables, body.canjes-cerrados #lista { display: none !important; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
 </head>
 <body>
 <main>
@@ -234,11 +234,11 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito } from "./comun.js?v=20261027m";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028a";
 // ⚙️ Para abrir los canjes a los socios, cambia esto a true
 const CANJES_ABIERTOS = false;
-import { escucharCuenta } from "./cuenta.js?v=20261027v";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261027m";
+import { escucharCuenta } from "./cuenta.js?v=20261028a";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261028a";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
@@ -308,7 +308,7 @@ function pintarPedidos() {
     const fila = document.createElement("div"); fila.className = "pedido";
     fila.append(Object.assign(document.createElement("b"), { textContent: coach ? `${p.nombre} · ${p.objeto}` : p.objeto }));
     fila.append(Object.assign(document.createElement("span"), { className: "pts", textContent: `−${fmtPuntos(p.puntos)} pts` }));
-    const dia = new Date(p.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+    const dia = mayus(new Date(p.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }));
     fila.append(Object.assign(document.createElement("div"), { className: "d", textContent: coach ? `Canjeado el ${dia}` : `Canjeado el ${dia} · pídeselo al coach en el box` }));
     if (coach) {
       const acc = document.createElement("div"); acc.className = "acc";
@@ -582,7 +582,7 @@ function escucharHistorial(u) {
       const izq = document.createElement("div");
       const t = document.createElement("div"); t.className = "t";
       const dd = document.createElement("div"); dd.className = "d";
-      const dia = new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
+      const dia = mayus(new Date(m.fecha + "T12:00:00").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }));
       dd.textContent = dia;
       if (m.tipo === "insignia") t.textContent = `🏅 Logro · ${m.nombre || ""}`;
       else if (m.tipo === "canje") { t.textContent = `🎁 Canje · ${m.objeto || "Objeto"}`; if (m.estado === "pendiente") dd.textContent = `${dia} · pendiente de recoger`; }

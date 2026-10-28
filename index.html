@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261027m">
+<link rel="stylesheet" href="estilos.css?v=20261028a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -32,6 +32,10 @@
   .bloque small { display: block; text-align: center; color: var(--suave); font-size: 13px; margin-top: 6px; }
   .segmentado.tres { grid-template-columns: 1fr 1fr 1fr; }
   .segmentado.cuatro { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #tiempoAcabado { margin-bottom: 12px; }
+  #tiempoAcabado button { padding: 11px; font-size: 15px; }
+  .bloque-reps { display: grid; justify-items: center; gap: 4px; }
+  .bloque-reps .campo { max-width: 200px; text-align: center; }
   .segmentado.cuatro button { padding: 14px 4px; font-size: 15px; }
   .emom-pesos { margin-top: 14px; display: grid; gap: 8px; }
   .emom-titulo { font-size: 14px; font-weight: 600; color: var(--texto); }
@@ -156,7 +160,7 @@
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261027ds">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
 </head>
 <body>
 <main>
@@ -218,7 +222,15 @@
     </div>
 
     <div class="bloque" id="entradaTiempo">
-      <div class="doble">
+      <!-- Por tiempo: si no lo ha acabado (time cap), pone las repeticiones que ha hecho -->
+      <div class="segmentado" id="tiempoAcabado">
+        <button type="button" data-v="si" aria-pressed="true">Completado</button>
+        <button type="button" data-v="no" aria-pressed="false">No completado</button>
+      </div>
+      <div class="bloque-reps" id="bloqueReps" hidden>
+        <input class="campo" id="repsTC" inputmode="numeric" placeholder="0" maxlength="4"><small>repeticiones hechas</small>
+      </div>
+      <div class="doble" id="dobleTiempo">
         <div><input class="campo" id="min" inputmode="numeric" placeholder="0" maxlength="3"><small>minutos</small></div>
         <span>:</span>
         <div><input class="campo" id="seg" inputmode="numeric" placeholder="00" maxlength="2"><small>segundos</small></div>
@@ -294,11 +306,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261027m";
-import { db, hoy, TIPOS, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261027m";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261027v";
-import { montarMenu } from "./menu.js?v=20261027m";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261027m";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261028a";
+import { db, hoy, TIPOS, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261028a";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261028a";
+import { montarMenu } from "./menu.js?v=20261028a";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261028a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -329,6 +341,12 @@ for (const [clave, m] of Object.entries(MATERIAL)) {
 }
 let tipo = "tiempo";
 let emomValor = 2;   // EMOM: 2 = completado, 1 = no completado
+let tiempoAcabado = true;   // Por tiempo: false = no lo ha acabado (se ponen las reps)
+function ponerAcabado(v) {
+  tiempoAcabado = v;
+  $("tiempoAcabado").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String((x.dataset.v === "si") === v)));
+  $("dobleTiempo").hidden = !v; $("bloqueReps").hidden = v;
+}
 // ---------- EMOM: filas de ejercicio + kg que se van añadiendo ----------
 function filaEmom(nombre = "", kg = "", unidad = "kg") {
   const f = document.createElement("div"); f.className = "emom-fila";
@@ -531,8 +549,9 @@ function rellenarConMiResultado() {
     i.value = kg || ""; i.disabled = !kg;
     i.parentElement.previousElementSibling.setAttribute("aria-pressed", !!kg);
   }
-  ["min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
-  if (r.tipo === "tiempo") { $("min").value = Math.floor(r.valor / 60); $("seg").value = String(r.valor % 60).padStart(2, "0"); }
+  ["min", "seg", "rondas", "repsExtra", "kg", "repsTC"].forEach((id) => ($(id).value = ""));
+  if (r.tipo === "tiempo" && sinAcabar(r.valor, "tiempo")) { ponerAcabado(false); $("repsTC").value = repsSinAcabar(r.valor); }
+  else if (r.tipo === "tiempo") { ponerAcabado(true); $("min").value = Math.floor(r.valor / 60); $("seg").value = String(r.valor % 60).padStart(2, "0"); }
   else if (r.tipo === "rondas") { $("rondas").value = Math.floor(r.valor / 1000); $("repsExtra").value = r.valor % 1000; }
   else if (r.tipo === "emom") ponerEmom(r.valor, r.ejercicios || []);
   else $("kg").value = r.valor;
@@ -620,6 +639,7 @@ $("tipo").addEventListener("click", (e) => {
 $("emomHecho").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) ponerEmom(+b.dataset.v, leerFilasEmom()); });
 $("emomAnadir").addEventListener("click", () => { const l = $("emomLista"); if (l.children.length >= 10) return; const f = filaEmom(); l.append(f); f.querySelector("input").focus(); $("emomAnadir").hidden = l.children.length >= 10; });
 function leerFilasEmom() { return [...$("emomLista").querySelectorAll(".emom-fila")].map((f) => ({ nombre: f.querySelector(".e-nombre").value, cantidad: f.querySelector(".e-kg").value.replace(",", "."), unidad: f.querySelector(".e-unidad").value })); }
+$("tiempoAcabado").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) ponerAcabado(b.dataset.v === "si"); });
 const entero = (id) => { const v = $(id).value.trim(); return v === "" ? 0 : (/^\d+$/.test(v) ? parseInt(v, 10) : NaN); };
 
 $("formulario").addEventListener("submit", async (e) => {
@@ -647,9 +667,15 @@ $("formulario").addEventListener("submit", async (e) => {
     }
     ejercicios = ejercicios.slice(0, 10);
   } else if (tipo === "tiempo") {
-    const m = entero("min"), s = entero("seg");
-    if (isNaN(m) || isNaN(s) || s > 59 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
-    valor = m * 60 + s;
+    if (!tiempoAcabado) {
+      const r = entero("repsTC");
+      if (isNaN(r) || r <= 0 || r > 9999) return ($("error").textContent = "Escribe las repeticiones que has hecho.");
+      valor = valorSinAcabar(r);
+    } else {
+      const m = entero("min"), s = entero("seg");
+      if (isNaN(m) || isNaN(s) || s > 59 || (m === 0 && s === 0)) return ($("error").textContent = "Revisa el tiempo (minutos y segundos).");
+      valor = m * 60 + s;
+    }
   } else if (tipo === "rondas") {
     const r = entero("rondas"), x = entero("repsExtra");
     if (isNaN(r) || isNaN(x) || x > 999 || (r === 0 && x === 0)) return ($("error").textContent = "Revisa las rondas y las reps.");
@@ -700,7 +726,7 @@ $("formulario").addEventListener("submit", async (e) => {
     $("puntosHoy").append(
       sumadosAhora ? "Ya están en tu cartera. " : `Los ${PUNTOS.registrar} puntos de registrar de hoy ya están en tu cartera. `,
       tipoSinPodio(tipo) ? "En los EMOM no hay podio: solo suman los puntos de registrar." : sinPodio(clase) ? "En esta clase no hay puntos por podio." : `Si acabas en el podio de ${categoria} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
-    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sinAcabar(valor, tipo) ? " (no completado)" : ""}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
     seguirMiPosicion({ id: ref.id, nombre, clase, categoria, tipo, valor });
@@ -825,9 +851,9 @@ $("avisame").addEventListener("click", async () => {
 
 // Vacía el formulario (al cambiar de clase) y deja de seguir la posición anterior
 function limpiarFormulario() {
-  ["min", "seg", "rondas", "repsExtra", "kg"].forEach((id) => ($(id).value = ""));
+  ["min", "seg", "rondas", "repsExtra", "kg", "repsTC"].forEach((id) => ($(id).value = ""));
   sensacion = null;
-  ponerEmom();
+  ponerEmom(); ponerAcabado(true);
   for (const clave of Object.keys(MATERIAL)) { elegido[clave] = false; const i = $("peso-" + clave); i.value = ""; i.disabled = true; i.parentElement.previousElementSibling.setAttribute("aria-pressed", "false"); }
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false"));
   ajustarCategorias();

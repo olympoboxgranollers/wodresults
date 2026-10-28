@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261027m";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261028a";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -173,9 +173,16 @@ export function textoEjercicios(lista) {
   }).join(" · ");
 }
 // Lo que se ve bajo la categoría: los pesos del EMOM o el material del Open
-export const detallePesos = (r) => (r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : ""));
+export const detallePesos = (r) => [sinAcabar(r?.valor, r?.tipo) ? "No completado" : "", r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : "")].filter(Boolean).join(" · ");
 
+// "Por tiempo" sin acabar (time cap): se guarda como 59999 − reps, así queda detrás de todos los que acaban
+// y entre ellos va primero quien más reps ha hecho
+export const BASE_SIN_ACABAR = 50000;
+export const sinAcabar = (valor, tipo) => tipo === "tiempo" && valor >= BASE_SIN_ACABAR;
+export const valorSinAcabar = (reps) => 59999 - reps;
+export const repsSinAcabar = (valor) => 59999 - valor;
 export function formatearValor(valor, tipo) {
+  if (sinAcabar(valor, tipo)) return `${repsSinAcabar(valor)} reps`;
   if (tipo === "emom") return valor >= 2 ? "✓ Completado" : "✗ No completado";
   if (tipo === "tiempo") {
     const m = Math.floor(valor / 60);
@@ -348,7 +355,7 @@ export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
 export const idRegistro = (clase, fecha = hoy()) => `${fecha}_${clase}_reg`;
 // Ranking general del mes: cada mes tiene su propio campo de puntos ("pm_2026_10"), así se reinicia solo el día 1
 export const campoMes = (fecha = hoy()) => "pm_" + String(fecha).slice(0, 7).replace("-", "_");
-export const nombreMes = (fecha = hoy()) => new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" });
+export const nombreMes = (fecha = hoy()) => mayus(new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" }));
 
 // Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
 export function calcularPuntos(resultados, tipo, clase = null) {
@@ -368,6 +375,8 @@ export function leerValor(texto, tipo) {
   const t = String(texto).trim().replace(",", ".");
   if (tipo === "emom") return /^(s[ií]|completado|✓|1|ok)/i.test(t) ? 2 : /^(no|✗|0)/i.test(t) ? 1 : NaN;
   if (tipo === "tiempo") {
+    const r = t.match(/^(\d{1,4})\s*(reps?|r)?(\s*·?\s*tc)?$/i);   // "123 reps": no lo acabó
+    if (r && (r[2] || r[3])) return +r[1] > 0 && +r[1] <= 9999 ? valorSinAcabar(+r[1]) : NaN;
     const m = t.match(/^(\d{1,3}):(\d{1,2})$/);
     if (!m || +m[2] > 59) return NaN;
     return +m[1] * 60 + +m[2];
@@ -381,6 +390,7 @@ export function leerValor(texto, tipo) {
 }
 export function escribirValor(valor, tipo) {
   if (tipo === "emom") return valor >= 2 ? "Sí" : "No";
+  if (sinAcabar(valor, tipo)) return `${repsSinAcabar(valor)} reps`;
   if (tipo === "tiempo") return `${Math.floor(valor / 60)}:${String(valor % 60).padStart(2, "0")}`;
   if (tipo === "rondas") return `${Math.floor(valor / 1000)}+${valor % 1000}`;
   return String(valor);
@@ -426,7 +436,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261027m").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261028a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
