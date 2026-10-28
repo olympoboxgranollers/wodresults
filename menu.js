@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261028a";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028a";
-import { COACH_EMAIL } from "./config.js?v=20261028a";
+import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261028b";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028b";
+import { COACH_EMAIL } from "./config.js?v=20261028b";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -40,6 +40,7 @@ const ICONOS = {
   canjes: '<rect x="3.5" y="8.5" width="17" height="12" rx="2"/><path d="M3.5 12.5h17"/><path d="M12 8.5v12"/><path d="M12 8.5c-1.8 0-4.5-.6-4.5-2.6 0-1.3 1-2 2-2 2 0 2.5 2.6 2.5 4.6z"/><path d="M12 8.5c1.8 0 4.5-.6 4.5-2.6 0-1.3-1-2-2-2-2 0-2.5 2.6-2.5 4.6z"/>',
   logros: '<circle cx="12" cy="9" r="5.5"/><path d="M8.6 13.4L7 21l5-2.6 5 2.6-1.6-7.6"/><path d="M12 6.6l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>',
   perfil: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+  amigos: '<circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9.5" r="2.8"/><path d="M15.5 14.2A5.5 5.5 0 0 1 21.5 19.5"/>',
   eventos: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M8 14h2"/><path d="M14 14h2"/><path d="M8 17h2"/>',
   salir: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'
 };
@@ -85,6 +86,7 @@ const PAGINAS = [
   { id: "resultado", href: "index.html",    texto: "Resultado" },
   { id: "logros",    href: "logros.html",   texto: "Logros", coach: true },   // los socios ven sus logros en su perfil
   { id: "eventos",   href: "eventos.html",  texto: "Eventos" },
+  { id: "amigos",    href: "amigos.html",   texto: "Amigos", socio: true },
   { id: "perfil",    href: "perfil.html",   texto: "Perfil", socio: true },
   { id: "pantalla",  href: "pantalla.html", texto: "Pantalla", coach: true },  // solo el coach (los entrenadores solo Publicar)
   { id: "publicar",  href: "publicar.html", texto: "Publicar", staff: true }
@@ -116,7 +118,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     montarAcceso(caja, { titulo: "Entra con tu cuenta", texto: "Con la cuenta del coach podrás corregir y validar resultados desde aquí." });
   }
 
-  let user = null;
+  let user = null, solicitudesPendientes = 0, dejarSolicitudes = null;
   const pintar = () => {
     nav.replaceChildren();
     const coach = esCuentaCoach(user);
@@ -141,6 +143,8 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
       a.className = "menu-item" + (p.id === actual ? " activo" : "");
       if (p.id === actual) a.setAttribute("aria-current", "page");
       a.append(icono(p.id), Object.assign(document.createElement("span"), { className: "menu-texto", textContent: p.texto }));
+      // Punto rojo en Amigos si alguien te ha mandado una solicitud
+      if (p.id === "amigos" && solicitudesPendientes > 0) a.append(Object.assign(document.createElement("span"), { className: "menu-aviso", textContent: solicitudesPendientes > 9 ? "9+" : String(solicitudesPendientes) }));
       nav.append(a);
     }
     if (cuenta) {
@@ -172,10 +176,18 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     nav.hidden = !u;
     const cambio = (u?.uid || null) !== (user?.uid || null);
     user = u;
+    // Solicitudes de amistad recibidas (para el aviso en el menú)
+    if (cambio && !tv) {
+      if (dejarSolicitudes) { dejarSolicitudes(); dejarSolicitudes = null; }
+      solicitudesPendientes = 0;
+      if (u && !esCuentaCoach(u) && !esCuentaTV(u)) dejarSolicitudes = onSnapshot(query(collection(db, "amistades"), where("uids", "array-contains", u.uid)), (s) => {
+        solicitudesPendientes = s.docs.filter((d) => d.data().estado === "pendiente" && d.data().para === u.uid).length; pintar();
+      }, () => {});
+    }
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261028a").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261028b").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);

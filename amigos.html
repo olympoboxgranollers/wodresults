@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es" translate="no" class="notranslate">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icono-32.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-title" content="Olympo Box">
+<meta name="theme-color" content="#0C0D10">
+<title>Amigos Olympo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css?v=20261028b">
+<style>
+  body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
+  main { width: 100%; max-width: 560px; }
+  header .marca { color: #fff; font-size: 13px; }
+  h1 { font-size: 34px; margin-top: 14px; color: var(--lila); }
+  .sub { color: var(--suave); margin-top: 6px; font-size: 15px; line-height: 1.5; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-top: 18px; border-radius: 999px; background: var(--panel); border: 1px solid var(--borde); }
+  .seg button { border: 0; background: none; color: var(--suave); font-weight: 600; font-size: 14px; padding: 10px 8px; border-radius: 999px; }
+  .seg button[aria-pressed="true"] { background: var(--lila); color: #0C0D10; }
+  h2 { font-size: 18px; margin: 24px 0 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  h2 small { font-size: 13px; color: var(--suave); font-weight: 500; }
+  .lista { display: grid; gap: 8px; }
+  .socio { box-sizing: border-box; width: 100%; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde); }
+  .socio .ini { width: 42px; height: 42px; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; background: color-mix(in srgb, var(--lila) 20%, var(--panel)); color: var(--lila); }
+  .socio a { flex: 1; min-width: 0; color: var(--texto); text-decoration: none; font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .socio a small { display: block; color: var(--suave); font-size: 12px; font-weight: 400; }
+  .botones { display: flex; gap: 6px; flex: none; }
+  .solicitudes .socio .am-btn { padding: 8px 11px; }
+  .am-btn { flex: none; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; border: 1px solid var(--borde); background: none; color: var(--texto); white-space: nowrap; }
+  .am-anadir { background: var(--lila); color: #0C0D10; border-color: var(--lila); }
+  .am-ok { color: #37B58A; border-color: color-mix(in srgb, #37B58A 55%, transparent); }
+  .am-pend { color: var(--suave); }
+  .am-quitar { color: #ff8a96; border-color: #E0485B; }
+  .vacio { color: var(--suave); font-size: 14px; text-align: center; padding: 22px 0; }
+  .buscar { position: relative; margin-top: 16px; }
+  .buscar input { width: 100%; box-sizing: border-box; background: var(--panel); border: 1px solid var(--borde); border-radius: 999px; padding: 12px 16px; font-size: 16px; color: var(--texto); outline: none; }
+  .mas { width: 100%; margin-top: 10px; background: none; border: 1px dashed var(--borde); color: var(--suave); border-radius: 14px; padding: 12px; font-size: 14px; font-weight: 600; }
+  .solicitudes { box-sizing: border-box; margin-top: 18px; padding: 12px; border-radius: 18px; border: 1px solid var(--lila); background: color-mix(in srgb, var(--lila) 8%, var(--panel)); }
+  .solicitudes h2 { margin-top: 0; }
+</style>
+<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
+</head>
+<body>
+<main>
+  <header>
+    <div class="marca">Olympo Box</div>
+    <h1>Amigos</h1>
+    <p class="sub">Añade a tus compañeros del box como amigos y encuentra a todos los socios de la app.</p>
+  </header>
+
+  <div class="seg" role="tablist" aria-label="Amigos">
+    <button type="button" id="verAmigos" aria-pressed="true">Mis amigos</button>
+    <button type="button" id="verTodos" aria-pressed="false">Todos los socios</button>
+  </div>
+
+  <section id="vistaAmigos">
+    <div class="solicitudes" id="solicitudes" hidden>
+      <h2>Solicitudes de amistad <small id="nSolicitudes"></small></h2>
+      <div class="lista" id="listaSolicitudes"></div>
+    </div>
+    <h2>Mis amigos <small id="nAmigos"></small></h2>
+    <div class="lista" id="listaAmigos"></div>
+    <h2 id="tituloEnviadas" hidden>Solicitudes enviadas <small id="nEnviadas"></small></h2>
+    <div class="lista" id="listaEnviadas"></div>
+  </section>
+
+  <section id="vistaTodos" hidden>
+    <div class="buscar"><input id="buscar" type="search" placeholder="Buscar socio por nombre…" autocomplete="off" aria-label="Buscar socio"></div>
+    <h2 id="tituloTodos">Todos los socios <small id="nTodos"></small></h2>
+    <div class="lista" id="listaTodos"></div>
+    <button type="button" class="mas" id="mas" hidden>Ver más socios</button>
+  </section>
+</main>
+
+<script type="module">
+import { collection, query, orderBy, limit, startAfter, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, persona, nombreBonito } from "./comun.js?v=20261028b";
+import { escucharCuenta } from "./cuenta.js?v=20261028b";
+import { montarMenu } from "./menu.js?v=20261028b";
+import { escucharAmistades, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261028b";
+
+const $ = (id) => document.getElementById(id);
+montarMenu({ actual: "amigos", cuenta: false });
+
+let yo = null, miNombre = "", rels = new Map(), dejarRels = null;
+let socios = [], ultimo = null, hayMas = true, cargando = false, buscando = "";
+const POR_PAGINA = 30;
+
+escucharCuenta(({ user, ficha }) => {
+  if (!user) return;
+  miNombre = ficha?.nombre || user.displayName || "";
+  if (yo?.uid === user.uid) return;
+  yo = user;
+  if (dejarRels) dejarRels();
+  dejarRels = escucharAmistades(yo.uid, (m) => { rels = m; pintarAmigos(); pintarTodos(); });
+  if (!socios.length) cargarMas();
+});
+
+// ---------- Pestañas ----------
+function ver(v) {
+  $("verAmigos").setAttribute("aria-pressed", String(v === "amigos"));
+  $("verTodos").setAttribute("aria-pressed", String(v === "todos"));
+  $("vistaAmigos").hidden = v !== "amigos"; $("vistaTodos").hidden = v !== "todos";
+  try { localStorage.setItem("amigos-vista", v); } catch {}
+}
+$("verAmigos").addEventListener("click", () => ver("amigos"));
+$("verTodos").addEventListener("click", () => ver("todos"));
+try { if (new URLSearchParams(location.search).get("ver") === "todos" || localStorage.getItem("amigos-vista") === "todos") ver("todos"); } catch {}
+
+// ---------- Filas ----------
+const iniciales = (n) => (n || "·").trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+function fila(uid, nombre, sub, botones) {
+  const f = document.createElement("div"); f.className = "socio";
+  const a = Object.assign(document.createElement("a"), { href: "perfil.html?uid=" + encodeURIComponent(uid), textContent: nombre });
+  if (sub) a.append(Object.assign(document.createElement("small"), { textContent: sub }));
+  const bs = document.createElement("div"); bs.className = "botones"; bs.append(...botones);
+  f.append(Object.assign(document.createElement("span"), { className: "ini", textContent: iniciales(nombre) }), a, bs);
+  return f;
+}
+const accion = async (fn) => { try { await fn(); } catch (e) { console.error(e); alertaSuave("No se ha podido hacer. Inténtalo de nuevo."); } };
+function alertaSuave(t) { const v = Object.assign(document.createElement("div"), { className: "vacio", textContent: t }); document.querySelector("main").prepend(v); setTimeout(() => v.remove(), 3000); }
+function botonPara(uid, nombre) {
+  return botonAmistad(rels.get(uid), {
+    alPedir: () => accion(() => pedirAmistad(yo.uid, miNombre, uid, nombre)),
+    alAceptar: () => accion(() => aceptarAmistad(rels.get(uid).id)),
+    alQuitar: () => accion(() => quitarAmistad(rels.get(uid).id))
+  });
+}
+const vacio = (t) => Object.assign(document.createElement("div"), { className: "vacio", textContent: t });
+
+// ---------- Mis amigos y solicitudes ----------
+function pintarAmigos() {
+  const todas = [...rels.entries()].map(([uid, r]) => ({ uid, ...r })).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  const amigos = todas.filter((r) => r.estado === "aceptada");
+  const recibidas = todas.filter((r) => r.estado !== "aceptada" && !r.deMi);
+  const enviadas = todas.filter((r) => r.estado !== "aceptada" && r.deMi);
+
+  $("solicitudes").hidden = !recibidas.length;
+  $("nSolicitudes").textContent = recibidas.length || "";
+  $("listaSolicitudes").replaceChildren(...recibidas.map((r) => {
+    const si = Object.assign(document.createElement("button"), { type: "button", className: "am-btn am-anadir", textContent: "Aceptar" });
+    si.addEventListener("click", () => accion(() => aceptarAmistad(r.id)));
+    const no = Object.assign(document.createElement("button"), { type: "button", className: "am-btn", textContent: "✕" });
+    no.setAttribute("aria-label", "Rechazar"); no.addEventListener("click", () => accion(() => quitarAmistad(r.id)));
+    return fila(r.uid, r.nombre, "Quiere ser tu amigo", [si, no]);
+  }));
+
+  $("nAmigos").textContent = amigos.length ? `${amigos.length}` : "";
+  $("listaAmigos").replaceChildren(...(amigos.length ? amigos.map((r) => fila(r.uid, r.nombre, "", [botonPara(r.uid, r.nombre)]))
+    : [vacio("Todavía no tienes amigos. Búscalos en «Todos los socios» y pulsa «+ Añadir».")]));
+
+  $("tituloEnviadas").hidden = !enviadas.length;
+  $("nEnviadas").textContent = enviadas.length || "";
+  $("listaEnviadas").replaceChildren(...enviadas.map((r) => fila(r.uid, r.nombre, "Esperando respuesta", [botonPara(r.uid, r.nombre)])));
+}
+
+// ---------- Todos los socios (por orden alfabético, de 30 en 30 para gastar pocas lecturas) ----------
+async function cargarMas() {
+  if (cargando || !hayMas || buscando) return;
+  cargando = true;
+  try {
+    const q = ultimo ? query(collection(db, "usuarios"), orderBy("nombre"), startAfter(ultimo), limit(POR_PAGINA)) : query(collection(db, "usuarios"), orderBy("nombre"), limit(POR_PAGINA));
+    const s = await getDocs(q);
+    ultimo = s.docs[s.docs.length - 1] || ultimo;
+    hayMas = s.size === POR_PAGINA;
+    socios.push(...s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => u.nombre));
+  } catch (e) { console.error(e); hayMas = false; }
+  cargando = false;
+  pintarTodos();
+}
+$("mas").addEventListener("click", cargarMas);
+let resultados = null;
+function pintarTodos() {
+  if (!yo) return;
+  const lista = (resultados || socios).filter((u) => u.uid !== yo.uid);
+  $("tituloTodos").firstChild.textContent = resultados ? "Resultados " : "Todos los socios ";
+  $("listaTodos").replaceChildren(...(lista.length ? lista.map((u) => fila(u.uid, u.nombre, "", [botonPara(u.uid, u.nombre)]))
+    : [vacio(resultados ? "No hay ningún socio con ese nombre." : "Cargando socios…")]));
+  $("mas").hidden = !!resultados || !hayMas;
+}
+// Buscar por el principio del nombre (unas pocas lecturas por búsqueda)
+let espera = null;
+$("buscar").addEventListener("input", () => {
+  clearTimeout(espera);
+  const t = $("buscar").value.trim().replace(/\s+/g, " ");
+  if (t.length < 2) { buscando = ""; resultados = null; pintarTodos(); return; }
+  espera = setTimeout(async () => {
+    buscando = nombreBonito(t);
+    try {
+      const s = await getDocs(query(collection(db, "usuarios"), orderBy("nombre"), where("nombre", ">=", buscando), where("nombre", "<", buscando + ""), limit(15)));
+      if (nombreBonito($("buscar").value.trim().replace(/\s+/g, " ")) !== buscando) return;
+      resultados = s.docs.map((d) => ({ uid: d.id, ...persona(d.data()) })).filter((u) => u.nombre);
+    } catch (e) { console.error(e); resultados = []; }
+    pintarTodos();
+  }, 350);
+});
+</script>
+</body>
+</html>

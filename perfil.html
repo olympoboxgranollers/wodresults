@@ -12,7 +12,7 @@
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028a">
+<link rel="stylesheet" href="estilos.css?v=20261028b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -224,6 +224,23 @@
   .sig-info b { font-size: 16px; font-weight: 600; }
   .sig-info span { font-size: 13px; color: var(--suave); }
   .resto-faltan { margin-top: 12px; }
+  /* Amigos en el perfil de otro socio */
+  .fila-amigo { display: flex; justify-content: center; margin-top: 14px; }
+  .am-btn { border-radius: 999px; padding: 10px 20px; font-size: 14px; font-weight: 700; border: 1px solid var(--borde); background: none; color: var(--texto); }
+  .am-anadir { background: var(--lila); color: #0C0D10; border-color: var(--lila); }
+  .am-ok { color: #37B58A; border-color: color-mix(in srgb, #37B58A 55%, transparent); }
+  .am-pend { color: var(--suave); }
+  .am-quitar { color: #ff8a96; border-color: #E0485B; }
+  /* Zona de admin: borrar usuario */
+  .zona-admin { margin-top: 34px; padding: 18px; border-radius: 18px; border: 1px solid rgba(224, 72, 91, .55); background: rgba(224, 72, 91, .07); }
+  .za-titulo { font-weight: 700; font-size: 15px; color: #ff8a96; }
+  .zona-admin p { margin: 6px 0 12px; font-size: 13px; line-height: 1.5; color: var(--suave); }
+  .za-borrar, .db-si { background: #E0485B; color: #fff; border: 0; border-radius: 999px; padding: 11px 20px; font-weight: 700; font-size: 14px; }
+  .db-si:disabled { opacity: .4; }
+  .db-conf { display: grid; gap: 6px; margin-top: 14px; font-size: 13px; color: var(--suave); }
+  .db-conf input { background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 12px; font-size: 16px; color: var(--texto); }
+  .db-acc { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+  .db-no { background: none; border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 11px 18px; font-size: 14px; }
   /* Mi cartera */
   .ver-cartera { margin-top: 14px; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-radius: 18px; background: #2a2c31; border: 1px solid color-mix(in srgb, var(--lila) 45%, transparent); color: var(--texto); text-align: left; box-shadow: 0 10px 26px rgba(0,0,0,.28); }
   .ver-cartera span { display: flex; flex-direction: column; gap: 1px; }
@@ -252,7 +269,7 @@
   .cart-mas { width: 100%; margin-top: 6px; background: none; border: 0; border-top: 1px solid #3a3d44; color: var(--lila); border-radius: 0; padding: 10px 0 2px; font-size: 13px; font-weight: 600; }
   .resto-faltan .medalla { background: #2a2c31; border: 1px solid rgba(255,255,255,.06); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
 </head>
 <body>
 <main>
@@ -277,6 +294,7 @@
       </div>
     </div>
   </section>
+  <div class="fila-amigo" id="filaAmigo" hidden></div>
   <div class="fila-editar"><button type="button" class="editar-perfil" id="editarPerfil" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button></div>
   <form class="perfil-form" id="perfilForm" hidden autocomplete="off">
     <div class="foto-fila">
@@ -354,13 +372,28 @@
   <h2 class="titulo-b" id="tituloFaltan" hidden>Le faltan</h2>
   <div class="siguiente" id="siguiente" hidden></div>
   <div class="rejilla resto-faltan" id="faltan"></div>
+
+  <!-- Solo el admin, en el perfil de otro socio: borrar el usuario -->
+  <section class="zona-admin" id="zonaAdmin" hidden>
+    <div class="za-titulo">Zona de admin</div>
+    <p>Borra a este socio de la app: su perfil, puntos, logros, marcas, resultados y su cuenta de acceso. No se puede deshacer.</p>
+    <button type="button" class="za-borrar" id="zaBorrar">Borrar usuario</button>
+  </section>
+  <dialog class="dlg-marcas dlg-borrar" id="dlgBorrar">
+    <h3><span>Borrar usuario</span><button type="button" id="dbCerrar" aria-label="Cerrar">✕</button></h3>
+    <p class="ayuda">Vas a borrar a <b id="dbNombre"></b>. Se borrarán su perfil, sus puntos y movimientos, logros, marcas, resultados, su foto y su inscripción a eventos. Su cuenta de acceso se elimina en la siguiente sincronización (como mucho en 1 hora). <b>No se puede deshacer.</b></p>
+    <label class="db-conf">Para confirmar, escribe <b>BORRAR</b><input id="dbTexto" autocomplete="off" autocapitalize="characters" placeholder="BORRAR"></label>
+    <div class="db-acc"><button type="button" class="db-no" id="dbNo">Cancelar</button><button type="button" class="db-si" id="dbSi" disabled>Borrar para siempre</button></div>
+    <div class="msg" id="dbMsg" role="status"></div>
+  </dialog>
 </main>
 
 <script type="module">
-import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028a";
-import { escucharCuenta } from "./cuenta.js?v=20261028a";
-import { montarMenu } from "./menu.js?v=20261028a";
+import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028b";
+import { escucharCuenta } from "./cuenta.js?v=20261028b";
+import { montarMenu, esCuentaCoach } from "./menu.js?v=20261028b";
+import { escucharAmistades, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261028b";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
@@ -410,6 +443,67 @@ async function calcularPuesto(f) {
   } catch { /* sin conexión: se queda en – */ }
 }
 
+// ---------- Amigos: botón en el perfil de otro socio ----------
+let rels = new Map(), relsDe = null, dejarRels = null;
+function pintarAmigo() {
+  const caja = $("filaAmigo");
+  const ver = !!ficha && !!yo && yo.uid !== ficha.uid;
+  caja.hidden = !ver;
+  if (!ver) return;
+  if (relsDe !== yo.uid) { relsDe = yo.uid; if (dejarRels) dejarRels(); dejarRels = escucharAmistades(yo.uid, (m) => { rels = m; pintarAmigo(); }); }
+  const otro = ficha.uid, rel = rels.get(otro);
+  const hacer = (fn) => fn().catch((e) => console.error(e));
+  caja.replaceChildren(botonAmistad(rel, {
+    alPedir: () => hacer(() => pedirAmistad(yo.uid, miNombreAmigos || yo.displayName || "", otro, ficha.nombre)),
+    alAceptar: () => hacer(() => aceptarAmistad(rel.id)),
+    alQuitar: () => hacer(() => quitarAmistad(rel.id))
+  }));
+}
+let miNombreAmigos = "";
+escucharCuenta(({ ficha: f }) => { miNombreAmigos = f?.nombre || ""; });
+
+// ---------- Admin: borrar a un socio ----------
+function pintarZonaAdmin() {
+  const ver = !!ficha && !!yo && esCuentaCoach(yo) && yo.uid !== ficha.uid;
+  $("zonaAdmin").hidden = !ver;
+}
+$("zaBorrar").addEventListener("click", () => {
+  $("dbNombre").textContent = ficha?.nombre || "este socio";
+  $("dbTexto").value = ""; $("dbSi").disabled = true; $("dbMsg").textContent = "";
+  $("dlgBorrar").showModal();
+});
+$("dbTexto").addEventListener("input", () => { $("dbSi").disabled = $("dbTexto").value.trim().toUpperCase() !== "BORRAR"; });
+$("dbNo").addEventListener("click", () => $("dlgBorrar").close());
+$("dbCerrar").addEventListener("click", () => $("dlgBorrar").close());
+$("dbSi").addEventListener("click", async () => {
+  const id = ficha?.uid;
+  if (!id || !esCuentaCoach(yo) || id === yo.uid) return;
+  $("dbSi").disabled = true; $("dbNo").disabled = true; $("dbMsg").className = "msg"; $("dbMsg").textContent = "Borrando…";
+  try {
+    // Se deja de escuchar su ficha para que no se vuelva a pintar mientras se borra
+    if (dejar) { dejar(); dejar = null; } if (dejarFoto) { dejarFoto(); dejarFoto = null; }
+    const refs = [];
+    (await getDocs(query(collection(db, "resultados"), where("uid", "==", id)))).forEach((d) => refs.push(d.ref));
+    (await getDocs(collection(db, "usuarios", id, "movimientos"))).forEach((d) => refs.push(d.ref));
+    (await getDocs(collection(db, "eventos"))).forEach((e) => refs.push(doc(db, "eventos", e.id, "asistentes", id)));
+    (await getDocs(query(collection(db, "amistades"), where("uids", "array-contains", id)))).forEach((d) => refs.push(d.ref));
+    refs.push(doc(db, "fotos", id), doc(db, "usuarios", id));
+    for (let i = 0; i < refs.length; i += 400) {
+      const lote = writeBatch(db);
+      refs.slice(i, i + 400).forEach((r) => lote.delete(r));
+      await lote.commit();
+    }
+    // La cuenta de acceso (Firebase Authentication) la borra la sincronización de GitHub
+    await setDoc(doc(db, "ajustes", "borrar"), { uids: arrayUnion(id) }, { merge: true });
+    $("dbMsg").className = "msg ok"; $("dbMsg").textContent = "✓ Usuario borrado.";
+    setTimeout(() => location.replace("ranking.html"), 1200);
+  } catch (e) {
+    console.error(e);
+    $("dbMsg").className = "msg error"; $("dbMsg").textContent = "No se ha podido borrar del todo. Vuelve a intentarlo.";
+    $("dbSi").disabled = false; $("dbNo").disabled = false;
+  }
+});
+
 function pintar() {
   if (ficha === false) { $("nombre").textContent = "Socio no encontrado"; return; }
   if (!ficha) return;
@@ -418,6 +512,8 @@ function pintar() {
   document.title = `${nombre} · Olympo`;
   ponerAvatar($("avatar"), nombre, foto);
   const esYo = !!yo && yo.uid === ficha.uid;
+  pintarZonaAdmin();
+  pintarAmigo();
   pintarCabecera(esYo);
   const oculto = !!ficha.ocultarPuntos && !esYo;
   $("dPuntos").textContent = oculto ? "🔒" : fmtPuntos(ficha.puntos || 0);

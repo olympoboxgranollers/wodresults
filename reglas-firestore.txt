@@ -9,8 +9,12 @@ service cloud.firestore {
         && request.auth.token.email == 'olympoboxgranollers@gmail.com'
         && request.auth.token.email_verified == true;
     }
-    // Cuenta de persona (correo o Google). Las TV conectadas entran como "anónimas" y no cuentan aquí.
-    function conCuenta() { return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+    // Cuenta de persona (correo o Google) con el email verificado (Google lo trae verificado; con correo hay que pulsar el enlace).
+    // Las TV conectadas entran como "anónimas" y no cuentan aquí.
+    function conCuenta() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && request.auth.token.email_verified == true;
+    }
     function esAnonimo() { return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous'; }
     // TV del box conectada desde el móvil del coach o de un entrenador: solo puede LEER el ranking del día
     function esTV() {
@@ -319,6 +323,31 @@ service cloud.firestore {
     }
 
     // ---------- Ajustes que solo cambia el admin principal (lista de entrenadores) ----------
+    // ---------- Amigos: solicitudes y amistades entre socios. Id: "uidA_uidB" (ordenados) ----------
+    match /amistades/{id} {
+      // Solo la ven los dos implicados
+      allow read: if esCoach() || (conCuenta() && request.auth.uid in resource.data.uids);
+      // Pedir amistad: la crea quien la pide, siempre "pendiente" y con el id de los dos uid ordenados
+      allow create: if conCuenta()
+        && request.resource.data.keys().hasOnly(['uids', 'de', 'para', 'estado', 'creado', 'nombres'])
+        && request.resource.data.de == request.auth.uid
+        && request.resource.data.para is string && request.resource.data.para != request.auth.uid
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.uids is list && request.resource.data.uids.size() == 2
+        && request.auth.uid in request.resource.data.uids && request.resource.data.para in request.resource.data.uids
+        && request.resource.data.uids[0] < request.resource.data.uids[1]
+        && id == request.resource.data.uids[0] + '_' + request.resource.data.uids[1]
+        && request.resource.data.nombres is map && request.resource.data.nombres.size() <= 2
+        && exists(/databases/$(database)/documents/usuarios/$(request.resource.data.para));
+      // Aceptar: solo quien la recibe, y solo cambia el estado a "aceptada"
+      allow update: if conCuenta() && request.auth.uid == resource.data.para
+        && resource.data.estado == 'pendiente'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado'])
+        && request.resource.data.estado == 'aceptada';
+      // Rechazar, cancelar o dejar de ser amigos: cualquiera de los dos (y el coach al borrar un socio)
+      allow delete: if esCoach() || (conCuenta() && request.auth.uid in resource.data.uids);
+    }
+
     match /ajustes/{id} {
       allow read: if conCuenta();
       allow write: if esCoach()
@@ -359,12 +388,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
         && (!('red' in request.resource.data) || (request.resource.data.red is string && request.resource.data.red.size() <= 32))
         && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
-        && request.resource.data.creado == request.time
+        && request.resource.data.creado is number
         && request.resource.data.vinculada == false;
       allow update: if (esAnonimo() && request.auth.uid == tv
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
-          && request.resource.data.vinculada == false
-          && (!('creado' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.creado == request.time))
+          && request.resource.data.vinculada == false)
         || (esStaff()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])
           && request.resource.data.vinculada is bool

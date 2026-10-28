@@ -71,6 +71,20 @@ const almacen = {
 };
 
 const prueba = process.env.PRUEBA === "true";
+
+// Socios que el admin ha borrado desde la app (Perfil → Zona de admin): se elimina también su cuenta de acceso
+if (!prueba) {
+  try {
+    const ref = db.doc("ajustes/borrar"), s = await ref.get();
+    const uids = s.exists ? (s.data().uids || []) : [];
+    const hechos = [];
+    for (const uid of uids) {
+      try { await auth.deleteUser(uid); hechos.push(uid); }
+      catch (e) { if (e?.code === "auth/user-not-found") hechos.push(uid); else console.error("No se ha podido borrar una cuenta de acceso."); }
+    }
+    if (hechos.length) { await ref.set({ uids: FieldValue.arrayRemove(...hechos) }, { merge: true }); console.log(`Cuentas de acceso borradas: ${hechos.length}`); }
+  } catch { console.error("No se han podido revisar las cuentas a borrar."); }
+}
 const aim = crearAim();
 try {
   const semillaHash = semilla ? createHash("sha256").update(semilla).digest("hex").slice(0, 16) : null;

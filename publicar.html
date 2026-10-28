@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028a">
+<link rel="stylesheet" href="estilos.css?v=20261028b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -79,7 +79,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
 </head>
 <body>
 <main>
@@ -149,12 +149,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261028a";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261028a";
+import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261028b";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261028b";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028a";
-import { NOMBRE_BOX } from "./config.js?v=20261028a";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028b";
+import { NOMBRE_BOX } from "./config.js?v=20261028b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;

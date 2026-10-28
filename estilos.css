@@ -428,3 +428,6 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 }
 .menu-tv { border-color: rgba(255,255,255,.08) !important; box-shadow: none !important; }
 
+
+/* Aviso de solicitudes de amistad en el menú */
+.menu-aviso { position: absolute; top: 2px; right: 8px; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: #E0485B; color: #fff; font-size: 10px; font-weight: 800; line-height: 17px; text-align: center; }

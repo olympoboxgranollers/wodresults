@@ -12,7 +12,7 @@
 <title>Eventos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028a">
+<link rel="stylesheet" href="estilos.css?v=20261028b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -78,7 +78,7 @@
   .boton.sec { background: none; color: var(--suave); }
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
 </head>
 <body>
 <main>
@@ -121,10 +121,10 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, addDoc, updateDoc, deleteDoc, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, persona, cosa, mayus } from "./comun.js?v=20261028a";
-import { escucharCuenta } from "./cuenta.js?v=20261028a";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261028a";
-import { ZONA_HORARIA } from "./config.js?v=20261028a";
+import { db, hoy, fmtPuntos, persona, cosa, mayus } from "./comun.js?v=20261028b";
+import { escucharCuenta } from "./cuenta.js?v=20261028b";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261028b";
+import { ZONA_HORARIA } from "./config.js?v=20261028b";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "eventos", cuenta: false });
