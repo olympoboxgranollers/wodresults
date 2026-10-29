@@ -43,9 +43,9 @@
   .emom-rondas[hidden] { display: none; }
   .emom-rondas .campo { width: 100%; box-sizing: border-box; text-align: center; font-size: 28px; padding: 12px; }
   .emom-rondas #emomParcialTit { margin-top: 6px; }
-  .emom-rondas-sel { display: flex; flex-wrap: wrap; gap: 8px; }
   .emom-rondas-sel[hidden] { display: none; }
-  .emom-rondas-sel button { flex: 1 0 56px; }
+  .emom-rondas-sel { height: 52px; width: 100%; box-sizing: border-box; margin: 0 !important; -webkit-appearance: none; appearance: none; border: 1px solid var(--borde); border-radius: 12px; padding: 0 36px 0 14px; font-size: 17px; font-weight: 700; color: var(--texto);
+    background: var(--fondo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9c6cd' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
   .emom-parcial { display: grid; gap: 8px; }
   .parcial-fila { display: grid; grid-template-columns: 76px minmax(0, 1fr) 40px; gap: 8px; align-items: center; }
   .parcial-fila .quitar { height: 46px; border-radius: 12px; border: 1px solid var(--borde); background: none; color: var(--suave); font-size: 16px; }
@@ -271,7 +271,7 @@
       <div class="emom-rondas" id="emomRondasCaja" hidden>
         <div class="emom-titulo">¿Cuántas rondas has completado enteras?</div>
         <input class="campo" id="emomRondas" inputmode="numeric" maxlength="3" placeholder="Ej. 2">
-        <div class="segmentado emom-rondas-sel" id="emomRondasSel" hidden></div>
+        <select class="emom-rondas-sel" id="emomRondasSel" aria-label="Rondas completadas" hidden></select>
         <div class="emom-titulo" id="emomParcialTit">¿Qué hiciste en la ronda que no acabaste?</div>
         <div class="emom-parcial" id="emomParcial"></div>
         <button type="button" class="emom-anadir" id="emomParcialAnadir">+ Añadir ejercicio</button>
@@ -419,7 +419,7 @@ function ponerParcial(parcial) {
   $("emomParcialAnadir").hidden = l.children.length >= 10;
 }
 $("emomParcialAnadir").addEventListener("click", () => { const f = filaParcial(); $("emomParcial").append(f); f.querySelector(".p-reps").focus(); $("emomParcialAnadir").hidden = $("emomParcial").children.length >= 10; });
-// Si el coach ha puesto cuántas rondas tiene el EMOM, se eligen con botones (0, 1, 2… hasta una menos del total)
+// Si el coach ha puesto cuántas rondas tiene el EMOM, se eligen en un desplegable (0, 1, 2… hasta una menos del total)
 function pintarRondasSel() {
   const total = tipo === "emom" ? wod?.rondas || 0 : 0;
   const caja = $("emomRondasSel");
@@ -427,17 +427,10 @@ function pintarRondasSel() {
   $("emomRondasCaja").querySelector(".emom-titulo").textContent = total ? `¿Cuántas rondas has completado enteras? (de ${total})` : "¿Cuántas rondas has completado enteras?";
   if (!total) return;
   const actual = $("emomRondas").value;
-  caja.replaceChildren(...Array.from({ length: total }, (_, i) => {
-    const b = Object.assign(document.createElement("button"), { type: "button", textContent: String(i) });
-    b.dataset.v = String(i); b.setAttribute("aria-pressed", String(actual === String(i)));
-    return b;
-  }));
+  caja.replaceChildren(new Option("Elige las rondas…", ""), ...Array.from({ length: total }, (_, i) =>
+    new Option(`${i} ${i === 1 ? "ronda" : "rondas"} de ${total}`, String(i), false, actual === String(i))));
 }
-$("emomRondasSel").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  $("emomRondas").value = b.dataset.v;
-  $("emomRondasSel").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-});
+$("emomRondasSel").addEventListener("change", () => { $("emomRondas").value = $("emomRondasSel").value; });
 function ponerEmom(valor = 2, ejercicios = [], rondas, parcial) {
   emomValor = valor >= 2 ? 2 : 1;
   $("emomRondasCaja").hidden = emomValor !== 1;

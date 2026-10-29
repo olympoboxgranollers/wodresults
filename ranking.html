@@ -427,7 +427,7 @@ function pintar() {
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
     if (claseEmom) res.classList.add(claseEmom);
     const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = textoGrupo(grupoDe(r), false);
-    const tp = [detallePesos(r), catDe(r) === "Open" && pesoTotal(r) ? `Total ${String(pesoTotal(r)).replace(".", ",")} kg` : ""].filter(Boolean).join(" · ");
+    const tp = detallePesos(r);
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
