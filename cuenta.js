@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, reload, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes } from "./comun.js?v=20261028b";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes, puntosRegistro } from "./comun.js?v=20261029a";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -199,7 +199,8 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
 
 // Suma al momento los puntos por registrar (una sola vez por clase y día).
 // Devuelve true si los ha sumado ahora y false si ya estaban sumados.
-export async function sumarRegistro(user, clase, ficha) {
+export async function sumarRegistro(user, clase, ficha, categoria = "Open") {
+  const pts = puntosRegistro(categoria);   // 20 en RX, 10 en Open
   const mid = idRegistro(clase);
   const ref = doc(db, "usuarios", user.uid, "movimientos", mid);
   if ((await getDoc(ref)).exists()) return false;
@@ -207,12 +208,12 @@ export async function sumarRegistro(user, clase, ficha) {
   // puntosRanking: solo registrar y podio (para el ranking general) y el campo del mes (ranking general mensual)
   const guardar = async (conMes) => {
     const lote = writeBatch(db);
-    lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: PUNTOS.registrar });
-    lote.update(doc(db, "usuarios", user.uid), { puntos: increment(PUNTOS.registrar), puntosRanking: increment(PUNTOS.registrar), ...(conMes ? { [campoMes(mid)]: increment(PUNTOS.registrar) } : {}), ultimoRegistro: mid });
+    lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: pts });
+    lote.update(doc(db, "usuarios", user.uid), { puntos: increment(pts), puntosRanking: increment(pts), ...(conMes ? { [campoMes(mid)]: increment(pts) } : {}), ultimoRegistro: mid });
     await lote.commit();
   };
   // Si las reglas de Firebase aún no aceptan el campo del mes, se suman igual los puntos (sin el del mes)
   try { await guardar(true); }
   catch (e) { console.warn("Sin el campo del mes (¿reglas sin publicar?)", e); await guardar(false); }
-  return true;
+  return pts;
 }

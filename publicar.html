@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028b">
+<link rel="stylesheet" href="estilos.css?v=20261029a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -79,7 +79,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
 </head>
 <body>
 <main>
@@ -149,12 +149,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261028b";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261028b";
+import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes } from "./comun.js?v=20261029a";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261029a";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028b";
-import { NOMBRE_BOX } from "./config.js?v=20261028b";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029a";
+import { NOMBRE_BOX } from "./config.js?v=20261029a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -290,18 +290,18 @@ function pintarRevision() {
   const p = PUNTOS.podio;
   $("cierreTexto").textContent = cierre
     ? `${n} de hoy ya está cerrado: se han repartido ${fmtPuntos(cierre.puntosTotales)} puntos entre ${cierre.socios} socios.`
-    : w && TIPOS[w.tipo]?.sinPodio ? `Hoy es un EMOM: solo se dan los ${PUNTOS.registrar} puntos por registrar el resultado (se suman al momento); no hay podio.`
+    : w && TIPOS[w.tipo]?.sinPodio ? `Hoy es un EMOM: solo se dan los puntos por registrar el resultado (${PUNTOS.registrarRX} en RX, ${PUNTOS.registrar} en Open, al momento); no hay podio.`
     : sinPodio(clase) ? `En ${n} solo se dan los ${PUNTOS.registrar} puntos por registrar el resultado (se suman al momento); no hay puntos por podio.`
-    : `Los ${PUNTOS.registrar} puntos de registrar se suman al momento; los del podio se reparten solos a las 00:00 con lo que haya aquí. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes. Podio: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Scaled +${p.Scaled[1]}/+${p.Scaled[2]}/+${p.Scaled[3]}, Open +${fmtPuntos(p.Open[1])}/+${p.Open[2]}/+${fmtPuntos(p.Open[3])}; y ${PUNTOS.registrar} por registrar.`;
+    : `Por registrar: ${PUNTOS.registrarRX} en RX y ${PUNTOS.registrar} en Open (al momento). Los del podio se reparten solos a las 00:00, por separado para chicos y chicas: RX +${p.RX[1]}/+${p.RX[2]}/+${p.RX[3]}, Open +${p.Open[1]}/+${p.Open[2]}/+${p.Open[3]}. En Open va delante quien ha usado más peso. Si alguien ha puesto un resultado falso, corrígelo o bórralo antes.`;
   const cont = $("revision"); cont.replaceChildren();
   if (!w) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Publica el entrenamiento de esta clase para que los socios puedan subir su resultado." })); return; }
   const filas = calcularPuntos(resHoy, w.tipo, clase);
   if (!filas.length) { cont.append(Object.assign(document.createElement("p"), { className: "cierre-texto", textContent: "Todavía no hay resultados." })); return; }
-  for (const cat of ["RX", "Scaled", "Open"]) {
-    const deCat = filas.filter((f) => f.categoria === cat);
+  for (const g of GRUPOS) {
+    const deCat = filas.filter((f) => f.grupo === g);
     if (!deCat.length) continue;
     const bloque = document.createElement("div"); bloque.className = "podio-cat";
-    bloque.append(Object.assign(document.createElement("h4"), { textContent: cat }));
+    bloque.append(Object.assign(document.createElement("h4"), { textContent: textoGrupo(g) }));
     for (const f of deCat) bloque.append(filaRevision(f, w.tipo));
     cont.append(bloque);
   }
@@ -353,8 +353,11 @@ function filaRevision(f, tipo) {
 function editor(r, tipo) {
   const box = document.createElement("div"); box.className = "editor";
   const sel = document.createElement("select");
-  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === r.categoria));
+  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === catDe(r)));
   sel.setAttribute("aria-label", "Categoría");
+  const selSexo = document.createElement("select"); selSexo.setAttribute("aria-label", "Sexo");
+  selSexo.append(new Option("Chico", "M", false, r.sexo === "M"), new Option("Chica", "F", false, r.sexo === "F"));
+  if (!r.sexo) selSexo.prepend(new Option("Sexo sin indicar", "", true, true));
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
   val.setAttribute("aria-label", "Resultado");
   const ayuda = Object.assign(document.createElement("div"), { className: "ayuda",
@@ -368,7 +371,7 @@ function editor(r, tipo) {
     const v = leerValor(val.value, tipo);
     if (isNaN(v)) { m.className = "msg error"; m.textContent = "Revisa el resultado: " + ayuda.textContent; return; }
     try {
-      await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true });
+      await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true, ...(selSexo.value ? { sexo: selSexo.value } : {}) });
       abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} corregido.`;
     } catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido guardar (¿el día ya está cerrado?)."; }
   });
@@ -380,18 +383,20 @@ function editor(r, tipo) {
       const lote = writeBatch(db);
       lote.delete(doc(db, "resultados", r.id));
       const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(clase));
-      if ((await getDoc(regRef)).exists()) {
+      const reg = await getDoc(regRef);
+      const pts = reg.exists() ? (reg.data().puntos || PUNTOS.registrar) : 0;   // 20 si era RX, 10 si era Open
+      if (reg.exists()) {
         lote.delete(regRef);
-        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), puntosRanking: increment(-PUNTOS.registrar), [campoMes()]: increment(-PUNTOS.registrar), mesBorrado: campoMes() });
+        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-pts), puntosRanking: increment(-pts), [campoMes()]: increment(-pts), mesBorrado: campoMes() });
       }
       await lote.commit();
-      abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado y sus ${PUNTOS.registrar} puntos de registrar descontados.`;
+      abierto = null; m.className = "msg ok"; m.textContent = `✓ Resultado de ${r.nombre} borrado${pts ? ` y sus ${pts} puntos de registrar descontados` : ""}.`;
     }
     catch (e) { console.error(e); m.className = "msg error"; m.textContent = "No se ha podido borrar."; }
   });
   cancelar.addEventListener("click", () => { abierto = null; pintarRevision(); });
   btns.append(guardar, borrar, cancelar);
-  box.append(sel, val, ayuda, btns);
+  box.append(sel, selSexo, val, ayuda, btns);
   return box;
 }
 

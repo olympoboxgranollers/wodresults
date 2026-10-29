@@ -12,7 +12,7 @@
 <title>Canjes Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028b">
+<link rel="stylesheet" href="estilos.css?v=20261029a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -151,7 +151,7 @@
   .proximamente p { color: var(--suave); font-size: 14px; line-height: 1.5; max-width: 34ch; }
   body.canjes-cerrados #tituloCanjeables, body.canjes-cerrados #lista { display: none !important; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
 </head>
 <body>
 <main>
@@ -234,11 +234,11 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, serverTimestamp, writeBatch, increment, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261028b";
+import { db, fmtPuntos, hoy, CLASES, PUNTOS, insigniasDe, crearInsignia, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261029a";
 // ⚙️ Para abrir los canjes a los socios, cambia esto a true
 const CANJES_ABIERTOS = false;
-import { escucharCuenta } from "./cuenta.js?v=20261028b";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261028b";
+import { escucharCuenta } from "./cuenta.js?v=20261029a";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261029a";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "canjes", cuenta: false });
@@ -655,8 +655,8 @@ function pintarRanking() {
 }
 $("como").append(
   Object.assign(document.createElement("b"), { textContent: "Cómo se ganan puntos: " }),
-  `${PUNTOS.reserva} por cada clase que reservas en AimHarder, ${PUNTOS.registrar} por registrar tu resultado en cada clase del día, y extra si quedas en el podio de tu categoría: ` +
-  ["RX", "Scaled", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
+  `${PUNTOS.reserva} por cada clase que reservas en AimHarder, ${PUNTOS.registrarRX} por registrar tu resultado en RX (${PUNTOS.registrar} en Open), y extra si quedas en el podio de tu categoría (chicos y chicas por separado): ` +
+  ["RX", "Open"].map((c) => `${c} +${fmtPuntos(PUNTOS.podio[c][1])} / +${fmtPuntos(PUNTOS.podio[c][2])} / +${fmtPuntos(PUNTOS.podio[c][3])}`).join(", ") +
   ". También con logros y eventos."
 );
 

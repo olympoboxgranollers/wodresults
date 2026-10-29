@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261028b";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261029a";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -104,7 +104,7 @@ export const claseAbierta = (c) => !!CLASES[c] && !CLASES[c].proximamente;
 export const soloOpen = (c) => !!CLASES[c]?.soloOpen;
 // sinPodio: en esa clase solo se dan los puntos de registrar (no hay puntos por podio)
 export const sinPodio = (c) => !!CLASES[c]?.sinPodio;
-export const categoriasDe = (c) => (soloOpen(c) ? ["Open"] : ["RX", "Scaled", "Open"]);
+export const categoriasDe = (c) => (soloOpen(c) ? ["Open"] : ["RX", "Open"]);
 
 // Id del WOD de hoy para una clase, p. ej. "2026-10-23_hyrox"
 export const idWod = (clase) => `${hoy()}_${clase}`;
@@ -196,9 +196,25 @@ export function formatearValor(valor, tipo) {
   return reps ? `${txt} + ${reps}` : txt;
 }
 
-// Categorías de más a menos nivel: RX > Scaled > Open
-export const CATEGORIAS = ["RX", "Scaled", "Open"];
-const ORDEN_CATEGORIA = { RX: 0, Scaled: 1, Open: 2 };
+// Categorías: RX y Open (Scaled ya no existe: los resultados antiguos en Scaled cuentan como Open)
+export const CATEGORIAS = ["RX", "Open"];
+export const catDe = (r) => (r?.categoria === "Scaled" ? "Open" : r?.categoria || "Open");
+// Sexo del atleta en cada resultado: cada categoría tiene su clasificación y su podio de chicos y de chicas
+export const SEXOS = { M: { uno: "Chico", varios: "Chicos" }, F: { uno: "Chica", varios: "Chicas" } };
+// Grupos de clasificación: RX chicos, RX chicas, Open chicos, Open chicas (y los antiguos sin sexo al final)
+export const grupoDe = (r) => catDe(r) + "·" + (SEXOS[r?.sexo] ? r.sexo : "");
+export const GRUPOS = ["RX·M", "RX·F", "Open·M", "Open·F", "RX·", "Open·"];
+export const textoGrupo = (g, plural = true) => { const [c, sx] = g.split("·"); return c + (SEXOS[sx] ? " · " + SEXOS[sx][plural ? "varios" : "uno"] : ""); };
+const ordenGrupo = (r) => { const i = GRUPOS.indexOf(grupoDe(r)); return i < 0 ? 99 : i; };
+// Peso total que ha puesto el atleta (material del Open o pesos del WOD/EMOM; las libras se pasan a kg, las calorías no cuentan)
+export function pesoTotal(r) {
+  let t = 0;
+  for (const v of Object.values(r?.pesos || {})) t += Number(v) || 0;
+  for (const e of r?.ejercicios || []) { const n = Number(e?.cantidad ?? e?.kg) || 0; const u = e?.unidad || "kg"; if (u === "kg") t += n; else if (u === "lb") t += n * 0.4536; }
+  return Math.round(t * 10) / 10;
+}
+// En Open va delante quien ha usado más peso (en cualquier tipo de WOD); con el mismo peso empatan
+const porPeso = (r) => catDe(r) === "Open";
 
 // Material que se puede indicar en Open (con el peso usado en kg)
 export const MATERIAL = {
@@ -219,21 +235,27 @@ export function textoPesos(pesos) {
 // y dentro de cada categoría por resultado. Los de otro tipo van al final.
 export function ordenar(lista, tipo) {
   const menos = TIPOS[tipo]?.menosEsMejor ?? false;
-  const orden = (r) => ORDEN_CATEGORIA[r.categoria] ?? 9;
   const mismos = lista.filter((r) => (r.tipo || tipo) === tipo);
   const otros = lista.filter((r) => (r.tipo || tipo) !== tipo);
-  mismos.sort((a, b) => orden(a) - orden(b) || (menos ? a.valor - b.valor : b.valor - a.valor));
+  mismos.sort((a, b) => ordenGrupo(a) - ordenGrupo(b)
+    || (porPeso(a) ? pesoTotal(b) - pesoTotal(a) : 0)
+    || (menos ? a.valor - b.valor : b.valor - a.valor));
   return [...mismos, ...otros];
 }
 
 // Posición de cada atleta en una lista ya ordenada.
 // Si dos tienen el mismo resultado en la misma categoría, comparten posición (1, 2, 2, 4…)
+// Cada grupo (RX chicos, RX chicas…) empieza en 1. En Open empatan los que han usado el mismo peso (si no han puesto peso, cuenta el resultado).
 export function posiciones(lista) {
   const pos = [];
+  let inicio = 0;
   lista.forEach((r, i) => {
     const ant = lista[i - 1];
-    const empate = ant && ant.categoria === r.categoria && ant.valor === r.valor && ant.tipo === r.tipo;
-    pos.push(empate ? pos[i - 1] : i + 1);
+    if (!ant || grupoDe(ant) !== grupoDe(r) || ant.tipo !== r.tipo) { inicio = i; pos.push(1); return; }
+    // En Open: mismo peso (y que hayan puesto peso) = empate. Si ninguno ha puesto peso, se mira el resultado.
+    const pa = pesoTotal(ant), pr = pesoTotal(r);
+    const empate = porPeso(r) && (pa > 0 || pr > 0) ? pa === pr : ant.valor === r.valor;
+    pos.push(empate ? pos[i - 1] : i - inicio + 1);
   });
   return pos;
 }
@@ -270,8 +292,10 @@ export function crearEmoji(clave, clase = "emoji") {
 // ---------- Pique: líderes, empates y mensajes ----------
 
 // Clasificación de una categoría (RX o Scaled) con sus posiciones
-export function clasificacionDe(resultados, tipo, categoria) {
-  const lista = ordenar(resultados.filter((r) => (r.tipo || tipo) === tipo && r.categoria === categoria), tipo);
+// grupo: "RX·M", "Open·F"… (o solo la categoría, "RX" / "Open", para todos los sexos juntos)
+export function clasificacionDe(resultados, tipo, grupo) {
+  const coincide = grupo.includes("·") ? (r) => grupoDe(r) === grupo : (r) => catDe(r) === grupo;
+  const lista = ordenar(resultados.filter((r) => (r.tipo || tipo) === tipo && coincide(r)), tipo);
   return { lista, pos: posiciones(lista) };
 }
 
@@ -279,9 +303,9 @@ export function clasificacionDe(resultados, tipo, categoria) {
 export function lideres(resultados, tipo) {
   const mapa = {};
   if (tipoSinPodio(tipo)) return mapa;   // en un EMOM no hay líder
-  for (const cat of CATEGORIAS) {
-    const { lista, pos } = clasificacionDe(resultados, tipo, cat);
-    mapa[cat] = lista.filter((_, i) => pos[i] === 1);
+  for (const g of GRUPOS) {
+    const { lista, pos } = clasificacionDe(resultados, tipo, g);
+    if (lista.length) mapa[g] = lista.filter((_, i) => pos[i] === 1);
   }
   return mapa;
 }
@@ -292,15 +316,16 @@ const nombres = (l) => l.map((r) => r.nombre).join(" y ");
 // Cada aviso: { icono, etiqueta, destacado, texto }
 export function mensajesDeLider(antes, ahora) {
   const msgs = [];
-  for (const cat of CATEGORIAS) {
-    const a = (antes?.[cat] || []).map((r) => r.id).sort().join();
-    const b = (ahora[cat] || []).map((r) => r.id).sort().join();
+  for (const g of GRUPOS) {
+    const cat = textoGrupo(g);
+    const a = (antes?.[g] || []).map((r) => r.id).sort().join();
+    const b = (ahora[g] || []).map((r) => r.id).sort().join();
     if (!b || a === b) continue;
-    const nuevos = ahora[cat];
+    const nuevos = ahora[g];
     if (nuevos.length > 1) {
       msgs.push({ icono: "⚔️", etiqueta: `Empate en cabeza · ${cat}`, destacado: nombres(nuevos), texto: "comparten el primer puesto" });
-    } else if (antes?.[cat]?.length) {
-      msgs.push({ icono: "👑", etiqueta: `Nuevo líder · ${cat}`, destacado: nuevos[0].nombre, texto: `le quita el primer puesto a ${nombres(antes[cat])}` });
+    } else if (antes?.[g]?.length) {
+      msgs.push({ icono: "👑", etiqueta: `Nuevo líder · ${cat}`, destacado: nuevos[0].nombre, texto: `le quita el primer puesto a ${nombres(antes[g])}` });
     } else {
       msgs.push({ icono: "👑", etiqueta: `Primer líder · ${cat}`, destacado: nuevos[0].nombre, texto: "se pone en cabeza" });
     }
@@ -335,15 +360,15 @@ function siguienteAviso() {
 }
 
 // ---------- Puntos ----------
-// 10 por registrar (igual en todas las categorías) + extra por el podio de su categoría.
-// Scaled suma la mitad que RX y Open la mitad que Scaled. Los empates comparten puesto.
+// Por registrar: 20 en RX y 10 en Open. Más el podio de su grupo (RX u Open, chicos o chicas).
+// Open suma la mitad que RX. Los empates comparten puesto.
 export const PUNTOS = {
-  registrar: 10,
+  registrar: 10,   // Open (y el mínimo); en RX se dan los de registrarRX
+  registrarRX: 20,
   reserva: 5,      // por cada clase reservada en AimHarder (lo suma la sincronización; cambiarlo también en sync/nucleo.mjs)
   podio: {
     RX:     { 1: 30,  2: 20, 3: 10 },
-    Scaled: { 1: 15,  2: 10, 3: 5 },
-    Open:   { 1: 7.5, 2: 5,  3: 2.5 }
+    Open:   { 1: 15,  2: 10, 3: 5 }
   }
 };
 // 7.5 -> "7,5"; 40 -> "40"
@@ -358,13 +383,18 @@ export const campoMes = (fecha = hoy()) => "pm_" + String(fecha).slice(0, 7).rep
 export const nombreMes = (fecha = hoy()) => mayus(new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" }));
 
 // Calcula los puntos de cada socio de una clase (solo resultados con cuenta y en la medida del WOD)
+// Puntos por registrar el resultado: 20 en RX y 10 en Open
+export const puntosRegistro = (categoria) => (categoria === "RX" ? PUNTOS.registrarRX : PUNTOS.registrar);
+// Cada grupo (RX chicos, RX chicas, Open chicos, Open chicas) tiene su podio
 export function calcularPuntos(resultados, tipo, clase = null) {
   const filas = [];
-  for (const cat of CATEGORIAS) {
-    const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, cat);
+  for (const g of GRUPOS) {
+    const cat = g.split("·")[0];
+    const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, g);
     lista.forEach((r, i) => {
-      const extra = sinPodio(clase) || tipoSinPodio(tipo) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
-      filas.push({ r, categoria: cat, posicion: pos[i], puntos: PUNTOS.registrar + extra });
+      const podio = sinPodio(clase) || tipoSinPodio(tipo) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
+      const registro = puntosRegistro(cat);
+      filas.push({ r, categoria: cat, grupo: g, posicion: pos[i], registro, podio, puntos: registro + podio });
     });
   }
   return filas;
@@ -436,7 +466,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261028b").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261029a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028b">
+<link rel="stylesheet" href="estilos.css?v=20261029a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -160,7 +160,7 @@
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
 </head>
 <body>
 <main>
@@ -200,13 +200,19 @@
     <label>Atleta</label>
     <div class="atleta-fijo"><b id="nombre">…</b><a href="perfil.html">Cambiar en tu perfil</a></div>
 
+    <label>Sexo</label>
+    <div class="segmentado" id="sexo">
+      <button type="button" data-v="M" aria-pressed="false">Chico</button>
+      <button type="button" data-v="F" aria-pressed="false">Chica</button>
+    </div>
+
     <label>Categoría</label>
-    <div class="segmentado tres" id="categoria">
+    <div class="segmentado" id="categoria">
       <button type="button" data-v="RX" aria-pressed="true">RX</button>
-      <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
       <button type="button" data-v="Open" aria-pressed="false">Open</button>
     </div>
-    <p class="nota-open" id="notaOpen" hidden>En esta clase no hay RX ni Scaled: todos los resultados van en Open.</p>
+    <p class="nota-open" id="notaOpen" hidden>En esta clase no hay RX: todos los resultados van en Open.</p>
+    <p class="nota-open" id="notaPuntosCat">RX: +20 puntos por registrar · Open: +10. En Open va delante quien usa más peso.</p>
 
     <div class="bloque-open" id="bloqueOpen" hidden>
       <div class="open-titulo">¿Qué peso has usado? <span class="opcional">Marca el material y escribe los kg</span></div>
@@ -306,11 +312,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261028b";
-import { db, hoy, TIPOS, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261028b";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261028b";
-import { montarMenu } from "./menu.js?v=20261028b";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261028b";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261029a";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261029a";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261029a";
+import { montarMenu } from "./menu.js?v=20261029a";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261029a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -319,6 +325,12 @@ $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "l
 let wod = null;
 let clase = claseInicial();
 let categoria = "RX";
+let sexo = "";   // "M" chico, "F" chica: cada uno compite en su clasificación
+function ponerSexo(v) {
+  sexo = v === "M" || v === "F" ? v : "";
+  $("sexo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === sexo)));
+}
+try { ponerSexo(localStorage.getItem("wod-sexo") || ""); } catch {}
 const elegido = {};  // material marcado en Open
 
 // Filas de material para Open: se pueden marcar varias y escribir el peso de cada una
@@ -389,7 +401,7 @@ $("sensaciones").addEventListener("click", (e) => {
 
 // ---------- Cuenta del socio ----------
 let user = null, ficha = undefined;
-montarAcceso($("acceso"), { titulo: "Entra o crea tu cuenta", texto: `Registra tus resultados, sigue tu evolución y suma puntos: ${PUNTOS.registrar} por cada resultado y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
+montarAcceso($("acceso"), { titulo: "Entra o crea tu cuenta", texto: `Registra tus resultados, sigue tu evolución y suma puntos: ${PUNTOS.registrarRX} por cada resultado en RX (${PUNTOS.registrar} en Open) y hasta +${PUNTOS.podio.RX[1]} por el podio.` });
 $("portadaMarca").textContent = NOMBRE_BOX;
 $("salir").addEventListener("click", () => salir());
 // ---------- Contador de clases hacia el próximo logro (solo logros con "clases" en el nombre) ----------
@@ -420,6 +432,7 @@ function escucharLogros() {
 escucharCuenta((c) => {
   const cambioUsuario = (c.user?.uid || null) !== (user?.uid || null);
   user = c.user; ficha = c.ficha;
+  if (ficha?.sexo && !sexo) ponerSexo(ficha.sexo);
   if (user) escucharLogros();
   pintarProgresoLogro();
   $("cargandoCuenta").hidden = true;
@@ -539,7 +552,8 @@ $("validar").addEventListener("click", async () => {
 function rellenarConMiResultado() {
   const r = miDoc;
   if (!r) return;
-  categoria = categoriasDe(clase).includes(r.categoria) ? r.categoria : categoriasDe(clase)[0];
+  categoria = categoriasDe(clase).includes(catDe(r)) ? catDe(r) : categoriasDe(clase)[0];
+  if (r.sexo) ponerSexo(r.sexo);
   $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === categoria));
   verBloqueOpen();
   for (const clave of Object.keys(MATERIAL)) {
@@ -611,11 +625,12 @@ function ajustarCategorias() {
   const cats = categoriasDe(clase);
   categoria = cats[0];
   $("categoria").querySelectorAll("button").forEach((x) => { x.hidden = !cats.includes(x.dataset.v); x.setAttribute("aria-pressed", x.dataset.v === categoria); });
-  $("categoria").classList.toggle("tres", cats.length === 3);
+
   $("categoria").classList.toggle("uno", cats.length === 1);
   $("notaOpen").hidden = !soloOpen(clase);
   verBloqueOpen();
 }
+$("sexo").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) ponerSexo(b.dataset.v); });
 $("categoria").addEventListener("click", (e) => {
   const b = e.target.closest("button");
   if (!b) return;
@@ -651,6 +666,7 @@ $("formulario").addEventListener("submit", async (e) => {
   if (!nombre) return ($("error").textContent = "Primero crea tu perfil de atleta.");
   if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
 
+  if (!sexo) return ($("error").textContent = "Marca si eres chico o chica: cada uno tiene su clasificación.");
   let valor, ejercicios = null;
   if (tipo === "emom") {
     valor = emomValor;
@@ -705,9 +721,12 @@ $("formulario").addEventListener("submit", async (e) => {
   $("enviar").disabled = true;
   try {
     if (!ficha) await guardarNombre(user, ficha, nombre);
+    // El sexo se recuerda en el perfil para no tener que marcarlo cada día
+    try { localStorage.setItem("wod-sexo", sexo); } catch {}
+    if (ficha?.sexo !== sexo) updateDoc(doc(db, "usuarios", user.uid), { sexo }).catch(() => {});
     const id = idResultado(clase, user.uid);
     await setDoc(doc(db, "resultados", id), {
-      uid: user.uid, nombre, clase, categoria, tipo, valor, fecha: hoy(),
+      uid: user.uid, nombre, clase, categoria, sexo, tipo, valor, fecha: hoy(),
       creado: miDoc?.creado || serverTimestamp(),
       ...(miDoc ? { editado: serverTimestamp() } : {}),
       ...(sensacion ? { sensacion } : {}),
@@ -718,18 +737,18 @@ $("formulario").addEventListener("submit", async (e) => {
     const eraNuevo = !miDoc;
     // Los puntos por registrar se suman al momento (una vez por clase y día)
     let sumadosAhora = false;
-    try { sumadosAhora = await sumarRegistro(user, clase, ficha); } catch (e) { console.warn("No se han podido sumar los puntos de registro", e); }
+    try { sumadosAhora = await sumarRegistro(user, clase, ficha, categoria); } catch (e) { console.warn("No se han podido sumar los puntos de registro", e); }
     $("hecho").querySelector("h2").textContent = eraNuevo ? "¡Registrado!" : "¡Cambios guardados!";
     $("puntosHoy").replaceChildren();
     const pc = PUNTOS.podio[categoria];
-    if (sumadosAhora) $("puntosHoy").append(Object.assign(document.createElement("div"), { className: "sumados", textContent: `+${PUNTOS.registrar} puntos` }), document.createElement("br"));
+    if (sumadosAhora) $("puntosHoy").append(Object.assign(document.createElement("div"), { className: "sumados", textContent: `+${sumadosAhora} puntos` }), document.createElement("br"));
     $("puntosHoy").append(
-      sumadosAhora ? "Ya están en tu cartera. " : `Los ${PUNTOS.registrar} puntos de registrar de hoy ya están en tu cartera. `,
-      tipoSinPodio(tipo) ? "En los EMOM no hay podio: solo suman los puntos de registrar." : sinPodio(clase) ? "En esta clase no hay puntos por podio." : `Si acabas en el podio de ${categoria} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
-    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${categoria}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sinAcabar(valor, tipo) ? " (no completado)" : ""}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+      sumadosAhora ? "Ya están en tu cartera. " : "Los puntos de registrar de hoy ya están en tu cartera. ",
+      tipoSinPodio(tipo) ? "En los EMOM no hay podio: solo suman los puntos de registrar." : sinPodio(clase) ? "En esta clase no hay puntos por podio." : `Si acabas en el podio de ${textoGrupo(grupoDe({ categoria, sexo }))} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
+    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${textoGrupo(grupoDe({ categoria, sexo }), false)}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sinAcabar(valor, tipo) ? " (no completado)" : ""}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
-    seguirMiPosicion({ id: ref.id, nombre, clase, categoria, tipo, valor });
+    seguirMiPosicion({ id: ref.id, nombre, clase, categoria, sexo, tipo, valor, ...(pesos ? { pesos } : {}), ...(ejercicios?.length ? { ejercicios } : {}) });
   } catch (err) {
     console.error(err);
     $("error").textContent = err?.code === "permission-denied"
@@ -769,7 +788,8 @@ function pintarEstado(todos) {
   const r = miResultado;
   // EMOM: no hay puestos ni líder
   if (tipoSinPodio(r.tipo)) { $("estado").hidden = true; return; }
-  const { lista, pos } = clasificacionDe(todos.filter((x) => claseDe(x) === r.clase), r.tipo, r.categoria);
+  const { lista, pos } = clasificacionDe(todos.filter((x) => claseDe(x) === r.clase), r.tipo, grupoDe(r));
+  const grupoTxt = textoGrupo(grupoDe(r));
   const i = lista.findIndex((x) => x.id === r.id);
   if (i < 0) return;
   const p = pos[i];
@@ -793,26 +813,26 @@ function pintarEstado(todos) {
 
   const conQuien = empatados.map((x) => x.nombre).join(" y ");
   if (estado === "lider") {
-    ponerCabecera("👑", `Líder · ${r.categoria}`, "lider");
+    ponerCabecera("👑", `Líder · ${grupoTxt}`, "lider");
     delete caja.dataset.destronado;
     if (estadoAntes !== "lider") $("estadoMsg").textContent = azar(FRASES_LIDER);
   } else if (estado === "empate") {
-    ponerCabecera("⚔️", `Empate en cabeza · ${r.categoria}`, "empate");
+    ponerCabecera("⚔️", `Empate en cabeza · ${grupoTxt}`, "empate");
     frase(conQuien, " está igualado contigo. Nadie cede el trono.");
   } else {
     const delante = lista[pos.indexOf(p) - 1];  // el que va justo por delante
     const lider = lista[0];
     if (estadoAntes === "lider" || estadoAntes === "empate") {
-      ponerCabecera("😤", `Te han quitado el 1º · ${r.categoria}`, "destronado");
+      ponerCabecera("😤", `Te han quitado el 1º · ${grupoTxt}`, "destronado");
       frase(lider.nombre, " te ha quitado el primer puesto. ¡La próxima es tuya!");
-      notificar(`😤 ${lider.nombre} te ha quitado el primer puesto`, `Ahora vas ${p}º en ${r.categoria} con ${formatearValor(r.valor, r.tipo)}.`);
+      notificar(`😤 ${lider.nombre} te ha quitado el primer puesto`, `Ahora vas ${p}º en ${grupoTxt} con ${formatearValor(r.valor, r.tipo)}.`);
     } else if (caja.dataset.destronado === "1") {
-      ponerCabecera("😤", `Te han quitado el 1º · ${r.categoria}`, "destronado");
+      ponerCabecera("😤", `Te han quitado el 1º · ${grupoTxt}`, "destronado");
     } else if (empatados.length) {
-      ponerCabecera("🤝", `Empate · ${r.categoria}`, "empate");
+      ponerCabecera("🤝", `Empate · ${grupoTxt}`, "empate");
       frase(conQuien, " va igualado contigo. ¡Toca desempatar!");
     } else {
-      ponerCabecera(p <= 3 ? ["", "🥇", "🥈", "🥉"][p] : "💪", `Tu posición · ${r.categoria}`);
+      ponerCabecera(p <= 3 ? ["", "🥇", "🥈", "🥉"][p] : "💪", `Tu posición · ${grupoTxt}`);
       frase(delante.nombre, ` va justo delante con ${formatearValor(delante.valor, r.tipo)}. ¡A por él!`);
     }
     if (estadoAntes === "lider" || estadoAntes === "empate") caja.dataset.destronado = "1";

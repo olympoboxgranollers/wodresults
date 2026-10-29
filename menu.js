@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261028b";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261028b";
-import { COACH_EMAIL } from "./config.js?v=20261028b";
+import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261029a";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029a";
+import { COACH_EMAIL } from "./config.js?v=20261029a";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -120,7 +120,7 @@ function explicarCanjes(coach) {
   const d = dlgCanjes; d.replaceChildren();
   const h = (tag, cls, txt) => Object.assign(document.createElement(tag), { className: cls, textContent: txt });
   const lista = document.createElement("ul"); lista.className = "canjes-pasos";
-  [["Suma puntos", `+${PUNTOS.reserva} por cada clase que reservas en AimHarder, +${PUNTOS.registrar} por registrar tu resultado, y extra por el podio, los logros y los eventos.`],
+  [["Suma puntos", `+${PUNTOS.reserva} por cada clase que reservas en AimHarder, +${PUNTOS.registrarRX} por registrar tu resultado en RX (+${PUNTOS.registrar} en Open), y extra por el podio, los logros y los eventos.`],
    ["Elige tu premio", "En Canjes verás los productos y premios del box y cuántos puntos cuesta cada uno."],
    ["Canjéalo", "Pulsas Canjear, se descuentan los puntos de tu cartera y el coach te lo entrega en el box."]]
     .forEach(([t, x], i) => { const li = document.createElement("li"); li.append(h("b", "", `${i + 1}. ${t}`), h("span", "", x)); lista.append(li); });
@@ -243,7 +243,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261028b").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261029a").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -314,7 +314,7 @@ function mostrarSiguienteLogro() {
 // · Última semana: un último aviso cuando faltan 7 días o menos (también a los apuntados).
 // Solo sale un aviso a la vez y se guarda en el móvil de cada socio.
 let escuchandoEventos = false;
-const DIA = 86400000, CADA = 14 * DIA;
+const DIA = 86400000;
 function vigilarEventosNuevos(paginaActual) {
   if (escuchandoEventos) return;
   escuchandoEventos = true;
@@ -327,26 +327,24 @@ function vigilarEventosNuevos(paginaActual) {
     const futuros = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })).filter((e) => e.fecha >= hoy()).sort((a, b) => a.fecha.localeCompare(b.fecha));
     // Limpia lo guardado de eventos que ya pasaron
     for (const id of Object.keys(estado)) if (!futuros.some((e) => e.id === id)) delete estado[id];
-    // En la propia página de eventos ya se ven: cuenta como visto
-    if (paginaActual === "eventos") { for (const e of futuros) estado[e.id] = { ...(estado[e.id] || {}), visto: ahora }; guardar(estado); return; }
+    // Solo se avisa del SIGUIENTE evento, y en tres momentos: cuando falta un mes, una semana y el día antes (cada uno una vez)
+    const e = futuros[0];
+    if (!e) { guardar(estado); return; }
+    const dias = Math.round((new Date(e.fecha + "T12:00:00") - new Date(hoy() + "T12:00:00")) / DIA);
+    const etapa = dias <= 1 ? "dia" : dias <= 7 ? "semana" : dias <= 30 ? "mes" : null;
+    if (!etapa) { guardar(estado); return; }
+    const st = estado[e.id] || {};
+    const marcarEtapa = () => { const o = leer(); const prev = o[e.id] || {}; o[e.id] = { ...prev, [etapa]: true, ...(etapa !== "mes" ? { mes: true } : {}), ...(etapa === "dia" ? { semana: true } : {}) }; guardar(o); };
+    if (st[etapa]) { guardar(estado); return; }
+    guardar(estado);
+    // En la propia página de eventos ya se ve: cuenta como visto
+    if (paginaActual === "eventos") { marcarEtapa(); return; }
     if (document.querySelector(".aviso-evento")) return;
-    for (const e of futuros) {
-      const st = estado[e.id] || {};
-      const dias = Math.round((new Date(e.fecha + "T12:00:00") - new Date(hoy() + "T12:00:00")) / DIA);
-      let tipo = null;
-      if (dias <= 7 && !st.final) tipo = "final";
-      else if (!st.visto) tipo = e.creado?.seconds && ahora - e.creado.seconds * 1000 < CADA ? "nuevo" : "recuerda";
-      else if (ahora - st.visto >= CADA && dias > 7) tipo = "recuerda";
-      if (!tipo) continue;
-      // Los que ya se han apuntado no necesitan los recordatorios de cada 2 semanas
-      let voy = false;
-      if (usuarioRol) { try { voy = (await getDoc(doc(db, "eventos", e.id, "asistentes", usuarioRol.uid))).exists(); } catch {} }
-      if (voy && tipo === "recuerda") { estado[e.id] = { ...st, visto: ahora }; guardar(estado); continue; }
-      mostrarAvisoEvento(e, tipo, dias, voy, () => {
-        const o = leer(); o[e.id] = { ...(o[e.id] || {}), visto: Date.now(), ...(tipo === "final" ? { final: true } : {}) }; guardar(o);
-      });
-      break;
-    }
+    let voy = false;
+    if (usuarioRol) { try { voy = (await getDoc(doc(db, "eventos", e.id, "asistentes", usuarioRol.uid))).exists(); } catch {} }
+    // A quien ya está apuntado no hace falta recordarle el aviso del mes
+    if (voy && etapa === "mes") { marcarEtapa(); return; }
+    mostrarAvisoEvento(e, etapa === "mes" ? "recuerda" : "final", dias, voy, marcarEtapa);
   }, () => {});
 }
 // Aviso de evento: ventana en el centro de la pantalla, con fondo oscuro detrás para que se lea bien
@@ -472,7 +470,11 @@ export function abrirEditor(r, tipo) {
   const sub = Object.assign(document.createElement("p"), { className: "editor-sub", textContent: r.validado ? "✓ Validado" + (r.revisado ? " · corregido por el coach" : "") : "Sin validar" });
   const lc = Object.assign(document.createElement("label"), { textContent: "Categoría" });
   const sel = document.createElement("select");
-  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === r.categoria));
+  for (const c of categoriasDe(claseDe(r))) sel.append(new Option(c, c, false, c === catDe(r)));
+  const ls = Object.assign(document.createElement("label"), { textContent: "Sexo" });
+  const selSexo = document.createElement("select");
+  selSexo.append(new Option("Chico", "M", false, r.sexo === "M"), new Option("Chica", "F", false, r.sexo === "F"));
+  if (!r.sexo) selSexo.prepend(new Option("Sin indicar", "", true, true));
   const lv = Object.assign(document.createElement("label"), { textContent: tipo === "emom" ? "¿Completado? (Sí / No)" : tipo === "tiempo" ? "Tiempo (min:seg) · si no lo acabó: 120 reps" : tipo === "rondas" ? "Rondas+reps (p. ej. 5+12)" : "Kilos" });
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
   const msg = Object.assign(document.createElement("div"), { className: "editor-msg" });
@@ -487,7 +489,7 @@ export function abrirEditor(r, tipo) {
   guardar.addEventListener("click", async () => {
     const v = leerValor(val.value, tipo);
     if (isNaN(v)) return error("Revisa el resultado.");
-    try { await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true }); dlg.close(); }
+    try { await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true, ...(selSexo.value ? { sexo: selSexo.value } : {}) }); dlg.close(); }
     catch (e) { console.error(e); error(e?.code === "permission-denied" ? "No se puede: el día ya está cerrado o no es la cuenta del coach." : "No se ha podido guardar."); }
   });
   validar.addEventListener("click", async () => {
@@ -502,9 +504,11 @@ export function abrirEditor(r, tipo) {
       lote.delete(doc(db, "resultados", r.id));
       if (r.uid) {
         const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(claseDe(r), r.fecha));
-        if ((await getDoc(regRef)).exists()) {
+        const reg = await getDoc(regRef);
+        if (reg.exists()) {
+          const pts = reg.data().puntos || PUNTOS.registrar;   // 20 si era RX, 10 si era Open
           lote.delete(regRef);
-          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-PUNTOS.registrar), puntosRanking: increment(-PUNTOS.registrar), [campoMes(r.fecha || hoy())]: increment(-PUNTOS.registrar), mesBorrado: campoMes(r.fecha || hoy()) });
+          lote.update(doc(db, "usuarios", r.uid), { puntos: increment(-pts), puntosRanking: increment(-pts), [campoMes(r.fecha || hoy())]: increment(-pts), mesBorrado: campoMes(r.fecha || hoy()) });
         }
       }
       await lote.commit();
@@ -514,6 +518,6 @@ export function abrirEditor(r, tipo) {
   cerrar.addEventListener("click", () => dlg.close());
   if (r.validado) validar.hidden = true;
   btns.append(guardar, validar, borrar, cerrar);
-  dlg.append(titulo, sub, lc, sel, lv, val, msg, btns);
+  dlg.append(titulo, sub, lc, sel, ls, selSexo, lv, val, msg, btns);
   dlg.showModal();
 }

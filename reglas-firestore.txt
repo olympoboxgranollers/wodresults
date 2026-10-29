@@ -36,6 +36,10 @@ service cloud.firestore {
       return timestamp.date(int(f.split('-')[0]), int(f.split('-')[1]), int(f.split('-')[2]));
     }
     // Es "hoy" en España (con 1-2 h de margen por el horario de verano/invierno)
+    // Campo de puntos del mes del ranking general ("pm_2026_10") a partir del id de un registro ("2026-10-27_wod_reg")
+    function campoMes(mid) {
+      return 'pm_' + mid.split('_')[0].split('-')[0] + '_' + mid.split('_')[0].split('-')[1];
+    }
     function esHoy(f) {
       return request.time > inicioDia(f) - duration.value(2, 'h')
         && request.time < inicioDia(f) + duration.value(23, 'h');
@@ -52,10 +56,14 @@ service cloud.firestore {
         && kgOk(d.pesos, 'kettlebell') && kgOk(d.pesos, 'barbell'));
     }
     function resultadoValido(d) {
-      return d.keys().hasOnly(['uid', 'nombre', 'clase', 'categoria', 'tipo', 'valor', 'fecha', 'creado', 'editado', 'sensacion', 'pesos', 'revisado', 'validado', 'reacciones'])
-        && d.clase in ['wod', 'hyrox', 'funcional']
+      return d.keys().hasOnly(['uid', 'nombre', 'clase', 'categoria', 'sexo', 'tipo', 'valor', 'fecha', 'creado', 'editado', 'sensacion', 'pesos', 'ejercicios', 'revisado', 'validado', 'reacciones'])
+        && (!('sexo' in d) || d.sexo in ['M', 'F'])   // chico / chica
+        && d.clase in ['wod', 'hyrox', 'funcional', 'crossbeginners']
         && d.categoria in ['RX', 'Scaled', 'Open']
-        && d.tipo in ['tiempo', 'rondas', 'kg']
+        && (d.clase != 'crossbeginners' || d.categoria == 'Open')   // en Crossbeginners solo hay Open
+        && d.tipo in ['tiempo', 'rondas', 'kg', 'emom']
+        && (d.tipo != 'emom' || d.valor in [1, 2])   // EMOM: 2 completado, 1 no
+        && (!('ejercicios' in d) || (d.ejercicios is list && d.ejercicios.size() <= 10))
         && d.tipo == get(/databases/$(database)/documents/wods/$(d.fecha + '_' + d.clase)).data.tipo
         && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 40
         && d.valor is number && d.valor > 0 && d.valor < 100000
@@ -114,7 +122,8 @@ service cloud.firestore {
         && request.resource.data.validado == true)
         // ...y corregir la categoría y el resultado de cualquiera mientras el día siga abierto
         || (esStaff()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'valor', 'revisado', 'validado'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'sexo', 'valor', 'revisado', 'validado'])
+        && (!('sexo' in request.resource.data) || request.resource.data.sexo in ['M', 'F'])
         && request.resource.data.categoria in ['RX', 'Scaled', 'Open']
         && request.resource.data.valor is number && request.resource.data.valor > 0 && request.resource.data.valor < 100000
         && request.resource.data.revisado == true
@@ -136,7 +145,8 @@ service cloud.firestore {
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
         && textoCorto(request.resource.data, 'favorito') && textoCorto(request.resource.data, 'odiado'));
       allow update: if esCoach() || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos', 'bio', 'alta'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'atleta', 'favorito', 'odiado', 'ocultarPuntos', 'bio', 'alta', 'sexo'])
+        && (!('sexo' in request.resource.data) || request.resource.data.sexo in ['M', 'F'])
         && (!('bio' in request.resource.data) || (request.resource.data.bio is string && request.resource.data.bio.size() <= 160))
         && (!('alta' in request.resource.data) || (request.resource.data.alta is string && request.resource.data.alta.size() == 10))
         && request.resource.data.nombre is string && request.resource.data.nombre.size() > 0 && request.resource.data.nombre.size() <= 40
@@ -154,11 +164,13 @@ service cloud.firestore {
         && request.resource.data.rm.keys().hasOnly(['snatch', 'cleanJerk', 'fecha'])
         && request.resource.data.rm.snatch is number && request.resource.data.rm.snatch >= 0 && request.resource.data.rm.snatch <= 400
         && request.resource.data.rm.cleanJerk is number && request.resource.data.rm.cleanJerk >= 0 && request.resource.data.rm.cleanJerk <= 400)
-        // +10 al momento por registrar: solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
+        // Puntos al momento por registrar (20 en RX, 10 en Open): solo si a la vez se crea su movimiento "registro" de esa clase y día (que no existía)
         || (conCuenta() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro', 'clases', 'puntosRanking'])
-        && request.resource.data.puntos == resource.data.puntos + 10
-        && (request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0) + 10 || request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0))
+        && request.resource.data.ultimoRegistro is string
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'ultimoRegistro', 'clases', 'puntosRanking', campoMes(request.resource.data.ultimoRegistro)])
+        && request.resource.data.puntos == resource.data.puntos + getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)).data.puntos
+        && (request.resource.data.get(campoMes(request.resource.data.ultimoRegistro), 0) == resource.data.get(campoMes(request.resource.data.ultimoRegistro), 0) + getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)).data.puntos || request.resource.data.get(campoMes(request.resource.data.ultimoRegistro), 0) == resource.data.get(campoMes(request.resource.data.ultimoRegistro), 0))
+        && (request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0) + getAfter(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro)).data.puntos || request.resource.data.get('puntosRanking', 0) == resource.data.get('puntosRanking', 0))
         && (request.resource.data.get('clases', 0) == resource.data.get('clases', 0) + 1 || request.resource.data.get('clases', 0) == resource.data.get('clases', 0))
         && request.resource.data.ultimoRegistro is string
         && !exists(/databases/$(database)/documents/usuarios/$(uid)/movimientos/$(request.resource.data.ultimoRegistro))
@@ -181,23 +193,26 @@ service cloud.firestore {
         && resource.data.get('clases', 0) >= logro(request.resource.data.ultimoLogro).clases
         && request.resource.data.puntos == resource.data.puntos + logro(request.resource.data.ultimoLogro).puntos
         && request.resource.data.insignias[request.resource.data.ultimoLogro].puntos == logro(request.resource.data.ultimoLogro).puntos)
-        // Un entrenador que borra un resultado le quita los 10 puntos de registrar (y la clase)
+        // Un entrenador que borra un resultado le quita los puntos de registrar (20 si era RX, 10 si era Open)
         || (esEntrenador()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'clases', 'puntosRanking'])
-        && request.resource.data.puntos == resource.data.puntos - 10
-        && request.resource.data.get('puntosRanking', 0) >= resource.data.get('puntosRanking', 0) - 10
+        && (!('mesBorrado' in request.resource.data) || (request.resource.data.mesBorrado is string && request.resource.data.mesBorrado.matches('pm_[0-9]{4}_[0-9]{2}')))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['puntos', 'clases', 'puntosRanking', 'mesBorrado', request.resource.data.get('mesBorrado', 'puntos')])
+        && (resource.data.puntos - request.resource.data.puntos) in [10, 20]
+        && request.resource.data.get(request.resource.data.get('mesBorrado', 'puntos'), 0) >= resource.data.get(request.resource.data.get('mesBorrado', 'puntos'), 0) - 20
+        && request.resource.data.get('puntosRanking', 0) >= resource.data.get('puntosRanking', 0) - 20
         && request.resource.data.get('clases', 0) >= resource.data.get('clases', 0) - 1);
       allow delete: if esCoach();
 
       // Historial de puntos de cada socio
       match /movimientos/{mid} {
         allow read: if conCuenta();
-        // El socio crea su "registro" (+10) una sola vez por clase y día, y solo si tiene su resultado de hoy
+        // El socio crea su "registro" (+20 en RX, +10 en Open) una sola vez por clase y día, y solo si tiene su resultado de hoy
         allow create: if esCoach() || (conCuenta() && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['fecha', 'clase', 'tipo', 'puntos'])
           && request.resource.data.tipo == 'registro'
-          && request.resource.data.puntos == 10
-          && request.resource.data.clase in ['wod', 'hyrox', 'funcional']
+          && ((request.resource.data.puntos == 20 && get(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid)).data.categoria == 'RX')
+            || (request.resource.data.puntos == 10 && get(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid)).data.categoria != 'RX'))
+          && request.resource.data.clase in ['wod', 'hyrox', 'funcional', 'crossbeginners']
           && mid == request.resource.data.fecha + '_' + request.resource.data.clase + '_reg'
           && esHoy(request.resource.data.fecha)
           && exists(/databases/$(database)/documents/resultados/$(request.resource.data.fecha + '_' + request.resource.data.clase + '_' + uid))
@@ -370,12 +385,12 @@ service cloud.firestore {
     match /wods/{id} {
       allow read: if conCuenta() || esTV();
       allow create, update: if esStaff()
-        && id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional)$')
+        && id.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}_(wod|hyrox|funcional|crossbeginners)$')
         && request.resource.data.keys().hasOnly(['nombre', 'tipo', 'descripcion'])
         && (!('descripcion' in request.resource.data) || (request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 1000))
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() <= 60
-        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg'];
+        && request.resource.data.tipo in ['tiempo', 'rondas', 'kg', 'emom'];
       allow delete: if esStaff() || diaPasado(id.split('_')[0]);
     }
   
@@ -388,15 +403,16 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
         && (!('red' in request.resource.data) || (request.resource.data.red is string && request.resource.data.red.size() <= 32))
         && request.resource.data.codigo is string && request.resource.data.codigo.size() == 4
-        && request.resource.data.creado is number
+        && request.resource.data.creado == request.time
         && request.resource.data.vinculada == false;
       allow update: if (esAnonimo() && request.auth.uid == tv
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['codigo', 'creado', 'vinculada', 'red'])
-          && request.resource.data.vinculada == false)
+          && request.resource.data.vinculada == false
+          && (!('creado' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.creado == request.time))
         || (esStaff()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['vinculada', 'por', 'clase'])
           && request.resource.data.vinculada is bool
-          && (!('clase' in request.resource.data) || request.resource.data.clase in ['wod', 'hyrox', 'funcional']));
+          && (!('clase' in request.resource.data) || request.resource.data.clase in ['wod', 'hyrox', 'funcional', 'crossbeginners']));
       allow delete: if esStaff() || (esAnonimo() && request.auth.uid == tv);
     }
   }

@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261028b">
+<link rel="stylesheet" href="estilos.css?v=20261029a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -41,9 +41,13 @@
   .descripcion b { display: block; font-family: "Oswald", sans-serif; text-transform: uppercase; letter-spacing: .02em; color: var(--malva); font-size: 13px; margin-bottom: 4px; font-weight: 600; }
   h2 { font-family: "Oswald", sans-serif; text-transform: uppercase; font-size: 22px; letter-spacing: .02em; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: baseline; }
   h2 small { font-size: 13px; color: var(--suave); font-family: "Inter", sans-serif; letter-spacing: 0; text-transform: none; }
-  .filtros { display: flex; gap: 8px; margin-bottom: 12px; }
+  .filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .grupo-cab { margin: 16px 2px 8px; font-weight: 700; font-size: 14px; letter-spacing: .04em; color: var(--malva); }
+  .grupo-cab:first-child { margin-top: 2px; }
   .filtros button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 14px; }
   .filtros button[aria-pressed="true"] { background: var(--malva); color: #1f2125; border-color: var(--malva); }
+  .filtros-sexo { margin: -4px 0 12px; }
+  .filtros-sexo select { appearance: none; -webkit-appearance: none; background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23E0369A' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center; border: 1.5px solid var(--malva); color: var(--texto); border-radius: 999px; padding: 9px 40px 9px 16px; font: inherit; font-weight: 600; font-size: 14px; min-width: 150px; }
   ol { list-style: none; display: flex; flex-direction: column; gap: 8px; }
   li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; font-size: 17px; }
   li .pos { font-family: "Oswald", sans-serif; font-size: 22px; color: var(--suave); text-align: center; }
@@ -174,7 +178,7 @@
   .tv-url { display: block; font-size: 12px; color: var(--lila); word-break: break-all; }
   .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261028b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
 </head>
 <body>
 <dialog class="dlg-tv" id="dlgTv" aria-label="Conectar la Smart TV">
@@ -222,13 +226,19 @@
   <div class="filtros" id="filtros">
     <button type="button" data-v="todos" aria-pressed="true">Todos</button>
     <button type="button" data-v="RX" aria-pressed="false">RX</button>
-    <button type="button" data-v="Scaled" aria-pressed="false">Scaled</button>
     <button type="button" data-v="Open" aria-pressed="false">Open</button>
+  </div>
+  <!-- Al elegir RX u Open aparece el desplegable de chicos / chicas -->
+  <div class="filtros-sexo" id="filtrosSexo" hidden>
+    <select id="selSexo" aria-label="Chicos o chicas">
+      <option value="M">Chicos</option>
+      <option value="F">Chicas</option>
+    </select>
   </div>
   <ol id="lista"></ol>
   <section class="general" id="vistaGeneral" hidden>
     <h3 class="titulo-general">Ranking general <span id="mesGeneral" class="mes-general"></span> <small id="nGeneral"></small></h3>
-    <p class="nota-general">Suma solo los puntos de registrar el resultado (10 por clase) y los del podio de cada día de este mes. No cuentan logros, eventos ni canjes. <b id="reinicioGeneral"></b></p>
+    <p class="nota-general">Suma solo los puntos de registrar el resultado (20 en RX, 10 en Open) y los del podio de cada día de este mes. No cuentan logros, eventos ni canjes. <b id="reinicioGeneral"></b></p>
     <button type="button" class="recalcular" id="recalcular" hidden>Recalcular desde el historial</button>
     <ol id="listaGeneral"></ol>
   </section>
@@ -250,10 +260,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261028b";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261028b";
-import { escucharCuenta } from "./cuenta.js?v=20261028b";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261028b";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261029a";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261029a";
+import { escucharCuenta } from "./cuenta.js?v=20261029a";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261029a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -362,6 +372,9 @@ let wod = null;
 let todos = [];        // resultados de hoy de todas las clases
 let resultados = [];   // solo los de la clase elegida
 let filtro = "todos";
+$("selSexo").addEventListener("change", () => pintar());
+// El desplegable solo se ve en la vista de hoy con RX u Open elegido
+const verSexo = () => { $("filtrosSexo").hidden = $("filtros").hidden || filtro === "todos"; };
 const vistos = new Set();
 let primeraCarga = true;
 let lideresAntes = null;
@@ -373,13 +386,14 @@ $("filtros").addEventListener("click", (e) => {
   if (!b) return;
   filtro = b.dataset.v;
   $("filtros").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  verSexo();
   pintar();
 });
 
 function pintar() {
   const tipo = wod?.tipo || "tiempo";
   const validos = wod ? resultados.filter((r) => (r.tipo || tipo) === tipo) : [];
-  const lista = ordenar(validos, tipo).filter((r) => filtro === "todos" || r.categoria === filtro);
+  const lista = ordenar(validos, tipo).filter((r) => (filtro === "todos" || catDe(r) === filtro) && ($("filtrosSexo").hidden || r.sexo === $("selSexo").value));
   const ol = $("lista");
   ol.replaceChildren();
   $("nAtletas").textContent = lista.length ? `${lista.length} atleta${lista.length > 1 ? "s" : ""}` : "";
@@ -390,7 +404,10 @@ function pintar() {
     ol.append(v);
   }
   const pos = posiciones(lista);
+  let grupoAnt = null;
   lista.forEach((r, i) => {
+    // Cabecera de cada clasificación: RX · Chicos, RX · Chicas, Open · Chicos, Open · Chicas
+    if (grupoDe(r) !== grupoAnt) { grupoAnt = grupoDe(r); ol.append(Object.assign(document.createElement("div"), { className: "grupo-cab", textContent: textoGrupo(grupoAnt) })); }
     const li = document.createElement("li");
     const sinPos = tipoSinPodio(r.tipo || tipo);   // EMOM: sin puestos ni podio
     if (pos[i] <= 3 && !sinPos) li.classList.add("p" + pos[i]);
@@ -403,8 +420,8 @@ function pintar() {
     if (em) nom.append(em);
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
     if (claseEmom) res.classList.add(claseEmom);
-    const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = r.categoria;
-    const tp = detallePesos(r);
+    const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = textoGrupo(grupoDe(r), false);
+    const tp = [detallePesos(r), catDe(r) === "Open" && pesoTotal(r) ? `Total ${String(pesoTotal(r)).replace(".", ",")} kg` : ""].filter(Boolean).join(" · ");
     if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
@@ -504,7 +521,7 @@ function verVista(v) {
   $("vistaHoy").classList.toggle("en-general", v === "general");
   // En General solo cambia lo de debajo de Clasificación (la lista y los filtros del día)
   $("lista").hidden = v !== "hoy"; $("nAtletas").hidden = v !== "hoy";
-  $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy" || soloOpen(clase);
+  $("pestanas").hidden = v !== "hoy"; $("filtros").hidden = v !== "hoy" || soloOpen(clase); verSexo();
   // Si ha cambiado el mes con la página abierta, se vuelve a escuchar el campo del mes nuevo
   if (v === "general" && dejarGeneral && campoGeneral !== campoMes()) { dejarGeneral(); dejarGeneral = null; }
   if (v === "general") { $("mesGeneral").textContent = "· " + nombreMes(); $("reinicioGeneral").textContent = textoReinicio(); }
@@ -698,7 +715,7 @@ function cambiarClase(nueva) {
   // En Crossbeginners todos son Open: sin filtros de categoría
   filtro = "todos";
   $("filtros").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === "todos")));
-  $("filtros").hidden = vista !== "hoy" || soloOpen(clase);
+  $("filtros").hidden = vista !== "hoy" || soloOpen(clase); verSexo();
   wod = null; cargado.wod = false; lideresAntes = null; lideresAntesTipo = null; primeraCarga = true;
   todos = []; resultados = [];
   $("wodNombre").textContent = titulo(`${CLASES[clase].nombre} del día`); $("tipo").textContent = ""; $("descripcion").hidden = true;
