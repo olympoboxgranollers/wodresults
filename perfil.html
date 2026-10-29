@@ -226,6 +226,14 @@
   .sig-info span { font-size: 13px; color: var(--suave); }
   .resto-faltan { margin-top: 12px; }
   /* Amigos en el perfil de otro socio */
+  .amigos-perfil { display: flex; flex-direction: column; gap: 18px; }
+  .amigos-perfil[hidden] { display: none; }
+  .amigos-perfil .am-n { color: var(--suave); font-weight: 600; font-size: 13px; letter-spacing: 0; }
+  .am-lista { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .am-chip { color: var(--texto); text-decoration: none; font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .am-chip.comun::after { content: " · en común"; color: var(--suave); font-weight: 400; font-size: 13px; }
+  .am-vacio { margin: 10px 0 0; color: var(--suave); font-size: 14px; }
+  html body :is(#amMas, #amMasComun) { text-transform: none !important; letter-spacing: 0 !important; margin-top: 8px; padding: 0; background: none !important; border: 0 !important; box-shadow: none !important; color: var(--lila); font: inherit; font-weight: 600; font-size: 14px; text-align: left; }
   .fila-amigo { display: flex; justify-content: center; margin-top: 14px; }
   .am-btn { border-radius: 999px; padding: 10px 20px; font-size: 14px; font-weight: 700; border: 1px solid var(--borde); background: none; color: var(--texto); }
   .am-anadir { background: var(--lila); color: #0C0D10; border-color: var(--lila); }
@@ -321,6 +329,21 @@
     </div>
   </section>
 
+  <!-- Amigos del socio y, si es el perfil de otro, los amigos en común -->
+  <section class="sobre amigos-perfil" id="amigosPerfil" hidden>
+    <div id="bloqueComun" hidden>
+      <div class="sobre-titulo">Amigos en común <small class="am-n" id="nComun"></small></div>
+      <div class="am-lista" id="listaComun"></div>
+      <button type="button" class="am-mas" id="amMasComun" hidden></button>
+    </div>
+    <div id="bloqueAmigos">
+      <div class="sobre-titulo"><span id="tituloAmigosP">Amigos</span> <small class="am-n" id="nAmigos"></small></div>
+      <div class="am-lista" id="listaAmigosP"></div>
+      <p class="am-vacio" id="amVacio" hidden></p>
+      <button type="button" class="am-mas" id="amMas" hidden>Ver todos</button>
+    </div>
+  </section>
+
   <a class="proximo" id="proximo" href="eventos.html" hidden>
     <div class="sobre-titulo">Próximo evento</div>
     <div class="prox-fila">
@@ -394,7 +417,7 @@ import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteD
 import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261029a";
 import { escucharCuenta, salir } from "./cuenta.js?v=20261029a";
 import { montarMenu, esCuentaCoach } from "./menu.js?v=20261029a";
-import { escucharAmistades, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261029a";
+import { escucharAmistades, escucharAmigosDe, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261029b";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
@@ -469,6 +492,49 @@ function pintarAmigo() {
     alQuitar: () => hacer(() => quitarAmistad(rel.id))
   }));
 }
+// ---------- Amigos en el perfil: sus amigos y los que tenemos en común ----------
+let amigosDe = { uid: null, lista: [], dejar: null }, misAmigos = { uid: null, set: new Set(), dejar: null }, verTodosAm = false, verTodosComun = false;
+const MAX_AM = 2;   // nombres que se ven sin desplegar
+function chipAmigo(a, comun) {
+  const el = document.createElement("a"); el.className = "am-chip" + (comun ? " comun" : "");
+  el.href = yo && a.uid === yo.uid ? "perfil.html" : "perfil.html?uid=" + encodeURIComponent(a.uid);
+  el.textContent = a.nombre; return el;
+}
+function pintarAmigosPerfil() {
+  const caja = $("amigosPerfil");
+  if (!ficha || !yo) { caja.hidden = true; return; }
+  const esYo = ficha.uid === yo.uid;
+  if (amigosDe.uid !== ficha.uid) {
+    if (amigosDe.dejar) amigosDe.dejar();
+    amigosDe = { uid: ficha.uid, lista: [], dejar: null, listo: false };
+    amigosDe.dejar = escucharAmigosDe(ficha.uid, (l) => { amigosDe.lista = l; amigosDe.listo = true; pintarAmigosPerfil(); });
+  }
+  if (!esYo && misAmigos.uid !== yo.uid) {
+    if (misAmigos.dejar) misAmigos.dejar();
+    misAmigos = { uid: yo.uid, set: new Set(), dejar: null };
+    misAmigos.dejar = escucharAmigosDe(yo.uid, (l) => { misAmigos.set = new Set(l.map((a) => a.uid)); pintarAmigosPerfil(); });
+  }
+  if (!amigosDe.listo) { caja.hidden = true; return; }
+  caja.hidden = false;
+  const lista = amigosDe.lista;
+  const comunes = esYo ? [] : lista.filter((a) => misAmigos.set.has(a.uid));
+  $("bloqueComun").hidden = esYo || !comunes.length;
+  $("nComun").textContent = comunes.length ? "· " + comunes.length : "";
+  $("listaComun").replaceChildren(...(verTodosComun ? comunes : comunes.slice(0, MAX_AM)).map((a) => chipAmigo(a, false)));
+  $("amMasComun").hidden = comunes.length <= MAX_AM;
+  $("amMasComun").textContent = verTodosComun ? "Mostrar menos" : `Mostrar más amigos en común (${comunes.length - MAX_AM})`;
+  $("tituloAmigosP").textContent = esYo ? "Mis amigos" : "Sus amigos";
+  $("nAmigos").textContent = lista.length ? "· " + lista.length : "";
+  const mostrar = verTodosAm ? lista : lista.slice(0, MAX_AM);
+  $("listaAmigosP").replaceChildren(...mostrar.map((a) => chipAmigo(a, !esYo && misAmigos.set.has(a.uid))));
+  $("amMas").hidden = lista.length <= MAX_AM;
+  $("amMas").textContent = verTodosAm ? "Mostrar menos" : `Mostrar más amigos (${lista.length - MAX_AM})`;
+  $("amVacio").hidden = lista.length > 0;
+  $("amVacio").textContent = esYo ? "Aún no tienes amigos. Búscalos en el apartado Amigos." : "Todavía no tiene amigos en la app.";
+}
+$("amMas").addEventListener("click", () => { verTodosAm = !verTodosAm; pintarAmigosPerfil(); });
+$("amMasComun").addEventListener("click", () => { verTodosComun = !verTodosComun; pintarAmigosPerfil(); });
+
 let miNombreAmigos = "";
 escucharCuenta(({ ficha: f }) => { miNombreAmigos = f?.nombre || ""; });
 
@@ -523,7 +589,7 @@ function pintar() {
   ponerAvatar($("avatar"), nombre, foto);
   const esYo = !!yo && yo.uid === ficha.uid;
   pintarZonaAdmin();
-  pintarAmigo();
+  pintarAmigo(); pintarAmigosPerfil();
   pintarCabecera(esYo);
   const oculto = !!ficha.ocultarPuntos && !esYo;
   $("dPuntos").textContent = oculto ? "🔒" : fmtPuntos(ficha.puntos || 0);

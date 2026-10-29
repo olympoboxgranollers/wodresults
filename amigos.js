@@ -18,6 +18,16 @@ export function escucharAmistades(miUid, cb) {
   }, () => cb(new Map()));
 }
 
+// Amigos (aceptados) de cualquier socio, para su perfil. cb(lista) con lista: [{ uid, nombre }]
+export function escucharAmigosDe(uid, cb) {
+  return onSnapshot(query(collection(db, "amistades"), where("uids", "array-contains", uid), where("estado", "==", "aceptada")), (s) => {
+    const lista = [];
+    s.forEach((d) => { const a = d.data(), otro = a.uids.find((u) => u !== uid); if (otro) lista.push({ uid: otro, nombre: a.nombres?.[otro] || "Socio" }); });
+    lista.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+    cb(lista);
+  }, () => cb([]));
+}
+
 export async function pedirAmistad(yo, miNombre, otro, nombreOtro) {
   const uids = [yo, otro].sort();
   await setDoc(doc(db, "amistades", idAmistad(yo, otro)), {

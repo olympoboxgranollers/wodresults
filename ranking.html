@@ -68,6 +68,10 @@
   .vistas { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
   .seg-clasif { display: flex !important; width: 100%; margin: 0 0 12px; }
   .seg-clasif button { flex: 1; padding: 9px 16px !important; }
+  /* Botones Hoy / General con la misma forma redonda que la caja que los rodea */
+  html body .seg-clasif { border-radius: 999px !important; padding: 4px !important; gap: 4px; background: var(--ol-elev2) !important; border: 1px solid var(--ol-borde-fuerte) !important; }
+  html body .seg-clasif :is(#verHoy, #verGeneral) { border-radius: 999px !important; border: 1px solid transparent !important; background: transparent !important; box-shadow: none !important; }
+  html body .seg-clasif :is(#verHoy, #verGeneral)[aria-pressed="true"] { border-color: #E0369A !important; background: var(--ol-elev3) !important; }
   .titulo-general { font-size: 18px; font-weight: 700; margin: 4px 0 6px; }
   .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--panel); border: 1px solid var(--borde); }
   .seg button { border: 0; background: none; color: var(--suave); font-weight: 600; font-size: 14px; padding: 7px 16px; border-radius: 999px; }
