@@ -55,6 +55,14 @@ export function crearAim({ base = "https://api.aimharder.com", fetchFn = fetch, 
   };
 }
 
+// ---------- Clases de AimHarder que cuentan ----------
+// Solo se cuentan las reservas de estas clases (por su nombre en AimHarder). Da igual mayúsculas, acentos y espacios.
+// Para añadir o quitar una, cambia esta lista.
+export const CLASES_QUE_CUENTAN = ["WOD", "FUNCIONAL", "MASTERS FUNCIONAL", "HIBRIDRACE", "CROSSBEGINNERS"];
+const normalClase = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const CUENTAN = new Set(CLASES_QUE_CUENTAN.map(normalClase));
+export const claseCuenta = (nombre) => CUENTAN.has(normalClase(nombre));
+
 // ---------- Contar las clases (reservas) de un cliente a partir de su historial ----------
 // estado = { desde, asistidas } → solo se piden las reservas con id >= desde.
 // Una reserva está "decidida" cuando su día ya pasó (o se canceló); hasta entonces se vuelve a mirar.
@@ -65,8 +73,8 @@ export function contarReservas(reservas, estado, hoy) {
   for (const b of lista) {
     const cancelada = !!b.cancellation_date;
     const decidida = cancelada || (b.day && b.day < hoy);
-    // Cuenta cada reserva no cancelada ni en lista de espera, haya check-in o no
-    const cuenta = !cancelada && b.state !== "waiting_list";
+    // Cuenta cada reserva no cancelada ni en lista de espera, haya check-in o no, y solo de las clases de la lista
+    const cuenta = !cancelada && b.state !== "waiting_list" && claseCuenta(b.class?.name);
     if (decidida && todoDecidido) {
       if (cuenta) asistidas++;
       desde = b.id + 1;
@@ -166,12 +174,13 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
 
   // 4) Historial de reservas de cada socio vinculado (primero los que hace más que no se miran)
   // Versión 2 del recuento: se cuentan reservas (antes, solo asistencias con check-in).
-  // La primera vez se vuelve a leer todo el historial de cada socio y se quitan los ajustes manuales antiguos.
-  const VERSION = 2;
+  // Versión 3: solo cuentan las clases de CLASES_QUE_CUENTAN. Se vuelve a leer todo el historial de cada socio
+  // (poco a poco, en varias sincronizaciones) y, al recontar, no se le quitan puntos por las clases que ya no cuentan.
+  const VERSION = 3;
   const estados = priv.versionConteo === VERSION ? { ...(priv.estados || {}) } : {};
   // Primero los que aún no tienen el recuento por reservas (los de más clases antes, que son los que más se notan);
   // después, los que hace más que no se miran
-  const migrado = (p) => !!usuarios.get(p.uid)?.conteoV2 && !!estados[p.cliente.id];
+  const migrado = (p) => !!usuarios.get(p.uid)?.conteoV3 && !!estados[p.cliente.id];
   // Socios que el coach ha pedido recontar ya desde Logros (van los primeros)
   const forzados = new Set(almacen.leerForzados ? await almacen.leerForzados() : []);
   const hechosForzados = [];
@@ -210,7 +219,11 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     n++; res.revisados++;
     if (forzados.has(uid)) hechosForzados.push(uid);
     const r = contarReservas(reservas, est, hoy);
-    if (prueba) { res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes }); continue; }
+    if (prueba) {
+      res.muestras.push({ reservasLeidas: reservas.length, clasesAsistidas: r.total, pendientes: r.pendientes });
+      for (const b of reservas) { const nm = String(b.class?.name || "(sin nombre)").slice(0, 40); res.nombresClase = res.nombresClase || new Map(); res.nombresClase.set(nm, claseCuenta(nm)); }
+      continue;
+    }
     estados[cliente.id] = { uid, ...r.estado, total: r.total, pendientes: r.pendientes, proximoDia: r.proximoDia, ultimaReserva: cliente.class_data?.reservation_date || null, revisado: ahora.toISOString() };
     // Ajuste manual del coach: los antiguos (del recuento anterior) se quitan la primera vez
     // Si el coach fijó a mano el total (clasesFijadas), se ajusta para quedarse en ese número
@@ -218,10 +231,11 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     const ajuste = fijado ? usuario.clasesFijadas - r.total : (usuario.conteoV2 ? (usuario.clasesAjuste || 0) : 0);
     const totalApp = r.total + ajuste;
     const nuevos = logrosNuevos(usuario, totalApp, logros);
-    const pr = puntosReservas(usuario, r.total);
+    // Primer recuento con la lista de clases: se fija la base sin quitarle puntos por las clases que ya no cuentan
+    const pr = usuario.conteoV3 ? puntosReservas(usuario, r.total) : { nuevas: 0, puntos: 0, clasesPuntuadas: r.total };
     // clasesAim: las reservas en AimHarder (sin ajustes), para que el coach vea de dónde sale el total
-    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
-      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
+    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || !usuario.conteoV3 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
+      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, conteoV3: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
       res.actualizados++; res.logros += nuevos.length;
     }
   }
@@ -237,5 +251,8 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
   });
   log(`Revisados: ${res.revisados} · actualizados: ${res.actualizados} · logros dados: ${res.logros} · peticiones: ${aim.cupo.peticiones} · cupo restante hoy: ${aim.cupo.dia ?? "?"}${res.detenidoPorCupo ? " · parado para no pasar el límite (sigue en la próxima sincronización)" : ""}`);
   if (prueba) res.muestras.forEach((m, i) => log(`Prueba · socio ${i + 1}: ${m.reservasLeidas} reservas leídas → ${m.clasesAsistidas} clases contadas (${m.pendientes} por venir)`));
+  // Nombres de clase vistos (no son datos personales): para comprobar que la lista CLASES_QUE_CUENTAN está bien escrita
+  if (prueba && res.nombresClase) for (const [nm, si] of [...res.nombresClase].sort()) log(`Prueba · clase "${nm}": ${si ? "cuenta" : "NO cuenta"}`);
+  if (res.nombresClase) res.nombresClase = Object.fromEntries(res.nombresClase);
   return res;
 }

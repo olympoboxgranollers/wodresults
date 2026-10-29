@@ -59,7 +59,9 @@ Puedes ver el consumo en **Firebase → Firestore → Uso**.
 
 ## Clases desde AimHarder (opcional, gratis)
 
-GitHub ejecuta cada hora `aimharder.mjs`: lee las clases asistidas de cada socio en AimHarder (emparejados por email) y las pone en la app.
+GitHub ejecuta cada hora `aimharder.mjs`: lee las clases reservadas de cada socio en AimHarder (emparejados por email) y las pone en la app.
+
+Solo cuentan las clases **WOD, FUNCIONAL, MASTERS FUNCIONAL, HIBRIDRACE y CROSSBEGINNERS** (el Open box no cuenta). La lista está al principio de `nucleo.mjs` (`CLASES_QUE_CUENTAN`); da igual mayúsculas, acentos y espacios.
 
 1. **Firebase → ⚙ Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada** (no la compartas).
 2. **AimHarder → Configuración → API** → copia el refresh token.
