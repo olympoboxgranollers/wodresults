@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029b">
+<link rel="stylesheet" href="estilos.css?v=20261029c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -79,7 +79,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029c">
 </head>
 <body>
 <main>
@@ -111,6 +111,11 @@
       <option value="kg">Carga en kg (más es mejor)</option>
       <option value="emom">EMOM: completado o no + pesos (solo puntos por registrar, sin podio)</option>
     </select>
+    <!-- Solo en EMOM: cuántas rondas tiene, para que los socios elijan cuántas completaron -->
+    <div id="cajaRondasEmom" hidden>
+      <label for="wRondas">Número de rondas del EMOM <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+      <input id="wRondas" inputmode="numeric" maxlength="2" placeholder="Ej. 3">
+    </div>
     <label for="wDesc">El entrenamiento (lo que se ve en pantalla)</label>
     <textarea id="wDesc" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
     <div class="acciones">
@@ -149,12 +154,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso } from "./comun.js?v=20261029b";
+import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso } from "./comun.js?v=20261029c";
 import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261029c";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029b";
-import { NOMBRE_BOX } from "./config.js?v=20261029b";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029c";
+import { NOMBRE_BOX } from "./config.js?v=20261029c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -243,13 +248,17 @@ function rellenar() {
   $("wNombre").value = w?.nombre && !w.nombre.endsWith(" del día") ? w.nombre : "";
   $("wTipo").value = w?.tipo || "tiempo";
   $("wDesc").value = w?.descripcion || "";
+  $("wRondas").value = w?.rondas || "";
+  verRondasEmom();
   $("estadoWod").textContent = w ? `${CLASES[clase].nombre}: publicado` : `${CLASES[clase].nombre}: sin publicar`;
   $("estadoWod").classList.toggle("publicado", !!w);
   $("guardar").textContent = w ? `Actualizar ${CLASES[clase].nombre}` : `Publicar ${CLASES[clase].nombre}`;
   editado = false;
 }
 
-for (const id of ["wNombre", "wTipo", "wDesc"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
+function verRondasEmom() { $("cajaRondasEmom").hidden = $("wTipo").value !== "emom"; }
+$("wTipo").addEventListener("change", verRondasEmom);
+for (const id of ["wNombre", "wTipo", "wDesc", "wRondas"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
 
 function cambiarClase(nueva) {
   if (editado && !confirmarCambio()) {
@@ -410,9 +419,12 @@ $("formWod").addEventListener("submit", async (e) => {
   e.preventDefault();
   const nombre = $("wNombre").value.trim() || `${CLASES[clase].nombre} del día`;
   const descripcion = $("wDesc").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 1000);
+  const tipoW = $("wTipo").value, rt = $("wRondas").value.trim();
+  const rondas = tipoW === "emom" && rt ? parseInt(rt, 10) : 0;
+  if (tipoW === "emom" && rt && !(/^\d+$/.test(rt) && rondas >= 1 && rondas <= 99)) { $("msg").className = "msg error"; $("msg").textContent = "Revisa el número de rondas (de 1 a 99)."; return; }
   $("guardar").disabled = true;
   try {
-    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion });
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: tipoW, descripcion, ...(rondas ? { rondas } : {}) });
     editado = false;
     $("msg").className = "msg ok";
     $("msg").textContent = `✓ ${CLASES[clase].nombre} publicado. Ya sale en la pantalla.`;

@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029b">
+<link rel="stylesheet" href="estilos.css?v=20261029c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -39,6 +39,18 @@
   .segmentado.cuatro button { padding: 14px 4px; font-size: 15px; }
   .emom-pesos { margin-top: 14px; display: grid; gap: 8px; }
   .emom-titulo { font-size: 14px; font-weight: 600; color: var(--texto); }
+  .emom-rondas { margin-top: 14px; display: grid; gap: 8px; }
+  .emom-rondas[hidden] { display: none; }
+  .emom-rondas .campo { width: 100%; box-sizing: border-box; text-align: center; font-size: 28px; padding: 12px; }
+  .emom-rondas #emomParcialTit { margin-top: 6px; }
+  .emom-rondas-sel { display: flex; flex-wrap: wrap; gap: 8px; }
+  .emom-rondas-sel[hidden] { display: none; }
+  .emom-rondas-sel button { flex: 1 0 56px; }
+  .emom-parcial { display: grid; gap: 8px; }
+  .parcial-fila { display: grid; grid-template-columns: 76px minmax(0, 1fr) 40px; gap: 8px; align-items: center; }
+  .parcial-fila .quitar { height: 46px; border-radius: 12px; border: 1px solid var(--borde); background: none; color: var(--suave); font-size: 16px; }
+  .parcial-fila input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
+  .parcial-fila .p-reps { text-align: center; font-weight: 700; }
   .emom-lista { display: grid; gap: 8px; }
   .emom-fila { display: grid; grid-template-columns: minmax(0, 1fr) 64px 66px 40px; gap: 8px; align-items: center; }
   .emom-fila input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
@@ -46,7 +58,7 @@
   .emom-fila .kgc { position: relative; }
   .emom-fila .kgc span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--suave); font-size: 13px; pointer-events: none; }
   .emom-fila .kgc input { padding-right: 30px; }
-  .emom-fila select { height: 46px; margin: 0 !important; width: 100%; -webkit-appearance: none; appearance: none; border: 1px solid var(--borde); border-radius: 12px; padding: 0 30px 0 12px; font-size: 15px; color: var(--texto);
+  .emom-fila select, .parcial-fila select { height: 46px; margin: 0 !important; width: 100%; -webkit-appearance: none; appearance: none; border: 1px solid var(--borde); border-radius: 12px; padding: 0 30px 0 12px; font-size: 15px; color: var(--texto);
     background: var(--fondo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9c6cd' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center; }
   .emom-fila .quitar { height: 46px; border-radius: 12px; border: 1px solid var(--borde); background: none; color: var(--suave); font-size: 16px; }
   .emom-anadir { justify-self: start; background: none; border: 1px dashed var(--malva); color: var(--malva); border-radius: 999px; padding: 10px 16px; font-weight: 600; font-size: 14px; }
@@ -160,7 +172,7 @@
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029c">
 </head>
 <body>
 <main>
@@ -255,6 +267,15 @@
         <button type="button" data-v="2" aria-pressed="true">✓ Completado</button>
         <button type="button" data-v="1" aria-pressed="false">✗ No completado</button>
       </div>
+      <!-- Si no lo ha completado: rondas enteras + lo que hizo en la ronda que no acabó -->
+      <div class="emom-rondas" id="emomRondasCaja" hidden>
+        <div class="emom-titulo">¿Cuántas rondas has completado enteras?</div>
+        <input class="campo" id="emomRondas" inputmode="numeric" maxlength="3" placeholder="Ej. 2">
+        <div class="segmentado emom-rondas-sel" id="emomRondasSel" hidden></div>
+        <div class="emom-titulo" id="emomParcialTit">¿Qué hiciste en la ronda que no acabaste?</div>
+        <div class="emom-parcial" id="emomParcial"></div>
+        <button type="button" class="emom-anadir" id="emomParcialAnadir">+ Añadir ejercicio</button>
+      </div>
       <div class="emom-pesos">
         <div class="emom-titulo">Pesos o calorías que has usado <span class="opcional">(opcional)</span></div>
         <div class="emom-lista" id="emomLista"></div>
@@ -312,11 +333,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona } from "./comun.js?v=20261029b";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261029b";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261029b";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261029c";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261029c";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261029c";
 import { montarMenu } from "./menu.js?v=20261029c";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261029b";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261029c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -362,7 +383,9 @@ function ponerAcabado(v) {
 // ---------- EMOM: filas de ejercicio + kg que se van añadiendo ----------
 function filaEmom(nombre = "", kg = "", unidad = "kg") {
   const f = document.createElement("div"); f.className = "emom-fila";
-  const n = Object.assign(document.createElement("input"), { className: "e-nombre", maxLength: 30, placeholder: "Ejercicio (ej. Thruster)", value: nombre });
+  // Desplegable con la lista de ejercicios: solo hay que poner los kg, lb o cal
+  const n = document.createElement("select"); n.className = "e-nombre";
+  opcionesEjercicios(n, nombre);
   n.setAttribute("aria-label", "Ejercicio");
   const k = Object.assign(document.createElement("input"), { className: "e-kg", inputMode: "decimal", placeholder: "0", value: kg === "" || kg == null ? "" : String(kg).replace(".", ",") });
   k.setAttribute("aria-label", "Cantidad");
@@ -375,8 +398,52 @@ function filaEmom(nombre = "", kg = "", unidad = "kg") {
   f.append(n, k, c, q);
   return f;
 }
-function ponerEmom(valor = 2, ejercicios = []) {
+// Filas "reps hechas + ejercicio" de la ronda que no acabó: empieza vacío y el socio añade los ejercicios que hizo
+function filaParcial(nombre = "", reps = "") {
+  const f = document.createElement("div"); f.className = "parcial-fila";
+  const r = Object.assign(document.createElement("input"), { className: "p-reps", inputMode: "numeric", maxLength: 3, placeholder: "0", value: reps === "" || reps == null ? "" : String(reps) });
+  r.setAttribute("aria-label", "Repeticiones hechas");
+  // Desplegable con la misma lista de ejercicios que el favorito / odiado del perfil
+  const n = document.createElement("select"); n.className = "p-nombre"; n.setAttribute("aria-label", "Ejercicio");
+  opcionesEjercicios(n, nombre);
+  const q = Object.assign(document.createElement("button"), { type: "button", className: "quitar", textContent: "✕" });
+  q.setAttribute("aria-label", "Quitar ejercicio");
+  q.addEventListener("click", () => { f.remove(); $("emomParcialAnadir").hidden = false; });
+  f.append(r, n, q); return f;
+}
+function ponerParcial(parcial) {
+  const l = $("emomParcial");
+  if (parcial === undefined && l.children.length) return;
+  l.replaceChildren();
+  (parcial || []).forEach((p) => l.append(filaParcial(p.nombre || "", p.reps ?? "")));
+  $("emomParcialAnadir").hidden = l.children.length >= 10;
+}
+$("emomParcialAnadir").addEventListener("click", () => { const f = filaParcial(); $("emomParcial").append(f); f.querySelector(".p-reps").focus(); $("emomParcialAnadir").hidden = $("emomParcial").children.length >= 10; });
+// Si el coach ha puesto cuántas rondas tiene el EMOM, se eligen con botones (0, 1, 2… hasta una menos del total)
+function pintarRondasSel() {
+  const total = tipo === "emom" ? wod?.rondas || 0 : 0;
+  const caja = $("emomRondasSel");
+  caja.hidden = !total; $("emomRondas").hidden = !!total;
+  $("emomRondasCaja").querySelector(".emom-titulo").textContent = total ? `¿Cuántas rondas has completado enteras? (de ${total})` : "¿Cuántas rondas has completado enteras?";
+  if (!total) return;
+  const actual = $("emomRondas").value;
+  caja.replaceChildren(...Array.from({ length: total }, (_, i) => {
+    const b = Object.assign(document.createElement("button"), { type: "button", textContent: String(i) });
+    b.dataset.v = String(i); b.setAttribute("aria-pressed", String(actual === String(i)));
+    return b;
+  }));
+}
+$("emomRondasSel").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  $("emomRondas").value = b.dataset.v;
+  $("emomRondasSel").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+});
+function ponerEmom(valor = 2, ejercicios = [], rondas, parcial) {
   emomValor = valor >= 2 ? 2 : 1;
+  $("emomRondasCaja").hidden = emomValor !== 1;
+  if (rondas !== undefined) $("emomRondas").value = rondas ?? "";
+  pintarRondasSel();
+  if (emomValor === 1) ponerParcial(parcial);
   $("emomHecho").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(+x.dataset.v === emomValor)));
   const l = $("emomLista"); l.replaceChildren();
   (ejercicios.length ? ejercicios : [{}]).forEach((e) => l.append(filaEmom(e.nombre || "", e.cantidad ?? e.kg ?? "", e.unidad || "kg")));
@@ -567,7 +634,7 @@ function rellenarConMiResultado() {
   if (r.tipo === "tiempo" && sinAcabar(r.valor, "tiempo")) { ponerAcabado(false); $("repsTC").value = repsSinAcabar(r.valor); }
   else if (r.tipo === "tiempo") { ponerAcabado(true); $("min").value = Math.floor(r.valor / 60); $("seg").value = String(r.valor % 60).padStart(2, "0"); }
   else if (r.tipo === "rondas") { $("rondas").value = Math.floor(r.valor / 1000); $("repsExtra").value = r.valor % 1000; }
-  else if (r.tipo === "emom") ponerEmom(r.valor, r.ejercicios || []);
+  else if (r.tipo === "emom") { $("emomParcial").replaceChildren(); ponerEmom(r.valor, r.ejercicios || [], r.rondas ?? "", r.parcial || undefined); }
   else $("kg").value = r.valor;
   sensacion = r.sensacion || null;
   $("sensaciones").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === sensacion));
@@ -580,6 +647,7 @@ function ponerTipo(t) {
   $("entradaRondas").hidden = t !== "rondas";
   $("entradaKg").hidden = t !== "kg";
   $("entradaEmom").hidden = t !== "emom";
+  pintarRondasSel();
   verBloqueOpen();
 }
 
@@ -590,6 +658,7 @@ function escucharWod() {
   wod = null; $("enviar").disabled = true;
   dejarWod = onSnapshot(doc(db, "wods", idWod(clase)), (snap) => {
   wod = snap.exists() ? snap.data() : null;
+  pintarRondasSel();
   const nombreWod = wod && wod.nombre && !wod.nombre.endsWith(" del día") ? ` · ${wod.nombre}` : "";
   $("wodNombre").textContent = wod ? `${CLASES[clase].nombre}${nombreWod} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : `${CLASES[clase].nombre} de hoy`;
   // El resultado solo se puede poner en la medida del WOD (tiempo, rondas o kg)
@@ -667,19 +736,35 @@ $("formulario").addEventListener("submit", async (e) => {
   if (!wod || tipo !== wod.tipo) return ($("error").textContent = wod ? `El WOD de hoy se puntúa por ${NOMBRE_MEDIDA[wod.tipo]}.` : "El coach todavía no ha configurado el WOD de hoy.");
 
   if (!sexo) return ($("error").textContent = "Marca si eres chico o chica: cada uno tiene su clasificación.");
-  let valor, ejercicios = null;
+  let valor, ejercicios = null, rondasEmom = null, parcial = null;
   if (tipo === "emom") {
     valor = emomValor;
+    if (valor === 1) {
+      rondasEmom = entero("emomRondas");
+      if (isNaN(rondasEmom) || rondasEmom > 999 || (wod?.rondas && rondasEmom >= wod.rondas)) return ($("error").textContent = "Revisa cuántas rondas has completado enteras.");
+      parcial = [];
+      for (const f of $("emomParcial").querySelectorAll(".parcial-fila")) {
+        const n = formatoEjercicio(f.querySelector(".p-nombre").value).slice(0, 40);
+        const rt = f.querySelector(".p-reps").value.trim();
+        if (!rt || rt === "0") continue;
+        const reps = /^\d+$/.test(rt) ? parseInt(rt, 10) : NaN;
+        if (isNaN(reps) || reps > 999) return ($("error").textContent = `Revisa las repeticiones de ${n || "cada ejercicio"}.`);
+        if (!n) return ($("error").textContent = "Elige el ejercicio de cada fila.");
+        parcial.push({ nombre: n, reps });
+      }
+      parcial = parcial.slice(0, 10);
+      if (!rondasEmom && !parcial.length) return ($("error").textContent = "Escribe las rondas completadas o lo que hiciste en la ronda que no acabaste.");
+    }
     ejercicios = [];
     for (const f of $("emomLista").querySelectorAll(".emom-fila")) {
-      const n = f.querySelector(".e-nombre").value.trim().replace(/\s+/g, " ");
+      const n = formatoEjercicio(f.querySelector(".e-nombre").value).slice(0, 40);
       const kt = f.querySelector(".e-kg").value.trim().replace(",", ".");
       if (!n && !kt) continue;
-      if (!n) return ($("error").textContent = "Escribe el nombre del ejercicio de cada peso.");
+      if (!n) return ($("error").textContent = "Elige el ejercicio de cada peso.");
       const unidad = f.querySelector(".e-unidad").value;
       const cant = kt === "" ? null : parseFloat(kt);
       if (kt !== "" && (isNaN(cant) || cant <= 0 || cant > 1000)) return ($("error").textContent = `Revisa la cantidad de ${n}.`);
-      ejercicios.push({ nombre: n[0].toUpperCase() + n.slice(1), ...(cant ? { cantidad: Math.round(cant * 10) / 10, unidad } : {}) });
+      ejercicios.push({ nombre: n, ...(cant ? { cantidad: Math.round(cant * 10) / 10, unidad } : {}) });
     }
     ejercicios = ejercicios.slice(0, 10);
   } else if (tipo === "tiempo") {
@@ -731,7 +816,9 @@ $("formulario").addEventListener("submit", async (e) => {
       ...(miDoc ? { editado: serverTimestamp() } : {}),
       ...(sensacion ? { sensacion } : {}),
       ...(pesos ? { pesos } : {}),
-      ...(ejercicios?.length ? { ejercicios } : {})
+      ...(ejercicios?.length ? { ejercicios } : {}),
+      ...(valor === 1 && tipo === "emom" ? { rondas: rondasEmom || 0, ...(wod?.rondas ? { rondasTotal: wod.rondas } : {}) } : {}),
+      ...(parcial?.length ? { parcial } : {})
     });
     const ref = { id };
     const eraNuevo = !miDoc;
@@ -745,7 +832,7 @@ $("formulario").addEventListener("submit", async (e) => {
     $("puntosHoy").append(
       sumadosAhora ? "Ya están en tu cartera. " : "Los puntos de registrar de hoy ya están en tu cartera. ",
       tipoSinPodio(tipo) ? "En los EMOM no hay podio: solo suman los puntos de registrar." : sinPodio(clase) ? "En esta clase no hay puntos por podio." : `Si acabas en el podio de ${textoGrupo(grupoDe({ categoria, sexo }))} sumarás además +${fmtPuntos(pc[1])} (1º), +${fmtPuntos(pc[2])} (2º) o +${fmtPuntos(pc[3])} (3º) a las 00:00.`);
-    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${textoGrupo(grupoDe({ categoria, sexo }), false)}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sinAcabar(valor, tipo) ? " (no completado)" : ""}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
+    $("resumen").textContent = `${nombre} · ${CLASES[clase].nombre} · ${textoGrupo(grupoDe({ categoria, sexo }), false)}${pesos ? " (" + textoPesos(pesos) + ")" : ""} · ${formatearValor(valor, tipo)}${sinAcabar(valor, tipo) ? " (no completado)" : ""}${tipo === "emom" && valor === 1 ? ` (${textoRondasEmom({ tipo, valor, rondas: rondasEmom || 0, rondasTotal: wod?.rondas, parcial })})` : ""}${ejercicios?.length ? " (" + textoEjercicios(ejercicios) + ")" : ""}${sensacion ? " " + SENSACIONES[sensacion].emoji : ""}`;
     $("formulario").hidden = true;
     $("hecho").hidden = false;
     seguirMiPosicion({ id: ref.id, nombre, clase, categoria, sexo, tipo, valor, ...(pesos ? { pesos } : {}), ...(ejercicios?.length ? { ejercicios } : {}) });

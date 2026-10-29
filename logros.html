@@ -12,7 +12,7 @@
 <title>Logros Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029b">
+<link rel="stylesheet" href="estilos.css?v=20261029c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -94,7 +94,7 @@
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
   .sync-detalle { margin-top: 6px; font-size: 12.5px; color: var(--suave); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029c">
 </head>
 <body>
 <main>
@@ -180,8 +180,8 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261029b";
-import { escucharCuenta } from "./cuenta.js?v=20261029b";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261029c";
+import { escucharCuenta } from "./cuenta.js?v=20261029c";
 import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261029c";
 
 const $ = (id) => document.getElementById(id);
@@ -248,7 +248,7 @@ escucharCuenta(({ user, ficha: f }) => {
       const auto = logros.filter((l) => l.clases > 0);
       if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
         dando = true;
-        import("./cierre.js?v=20261029b").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+        import("./cierre.js?v=20261029c").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
       }
     }, () => {});
   }
