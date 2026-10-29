@@ -38,6 +38,7 @@
   .bloque-reps .campo { max-width: 200px; text-align: center; }
   .segmentado.cuatro button { padding: 14px 4px; font-size: 15px; }
   .emom-pesos { margin-top: 14px; display: grid; gap: 8px; }
+  .emom-pesos[hidden] { display: none; }
   .emom-titulo { font-size: 14px; font-weight: 600; color: var(--texto); }
   .emom-rondas { margin-top: 14px; display: grid; gap: 8px; }
   .emom-rondas[hidden] { display: none; }
@@ -276,7 +277,7 @@
         <div class="emom-parcial" id="emomParcial"></div>
         <button type="button" class="emom-anadir" id="emomParcialAnadir">+ Añadir ejercicio</button>
       </div>
-      <div class="emom-pesos">
+      <div class="emom-pesos" id="emomPesos">
         <div class="emom-titulo">Pesos o calorías que has usado <span class="opcional">(opcional)</span></div>
         <div class="emom-lista" id="emomLista"></div>
         <button type="button" class="emom-anadir" id="emomAnadir">+ Añadir ejercicio</button>
@@ -434,6 +435,7 @@ $("emomRondasSel").addEventListener("change", () => { $("emomRondas").value = $(
 function ponerEmom(valor = 2, ejercicios = [], rondas, parcial) {
   emomValor = valor >= 2 ? 2 : 1;
   $("emomRondasCaja").hidden = emomValor !== 1;
+  $("emomPesos").hidden = emomValor === 1;   // si no lo ha completado, no se piden los pesos
   if (rondas !== undefined) $("emomRondas").value = rondas ?? "";
   pintarRondasSel();
   if (emomValor === 1) ponerParcial(parcial);
@@ -759,7 +761,7 @@ $("formulario").addEventListener("submit", async (e) => {
       if (kt !== "" && (isNaN(cant) || cant <= 0 || cant > 1000)) return ($("error").textContent = `Revisa la cantidad de ${n}.`);
       ejercicios.push({ nombre: n, ...(cant ? { cantidad: Math.round(cant * 10) / 10, unidad } : {}) });
     }
-    ejercicios = ejercicios.slice(0, 10);
+    ejercicios = valor === 1 ? [] : ejercicios.slice(0, 10);   // no completado: sin pesos
   } else if (tipo === "tiempo") {
     if (!tiempoAcabado) {
       const r = entero("repsTC");
