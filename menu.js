@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes } from "./comun.js?v=20261029a";
-import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029a";
-import { COACH_EMAIL } from "./config.js?v=20261029a";
+import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso } from "./comun.js?v=20261029b";
+import { escucharCuenta, montarAcceso, salir } from "./cuenta.js?v=20261029b";
+import { COACH_EMAIL } from "./config.js?v=20261029b";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -243,7 +243,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261029a").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261029b").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -477,6 +477,7 @@ export function abrirEditor(r, tipo) {
   if (!r.sexo) selSexo.prepend(new Option("Sin indicar", "", true, true));
   const lv = Object.assign(document.createElement("label"), { textContent: tipo === "emom" ? "¿Completado? (Sí / No)" : tipo === "tiempo" ? "Tiempo (min:seg) · si no lo acabó: 120 reps" : tipo === "rondas" ? "Rondas+reps (p. ej. 5+12)" : "Kilos" });
   const val = Object.assign(document.createElement("input"), { value: escribirValor(r.valor, tipo) });
+  const peso = camposPeso(r);
   const msg = Object.assign(document.createElement("div"), { className: "editor-msg" });
   const btns = document.createElement("div"); btns.className = "editor-btns";
   const boton = (t, c) => Object.assign(document.createElement("button"), { type: "button", textContent: t, className: c || "" });
@@ -489,7 +490,8 @@ export function abrirEditor(r, tipo) {
   guardar.addEventListener("click", async () => {
     const v = leerValor(val.value, tipo);
     if (isNaN(v)) return error("Revisa el resultado.");
-    try { await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, revisado: true, validado: true, ...(selSexo.value ? { sexo: selSexo.value } : {}) }); dlg.close(); }
+    let pesos; try { pesos = peso.leer(); } catch (t) { return error(t); }
+    try { await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, ...pesos, revisado: true, validado: true, ...(selSexo.value ? { sexo: selSexo.value } : {}) }); dlg.close(); }
     catch (e) { console.error(e); error(e?.code === "permission-denied" ? "No se puede: el día ya está cerrado o no es la cuenta del coach." : "No se ha podido guardar."); }
   });
   validar.addEventListener("click", async () => {
@@ -518,6 +520,6 @@ export function abrirEditor(r, tipo) {
   cerrar.addEventListener("click", () => dlg.close());
   if (r.validado) validar.hidden = true;
   btns.append(guardar, validar, borrar, cerrar);
-  dlg.append(titulo, sub, lc, sel, ls, selSexo, lv, val, msg, btns);
+  dlg.append(titulo, sub, lc, sel, ls, selSexo, lv, val, peso.el, msg, btns);
   dlg.showModal();
 }

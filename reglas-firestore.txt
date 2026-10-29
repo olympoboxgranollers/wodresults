@@ -122,7 +122,9 @@ service cloud.firestore {
         && request.resource.data.validado == true)
         // ...y corregir la categoría y el resultado de cualquiera mientras el día siga abierto
         || (esStaff()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'sexo', 'valor', 'revisado', 'validado'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['categoria', 'sexo', 'valor', 'pesos', 'ejercicios', 'revisado', 'validado'])
+        && pesosValidos(request.resource.data)
+        && (!('ejercicios' in request.resource.data) || (request.resource.data.ejercicios is list && request.resource.data.ejercicios.size() <= 10))
         && (!('sexo' in request.resource.data) || request.resource.data.sexo in ['M', 'F'])
         && request.resource.data.categoria in ['RX', 'Scaled', 'Open']
         && request.resource.data.valor is number && request.resource.data.valor > 0 && request.resource.data.valor < 100000
@@ -340,8 +342,8 @@ service cloud.firestore {
     // ---------- Ajustes que solo cambia el admin principal (lista de entrenadores) ----------
     // ---------- Amigos: solicitudes y amistades entre socios. Id: "uidA_uidB" (ordenados) ----------
     match /amistades/{id} {
-      // Solo la ven los dos implicados
-      allow read: if esCoach() || (conCuenta() && request.auth.uid in resource.data.uids);
+      // Las solicitudes solo las ven los dos implicados; las amistades aceptadas las puede ver cualquier socio (para los amigos y amigos en común del perfil)
+      allow read: if esCoach() || (conCuenta() && (request.auth.uid in resource.data.uids || resource.data.estado == 'aceptada'));
       // Pedir amistad: la crea quien la pide, siempre "pendiente" y con el id de los dos uid ordenados
       allow create: if conCuenta()
         && request.resource.data.keys().hasOnly(['uids', 'de', 'para', 'estado', 'creado', 'nombres'])

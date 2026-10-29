@@ -14,45 +14,52 @@
 | `publicar.html` | Coach y entrenadores | Publicar el WOD de cada clase y corregir, validar o borrar resultados. El coach gestiona aquí la lista de **entrenadores** |
 | `puntos.html` | — | Redirige a Canjes (enlaces antiguos) |
 
-Menú de los socios: Canjes · Ranking · Resultado · Eventos · Perfil.
+| `amigos.html` | Socios | Mis amigos, solicitudes y todos los socios registrados. En el perfil salen sus amigos y los amigos en común |
+| `tv.html` | TV del box | Pantalla de la TV conectada con código (sin cuenta de coach) |
+
+Menú de los socios: Canjes · Ranking · Resultado · Eventos · Amigos · Perfil.
 Menú del coach: Canjes · Ranking · Logros · Eventos · Pantalla · Publicar.
 Entrenadores: el menú de socio + Pantalla y Publicar.
 
-Avisos automáticos: ventana de **logro nuevo** (los logros de clases se dan solos al llegar) y avisos de **eventos**: «Nuevo evento» hasta que se cierra, «Recuerda» cada 2 semanas a quien no se ha apuntado y un último aviso la semana del evento (también a los apuntados). Solo sale uno a la vez.
+Avisos automáticos: ventana de **logro nuevo**, avisos de **amistad** (te envían o aceptan una solicitud) y avisos de **eventos**: solo del siguiente evento, cuando falta un mes, una semana y el día antes (una vez cada uno).
 
-## Archivos de apoyo
+## Archivos
 
-`config.js` (Firebase, nombre, coach, clases y extras), `tema.css` (colores), `estilos.css`, `comun.js`, `cuenta.js`, `menu.js`, `cierre.js`, `sw.js`, `manifest.json`, logo e iconos, y `firestore.rules` (se pega en Firebase).
+- Páginas: las `.html` de la tabla.
+- Apoyo: `config.js` (Firebase, nombre, coach, clases), `estilos.css`, `olympo-ds.css` (diseño), `comun.js`, `cuenta.js`, `menu.js`, `cierre.js`, `amigos.js`, `medallas-datos.js`, `sw.js`, `manifest.json`, logo, iconos y medallas (`.png` / `.webp`).
+- Sincronización con AimHarder: `aimharder.mjs`, `nucleo.mjs`, `package.json` y `.github/workflows/aimharder.yml`.
+- `firestore.rules` / `reglas-firestore.txt`: las reglas de seguridad que se pegan en Firebase.
 
-Medallas ilustradas: carpeta `medallas/` (súbela entera, como carpeta). Si por lo que sea no cargara, la app usa la copia que va dentro de `medallas-datos.js`, así que las medallas se ven igual.
-Sincronización con AimHarder: carpeta `sync/` y `.github/workflows/aimharder.yml`.
+## Montar o restaurar la app
 
-## Subir y actualizar
-
-1. **GitHub** → repositorio `wodresults` → *Add file → Upload files* → arrastra los archivos sueltos y las carpetas `medallas` y `sync` → **Commit changes**.
-   - La carpeta `.github` está oculta en Mac: *Add file → Create new file* → nombre `.github/workflows/aimharder.yml` → pega el contenido de `sync/aimharder.yml`.
-2. **Firebase → Firestore → Reglas** → pega `firestore.rules` → **Publicar**.
-3. **Firebase → Authentication** → Google y Correo/contraseña activados; dominio `olympoboxgranollers.github.io` autorizado.
-   - Las cuentas con correo/contraseña tienen que **verificar el email** (pulsar el enlace que les llega) antes de poder usar la app o recibir clases de AimHarder; las de Google ya vienen verificadas. El texto del email se cambia en *Authentication → Plantillas → Verificación de dirección de correo electrónico*.
-4. En la TV, abre `pantalla.html` con la cuenta del coach (Google) y pulsa ⛶.
-5. Después de cada actualización, recarga con Ctrl+Shift+R.
+1. **GitHub** → repositorio `wodresults` (debe ser **público** para que GitHub Pages funcione gratis) → *Add file → Upload files* → arrastra todos los archivos → **Commit changes**.
+   - La carpeta `.github` está oculta en Mac (Cmd+Shift+. para verla). Si no se sube: *Add file → Create new file* → nombre `.github/workflows/aimharder.yml` → pega su contenido.
+   - **Settings → Pages** → *Deploy from a branch* → `main` / `(root)`.
+2. **Firebase → Firestore → Reglas** → pega `reglas-firestore.txt` → **Publicar**.
+3. **Firebase → Authentication → Método de inicio de sesión**: Google, Correo/contraseña y Anónimo (para la TV) activados. En *Configuración → Dominios autorizados*: `olympoboxgranollers.github.io`.
+   - Las cuentas con correo/contraseña tienen que **verificar el email** antes de usar la app; las de Google ya vienen verificadas.
+4. Si alguna página muestra un error de «índice», abre la consola del navegador: Firebase da un enlace que lo crea con un clic.
+5. En la TV, abre `pantalla.html` con la cuenta del coach (o `tv.html` con código) y pulsa ⛶.
+6. Después de cada actualización, espera unos minutos y recarga con Ctrl+Shift+R.
 
 ## Plan gratuito de Firebase
 
 La app está pensada para no salir del plan gratis (Spark), que no lleva tarjeta: nunca te pueden cobrar. Si algún día se pasara del límite de lecturas, la app dejaría de cargar datos hasta que se reinicia el contador (sobre las 9 de la mañana).
-Para gastar poco: el móvil guarda una copia de los datos y al cambiar de página solo descarga lo que ha cambiado; el puesto del ranking se calcula con un recuento; el ranking de puntos solo se carga al abrirlo; y AimHarder se sincroniza cada 3 horas.
+Para gastar poco: el móvil guarda una copia de los datos y al cambiar de página solo descarga lo que ha cambiado; el puesto del ranking se calcula con un recuento; el ranking de puntos solo se carga al abrirlo; y AimHarder se sincroniza cada hora.
 Puedes ver el consumo en **Firebase → Firestore → Uso**.
 
 ## Puntos
 
-- 10 por registrar el resultado (al momento, una vez por clase y día). Cada resultado cuenta además como una clase para los logros.
-- Podio de cada categoría a las 00:00: RX +30/+20/+10 · Scaled +15/+10/+5 · Open +7,5/+5/+2,5. Los empates comparten puesto.
+- Por registrar el resultado (al momento, una vez por clase y día): **RX +20 · Open +10**. Cada resultado cuenta además como una clase para los logros.
+- Categorías: solo **RX** y **Open** (los resultados antiguos en Scaled cuentan como Open). Cada resultado lleva **chico / chica** y los rankings y podios van separados: RX Chicos, RX Chicas, Open Chicos, Open Chicas.
+- En Open va delante quien ha puesto más peso (en cualquier WOD o EMOM); con el mismo peso empatan. Si nadie ha puesto peso, cuenta el resultado.
+- Podio de cada grupo a las 00:00: RX +30/+20/+10 · Open +15/+10/+5. Los empates comparten puesto.
 - Logros (los puntos de cada logro) y eventos (+100 cuando el coach pasa lista).
 - El podio y los logros de clases se reparten desde un aparato con la sesión del coach abierta: la TV con `pantalla.html` lo hace a las 00:00; si está apagada, en cuanto el coach abra cualquier página.
 
 ## Clases desde AimHarder (opcional, gratis)
 
-GitHub ejecuta cada 3 horas `sync/aimharder.mjs`: lee las clases asistidas de cada socio en AimHarder (emparejados por email) y las pone en la app.
+GitHub ejecuta cada hora `aimharder.mjs`: lee las clases asistidas de cada socio en AimHarder (emparejados por email) y las pone en la app.
 
 1. **Firebase → ⚙ Configuración del proyecto → Cuentas de servicio → Generar nueva clave privada** (no la compartas).
 2. **AimHarder → Configuración → API** → copia el refresh token.

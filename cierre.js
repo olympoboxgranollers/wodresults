@@ -4,7 +4,7 @@
 // cerrado, calcula el podio de cada clase y categoría y suma los puntos. Cada día y clase se cierra
 // una sola vez (si otro aparato ya lo ha hecho, las reglas de Firebase rechazan el segundo intento).
 import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261029a";
+import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261029b";
 
 let enMarcha = false;
 export async function cerrarDiasPendientes() {

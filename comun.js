@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261029a";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261029b";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -223,6 +223,25 @@ export const MATERIAL = {
   kettlebell: { nombre: "Kettlebell", corto: "KB" },
   barbell:    { nombre: "Barbell",    corto: "BB" }
 };
+
+// Campos para que el coach o un entrenador corrija los pesos de un resultado:
+// los ejercicios del EMOM / WOD (con su cantidad) o el material del Open (kg).
+// Devuelve { el, leer } — leer() da los campos a guardar o lanza un texto de error.
+export function camposPeso(r) {
+  const el = document.createElement("div"); el.className = "editor-pesos";
+  const tit = Object.assign(document.createElement("label"), { className: "editor-pesos-tit", textContent: "Peso" });
+  el.append(tit);
+  const num = (v, aria) => { const i = Object.assign(document.createElement("input"), { type: "number", inputMode: "decimal", min: "0", step: "0.5", value: v ?? "", placeholder: "–" }); i.setAttribute("aria-label", aria); return i; };
+  const fila = (txt, input, unidad) => { const f = document.createElement("div"); f.className = "editor-peso-fila"; f.append(Object.assign(document.createElement("span"), { textContent: txt }), input, Object.assign(document.createElement("small"), { textContent: unidad })); el.append(f); };
+  const leerNum = (i, nombre) => { const t = String(i.value).trim().replace(",", "."); if (!t) return null; const n = Number(t); if (!(n > 0 && n <= 500)) throw `Revisa el peso de ${nombre} (entre 0 y 500).`; return Math.round(n * 10) / 10; };
+  if (r.ejercicios?.length) {
+    const inputs = r.ejercicios.map((e) => { const i = num(e.cantidad ?? e.kg, "Peso de " + e.nombre); fila(e.nombre, i, e.unidad || "kg"); return i; });
+    return { el, leer: () => ({ ejercicios: r.ejercicios.map((e, k) => { const n = leerNum(inputs[k], e.nombre); return { nombre: e.nombre, ...(n ? { cantidad: n, unidad: e.unidad || "kg" } : {}) }; }) }) };
+  }
+  const inputs = {};
+  for (const [k, m] of Object.entries(MATERIAL)) { inputs[k] = num(r.pesos?.[k], "Peso de " + m.nombre); fila(m.nombre, inputs[k], "kg"); }
+  return { el, leer: () => { const p = {}; for (const [k, m] of Object.entries(MATERIAL)) { const n = leerNum(inputs[k], m.nombre); if (n) p[k] = n; } return { pesos: p }; } };
+}
 
 // Texto corto con los pesos de Open, p. ej. "WB 6 · DB 15 kg"
 export function textoPesos(pesos) {
@@ -466,7 +485,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261029a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261029b").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

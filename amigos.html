@@ -12,7 +12,7 @@
 <title>Amigos Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029a">
+<link rel="stylesheet" href="estilos.css?v=20261029b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -43,7 +43,7 @@
   .solicitudes { box-sizing: border-box; margin-top: 18px; padding: 12px; border-radius: 18px; border: 1px solid var(--lila); background: color-mix(in srgb, var(--lila) 8%, var(--panel)); }
   .solicitudes h2 { margin-top: 0; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029b">
 <style>
   /* Amigos: filas y pestañas redondas (en forma de píldora) */
   html body .seg { border-radius: 999px !important; }
@@ -89,9 +89,9 @@
 
 <script type="module">
 import { collection, query, orderBy, limit, startAfter, getDocs, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, persona, nombreBonito } from "./comun.js?v=20261029a";
-import { escucharCuenta } from "./cuenta.js?v=20261029a";
-import { montarMenu } from "./menu.js?v=20261029a";
+import { db, persona, nombreBonito } from "./comun.js?v=20261029b";
+import { escucharCuenta } from "./cuenta.js?v=20261029b";
+import { montarMenu } from "./menu.js?v=20261029b";
 import { escucharAmistades, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261029b";
 
 const $ = (id) => document.getElementById(id);

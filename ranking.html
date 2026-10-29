@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029a">
+<link rel="stylesheet" href="estilos.css?v=20261029b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -182,7 +182,7 @@
   .tv-url { display: block; font-size: 12px; color: var(--lila); word-break: break-all; }
   .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261029b">
 </head>
 <body>
 <dialog class="dlg-tv" id="dlgTv" aria-label="Conectar la Smart TV">
@@ -264,10 +264,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261029a";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261029a";
-import { escucharCuenta } from "./cuenta.js?v=20261029a";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261029a";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261029b";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261029b";
+import { escucharCuenta } from "./cuenta.js?v=20261029b";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261029b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
