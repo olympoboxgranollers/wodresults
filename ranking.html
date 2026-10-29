@@ -44,6 +44,7 @@
   .filtros { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
   .grupo-cab { margin: 16px 2px 8px; font-weight: 700; font-size: 14px; letter-spacing: .04em; color: var(--malva); }
   .grupo-cab:first-child { margin-top: 2px; }
+  #lista li.nuevo-grupo { margin-top: 22px; }
   .filtros button { background: var(--panel); border: 1px solid var(--borde); color: var(--texto); border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 14px; }
   .filtros button[aria-pressed="true"] { background: var(--malva); color: #1f2125; border-color: var(--malva); }
   .filtros-sexo { margin: -4px 0 12px; }
@@ -265,7 +266,7 @@
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261029b";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261029b";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261029c";
 import { escucharCuenta } from "./cuenta.js?v=20261029b";
 import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261029b";
 
@@ -410,9 +411,10 @@ function pintar() {
   const pos = posiciones(lista);
   let grupoAnt = null;
   lista.forEach((r, i) => {
-    // Cabecera de cada clasificación: RX · Chicos, RX · Chicas, Open · Chicos, Open · Chicas
-    if (grupoDe(r) !== grupoAnt) { grupoAnt = grupoDe(r); ol.append(Object.assign(document.createElement("div"), { className: "grupo-cab", textContent: textoGrupo(grupoAnt) })); }
+    // Cada clasificación (RX chicos, RX chicas, Open chicos, Open chicas) va separada con un poco de espacio, sin título
     const li = document.createElement("li");
+    if (grupoAnt !== null && grupoDe(r) !== grupoAnt) li.classList.add("nuevo-grupo");
+    grupoAnt = grupoDe(r);
     const sinPos = tipoSinPodio(r.tipo || tipo);   // EMOM: sin puestos ni podio
     if (pos[i] <= 3 && !sinPos) li.classList.add("p" + pos[i]);
     if (!primeraCarga && !vistos.has(r.id)) li.classList.add("nuevo");

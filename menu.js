@@ -492,7 +492,15 @@ export function abrirEditor(r, tipo) {
     if (isNaN(v)) return error("Revisa el resultado.");
     let pesos; try { pesos = peso.leer(); } catch (t) { return error(t); }
     try { await updateDoc(doc(db, "resultados", r.id), { categoria: sel.value, valor: v, ...pesos, revisado: true, validado: true, ...(selSexo.value ? { sexo: selSexo.value } : {}) }); dlg.close(); }
-    catch (e) { console.error(e); error(e?.code === "permission-denied" ? "No se puede: el día ya está cerrado o no es la cuenta del coach." : "No se ha podido guardar."); }
+    catch (e) {
+      console.error(e);
+      if (e?.code !== "permission-denied") return error("No se ha podido guardar.");
+      // Explica el motivo: día ya cerrado, o reglas de Firebase sin actualizar
+      let cerrado = false;
+      try { cerrado = (await getDoc(doc(db, "cierres", `${r.fecha || hoy()}_${claseDe(r)}`))).exists(); } catch {}
+      error(cerrado ? "No se puede: este día ya está cerrado (los puntos ya se repartieron)."
+        : "Firebase no ha dejado guardar. Publica las reglas nuevas (reglas-firestore.txt) en Firebase → Firestore → Reglas.");
+    }
   });
   validar.addEventListener("click", async () => {
     try { await updateDoc(doc(db, "resultados", r.id), { validado: true }); dlg.close(); }
