@@ -441,3 +441,8 @@ button, .enviar, .validar, .guardar, .acceso-entrar, .pestanas button { text-tra
 .editor-peso-fila { display: grid; grid-template-columns: 1fr 90px 30px; align-items: center; gap: 8px; font-size: 14px; }
 .editor-peso-fila input { width: 100%; box-sizing: border-box; text-align: right; padding: 8px 10px; }
 .editor-peso-fila small { color: var(--suave); }
+
+/* Foto de perfil pequeña en las listas (ranking) */
+.avatar-mini { width: 32px; height: 32px; flex: none; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-size: 12px; font-weight: 700; letter-spacing: 0; background: color-mix(in srgb, var(--lila, #c9a7ff) 20%, var(--panel, #1a1a1f)); color: var(--lila, #c9a7ff); }
+.avatar-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-mini.con-foto { background: none; }

@@ -11,7 +11,7 @@
 <title>TV · Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261030a">
+<link rel="stylesheet" href="estilos.css?v=20261030c">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -155,7 +155,7 @@
   .estado-tv.ok { color: #3ddc84; }
   .estado-tv.mal { color: #ff8a80; opacity: .9; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261030a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261030c">
 </head>
 <body>
 <header>
@@ -194,11 +194,11 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261030a";
-import { NOMBRE_BOX } from "./config.js?v=20261030a";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261030a";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261030c";
+import { NOMBRE_BOX } from "./config.js?v=20261030c";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261030c";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261030a";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261030c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV

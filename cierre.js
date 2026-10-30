@@ -4,7 +4,7 @@
 // cerrado, calcula el podio de cada clase y categoría y suma los puntos. Cada día y clase se cierra
 // una sola vez (si otro aparato ya lo ha hecho, las reglas de Firebase rechazan el segundo intento).
 import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261030a";
+import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261030c";
 
 let enMarcha = false;
 export async function cerrarDiasPendientes() {
@@ -35,15 +35,19 @@ export async function cerrarDiasPendientes() {
         // (y los de registrar si por lo que sea no se sumaron en su momento)
         const podio = f.podio;
         const regRef = doc(db, "usuarios", f.r.uid, "movimientos", idRegistro(g.clase, g.fecha));
-        const faltaRegistro = !(await getDoc(regRef)).exists();
-        const sumar = podio + (faltaRegistro ? f.registro : 0);
+        const reg = await getDoc(regRef);
+        const faltaRegistro = !reg.exists();
+        // Si cambió de RX a Open (o al revés) después de registrar, se ajustan los puntos de registrar a la categoría final
+        const ajuste = !faltaRegistro && reg.data().tipo === "registro" && typeof reg.data().puntos === "number" ? f.registro - reg.data().puntos : 0;
+        if (ajuste) lote.update(regRef, { puntos: f.registro });
+        const sumar = podio + (faltaRegistro ? f.registro : 0) + ajuste;
         total += f.puntos;
         if (faltaRegistro) lote.set(regRef, { fecha: g.fecha, clase: g.clase, tipo: "registro", puntos: f.registro });
         if (podio > 0) lote.set(doc(db, "usuarios", f.r.uid, "movimientos", id), {
           fecha: g.fecha, clase: g.clase, tipo: "podio", categoria: textoGrupo(f.grupo, false), posicion: f.posicion, puntos: podio,
           resultado: formatearValor(f.r.valor, f.r.tipo), wod: CLASES[g.clase]?.nombre || "WOD"
         });
-        if (sumar > 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar), puntosRanking: increment(sumar), [campoMes(g.fecha)]: increment(sumar) }, { merge: true });
+        if (sumar !== 0) lote.set(doc(db, "usuarios", f.r.uid), { nombre: f.r.nombre, puntos: increment(sumar), puntosRanking: increment(sumar), [campoMes(g.fecha)]: increment(sumar) }, { merge: true });
       }
       lote.set(doc(db, "cierres", id), { fecha: g.fecha, clase: g.clase, cerrado: serverTimestamp(), socios: filas.length, puntosTotales: total, automatico: true });
       try { await lote.commit(); cerrados++; } catch (e) { console.warn("Cierre ya hecho o sin permiso", id, e); }

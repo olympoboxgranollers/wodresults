@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261030a";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261030c";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -409,6 +409,26 @@ export const fmtPuntos = (n) => (Math.round(n * 10) / 10).toLocaleString("es-ES"
 export const idResultado = (clase, uid) => `${hoy()}_${clase}_${uid}`;
 export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
 export const idRegistro = (clase, fecha = hoy()) => `${fecha}_${clase}_reg`;
+
+// ---------- Fotos de perfil en las listas (ranking, socios) ----------
+// Se lee cada foto una sola vez por página (se guarda en memoria); quien no tiene foto sale con sus iniciales
+const cacheFotos = new Map();
+export function fotoDe(uid) {
+  if (!uid) return Promise.resolve(null);
+  if (!cacheFotos.has(uid)) cacheFotos.set(uid, leerDoc(docRef(db, "fotos", uid)).then((s) => (s.exists() ? s.data().img || null : null)).catch(() => null));
+  return cacheFotos.get(uid);
+}
+const inicialesDe = (n) => String(n || "·").trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase() || "·";
+export function avatarMini(uid, nombre, clase = "avatar-mini") {
+  const a = Object.assign(document.createElement("span"), { className: clase, textContent: inicialesDe(nombre) });
+  a.setAttribute("aria-hidden", "true");
+  fotoDe(uid).then((img) => {
+    if (!img) return;
+    const i = Object.assign(document.createElement("img"), { src: img, alt: "", loading: "lazy" });
+    a.replaceChildren(i); a.classList.add("con-foto");
+  });
+  return a;
+}
 // Ranking general del mes: cada mes tiene su propio campo de puntos ("pm_2026_10"), así se reinicia solo el día 1
 export const campoMes = (fecha = hoy()) => "pm_" + String(fecha).slice(0, 7).replace("-", "_");
 export const nombreMes = (fecha = hoy()) => mayus(new Date(String(fecha).slice(0, 7) + "-15T12:00:00").toLocaleDateString("es-ES", { month: "long" }));
@@ -497,7 +517,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261030a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261030c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
@@ -681,7 +701,7 @@ export function crearInsignia(ins, tam = 56) {
 // Solo los que llevan la palabra "clases" en el nombre muestran el contador
 export const esLogroDeClases = (l) => /clases/i.test(l?.nombre || "");
 // Ejercicios para elegir el favorito y el más odiado
-export const EJERCICIOS = ["Assault Bike / Echo Bike", "Back Squat", "Box Jump Over", "Box Jumps", "Burpee Box Jump Over", "Burpee Over Bar", "Burpees", "Butterfly Pull-ups", "Chest to Bar", "Clean", "Clean and Jerk", "Cluster", "Crossover Double Unders", "Db Clean and Jerk", "Db Overhead Walking Lunge", "Db Snatch", "Db Thruster", "Deadlift", "Deficit Handstand Push-up", "Devil Press", "Double Unders", "Farmers Carry", "Front Squat", "GHD Sit-ups", "Handstand Push-up", "Handstand Walk", "Hang Clean", "Hang Snatch", "Hollow Hold / Hollow Rock", "Jerk", "Jumping Lunges", "Kettlebell Snatch", "Kettlebell Swing", "Muscle-up", "Overhead Squat", "Pistol Squat", "Power Clean", "Power Snatch", "Pull-ups", "Push Jerk", "Push Press", "Rope Climb", "Rowing", "Run", "Sandbag Bear Hug Carry", "Sandbag Clean", "Shuttle Run", "Single Unders", "SkiErg", "Sled Pull", "Sled Push", "Snatch", "Split Jerk", "Squat Clean", "Squat Snatch", "Strict Handstand Push-up", "Strict Press", "Strict Pull-ups", "Sumo Deadlift High Pull", "Thruster", "Toes to Bar", "Turkish Get-Up", "V-Ups", "Walking Lunges", "Wall Walk", "Wallballs"];
+export const EJERCICIOS = ["Assault Bike / Echo Bike", "Back Squat", "Box Jump Over", "Box Jumps", "Burpee Box Jump Over", "Burpee Over Bar", "Burpees", "Butterfly Pull-ups", "Chest to Bar", "Clean", "Clean and Jerk", "Cluster", "Crossover Double Unders", "Db Clean and Jerk", "Db Overhead Walking Lunge", "Db Snatch", "Db Thruster", "Deadlift", "Deficit Handstand Push-up", "Devil Press", "Double Unders", "Farmers Carry", "Front Squat", "GHD Sit-ups", "Handstand Push-up", "Handstand Walk", "Hang Clean", "Hang Snatch", "Hollow Hold / Hollow Rock", "Jerk", "Jumping Lunges", "Kettlebell Snatch", "Kettlebell Swing", "Knees to Chest", "Muscle-up", "Overhead Squat", "Pike Push-ups", "Pistol Squat", "Power Clean", "Power Snatch", "Pull-ups", "Push Jerk", "Push Press", "Ring Row", "Rope Climb", "Rope Pull", "Rowing", "Run", "Sandbag Bear Hug Carry", "Sandbag Clean", "Shuttle Run", "Single Unders", "SkiErg", "Sled Pull", "Sled Push", "Snatch", "Split Jerk", "Squat Clean", "Squat Snatch", "Strict Handstand Push-up", "Strict Press", "Strict Pull-ups", "Sumo Deadlift High Pull", "Thruster", "Toes to Bar", "Turkish Get-Up", "V-Ups", "Walking Lunges", "Wall Walk", "Wallballs"];
 // Se ven en minúscula con la primera letra en mayúscula: "Back squat"
 export const formatoEjercicio = (t) => { const x = String(t || "").trim().replace(/\s+/g, " ").toLowerCase(); return x ? x[0].toUpperCase() + x.slice(1) : ""; };
 // Rellena un <select> con los ejercicios (y deja elegido el que ya tenía, aunque no esté en la lista)

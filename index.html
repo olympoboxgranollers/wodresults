@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261030a">
+<link rel="stylesheet" href="estilos.css?v=20261030c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -174,7 +174,7 @@
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261030a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261030c">
 </head>
 <body>
 <main>
@@ -222,8 +222,8 @@
 
     <label>Categoría</label>
     <div class="segmentado" id="categoria">
-      <button type="button" data-v="RX" aria-pressed="true">RX</button>
-      <button type="button" data-v="Open" aria-pressed="false">Open</button>
+      <button type="button" data-v="RX" aria-pressed="false">RX</button>
+      <button type="button" data-v="Open" aria-pressed="true">Open</button>
     </div>
     <p class="nota-open" id="notaOpen" hidden>En esta clase no hay RX: todos los resultados van en Open.</p>
     <p class="nota-open" id="notaPuntosCat">RX: +20 puntos por registrar · Open: +10. En Open va delante quien usa más peso.</p>
@@ -335,11 +335,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261030a";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261030a";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261030a";
-import { montarMenu } from "./menu.js?v=20261030a";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261030a";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261030c";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261030c";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261030c";
+import { montarMenu } from "./menu.js?v=20261030c";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261030c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -347,7 +347,7 @@ $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "l
 
 let wod = null;
 let clase = claseInicial();
-let categoria = "RX";
+let categoria = "Open";   // por defecto Open: quien hace RX lo marca
 let sexo = "";   // "M" chico, "F" chica: cada uno compite en su clasificación
 function ponerSexo(v) {
   sexo = v === "M" || v === "F" ? v : "";
@@ -630,7 +630,7 @@ $("validar").addEventListener("click", async () => {
 function rellenarConMiResultado() {
   const r = miDoc;
   if (!r) return;
-  categoria = categoriasDe(clase).includes(catDe(r)) ? catDe(r) : categoriasDe(clase)[0];
+  categoria = categoriasDe(clase).includes(catDe(r)) ? catDe(r) : "Open";
   if (r.sexo) ponerSexo(r.sexo);
   $("categoria").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === categoria));
   verBloqueOpen();
@@ -703,7 +703,7 @@ const NOMBRE_MEDIDA = { tiempo: "tiempo", rondas: "rondas", kg: "peso (kg)", emo
 // Categorías de la clase: en Crossbeginners solo hay Open
 function ajustarCategorias() {
   const cats = categoriasDe(clase);
-  categoria = cats[0];
+  categoria = cats.includes("Open") ? "Open" : cats[0];   // por defecto siempre Open
   $("categoria").querySelectorAll("button").forEach((x) => { x.hidden = !cats.includes(x.dataset.v); x.setAttribute("aria-pressed", x.dataset.v === categoria); });
 
   $("categoria").classList.toggle("uno", cats.length === 1);

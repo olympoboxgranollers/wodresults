@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, reload, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes, puntosRegistro } from "./comun.js?v=20261030a";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes, puntosRegistro, catDe, claseDe } from "./comun.js?v=20261030c";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -199,6 +199,30 @@ export function montarAcceso(contenedor, { titulo = "Entra en tu cuenta", texto 
 
 // Suma al momento los puntos por registrar (una sola vez por clase y día).
 // Devuelve true si los ha sumado ahora y false si ya estaban sumados.
+// Corrección de un resultado (coach o entrenador). Si cambia de RX a Open (o al revés),
+// se ajustan a la vez los puntos de registrar: RX 20, Open 10. Devuelve la diferencia de puntos (+10, -10 o 0).
+export async function guardarCorreccion(r, cambios) {
+  const lote = writeBatch(db);
+  lote.update(doc(db, "resultados", r.id), cambios);
+  let diff = 0;
+  if (r.uid && "categoria" in cambios) {
+    const fecha = r.fecha || hoy();
+    const regRef = doc(db, "usuarios", r.uid, "movimientos", idRegistro(claseDe(r), fecha));
+    const reg = await getDoc(regRef);
+    if (reg.exists() && reg.data().tipo === "registro") {
+      const debe = puntosRegistro(catDe({ categoria: cambios.categoria }));
+      diff = debe - (reg.data().puntos || 0);
+      if (diff) {
+        const mes = campoMes(fecha);
+        lote.update(regRef, { puntos: debe });
+        lote.update(doc(db, "usuarios", r.uid), { puntos: increment(diff), puntosRanking: increment(diff), [mes]: increment(diff), mesCorregido: mes });
+      }
+    }
+  }
+  await lote.commit();
+  return diff;
+}
+
 export async function sumarRegistro(user, clase, ficha, categoria = "Open") {
   const pts = puntosRegistro(categoria);   // 20 en RX, 10 en Open
   const mid = idRegistro(clase);

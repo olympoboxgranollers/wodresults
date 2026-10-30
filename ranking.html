@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261030a">
+<link rel="stylesheet" href="estilos.css?v=20261030c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -52,7 +52,8 @@
   ol { list-style: none; display: flex; flex-direction: column; gap: 8px; }
   li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; font-size: 17px; }
   li .pos { font-family: "Oswald", sans-serif; font-size: 22px; color: var(--suave); text-align: center; }
-  li .nom { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li .nom { font-weight: 600; min-width: 0; display: flex; align-items: center; gap: 9px; }
+  li .nom .nom-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   li .emoji { margin-left: 6px; width: 24px; height: 24px; font-size: 20px; line-height: 24px; vertical-align: middle; display: inline-block; }
   li .res { font-family: "Oswald", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
   li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
@@ -183,7 +184,7 @@
   .tv-url { display: block; font-size: 12px; color: var(--lila); word-break: break-all; }
   .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261030a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261030c">
 </head>
 <body>
 <dialog class="dlg-tv" id="dlgTv" aria-label="Conectar la Smart TV">
@@ -265,10 +266,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes } from "./comun.js?v=20261030a";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261030a";
-import { escucharCuenta } from "./cuenta.js?v=20261030a";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261030a";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes, avatarMini } from "./comun.js?v=20261030c";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261030c";
+import { escucharCuenta } from "./cuenta.js?v=20261030c";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261030c";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -421,7 +422,8 @@ function pintar() {
     const num = document.createElement("span"); num.className = "pos"; num.textContent = sinPos ? (r.valor >= 2 ? "✓" : "✗") : pos[i];
     const claseEmom = sinPos ? (r.valor >= 2 ? "emom-si" : "emom-no") : "";
     if (claseEmom) num.classList.add(claseEmom);
-    const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = r.nombre;
+    const nom = document.createElement("span"); nom.className = "nom";
+    nom.append(avatarMini(r.uid, r.nombre), Object.assign(document.createElement("span"), { className: "nom-txt", textContent: r.nombre }));
     const em = crearEmoji(r.sensacion);
     if (em) nom.append(em);
     const res = document.createElement("span"); res.className = "res"; res.textContent = formatearValor(r.valor, r.tipo || tipo);
@@ -553,7 +555,8 @@ function pintarGeneral() {
     const li = document.createElement("li");
     if (puesto <= 3) li.classList.add("p" + puesto);
     if (yo && u.uid === yo.uid) li.classList.add("yo");
-    const nom = Object.assign(document.createElement("span"), { className: "nom", textContent: u.nombre || "Atleta" });
+    const nom = Object.assign(document.createElement("span"), { className: "nom" });
+    nom.append(avatarMini(u.uid, u.nombre || "Atleta"), Object.assign(document.createElement("span"), { className: "nom-txt", textContent: u.nombre || "Atleta" }));
     const pts = Object.assign(document.createElement("span"), { className: "pts", textContent: fmtPuntos(u.puntosMes) });
     pts.append(Object.assign(document.createElement("small"), { textContent: "pts" }));
     li.append(Object.assign(document.createElement("span"), { className: "pos", textContent: puesto }), nom, pts);
