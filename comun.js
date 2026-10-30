@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261029c";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261030a";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -179,8 +179,11 @@ export function textoRondasEmom(r) {
   const n = Number(r.rondas) || 0;
   const de = r.rondasTotal ? ` de ${r.rondasTotal}` : "";
   const hechas = r.rondasTotal ? `${n}${de} rondas completas` : n === 1 ? "Ronda 1 completa" : n > 1 ? `Rondas 1-${n} completas` : "";
-  const p = (r.parcial || []).filter((e) => e?.reps > 0).map((e) => `${e.reps} ${e.nombre}`).join(", ");
-  return [hechas, p ? `Ronda ${n + 1}: ${p}` : ""].filter(Boolean).join(" · ");
+  // Lo hecho en cada ronda sin acabar: "Ronda 4: 10 Thruster · Ronda 5: 8 Clean"
+  const porRonda = new Map();
+  for (const e of r.parcial || []) if (e?.reps > 0) { const k = e.ronda || n + 1; porRonda.set(k, [...(porRonda.get(k) || []), `${e.reps} ${e.nombre}`]); }
+  const partes = [...porRonda].sort((a, b) => a[0] - b[0]).map(([k, l]) => `Ronda ${k}: ${l.join(", ")}`);
+  return [hechas, ...partes].filter(Boolean).join(" · ");
 }
 export const detallePesos = (r) => [sinAcabar(r?.valor, r?.tipo) ? "No completado" : "", textoRondasEmom(r), r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : "")].filter(Boolean).join(" · ");
 
@@ -494,7 +497,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261029c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261030a").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));

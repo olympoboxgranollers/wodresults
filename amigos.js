@@ -2,7 +2,7 @@
 // Cada amistad es un documento "amistades/{uidA_uidB}" (los dos uid ordenados) con:
 //   uids: [uidA, uidB], de: quien la pidió, para: quien la recibe, nombres: { uid: nombre }, estado: "pendiente" | "aceptada"
 import { collection, doc, onSnapshot, query, where, setDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./comun.js?v=20261029c";
+import { db } from "./comun.js?v=20261030a";
 
 export const idAmistad = (a, b) => (a < b ? `${a}_${b}` : `${b}_${a}`);
 

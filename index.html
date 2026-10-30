@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261029c">
+<link rel="stylesheet" href="estilos.css?v=20261030a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -48,10 +48,11 @@
   .emom-rondas-sel { height: 52px; width: 100%; box-sizing: border-box; margin: 0 !important; -webkit-appearance: none; appearance: none; border: 1px solid var(--borde); border-radius: 12px; padding: 0 36px 0 14px; font-size: 17px; font-weight: 700; color: var(--texto);
     background: var(--fondo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c9c6cd' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
   .emom-parcial { display: grid; gap: 8px; }
-  .parcial-fila { display: grid; grid-template-columns: 76px minmax(0, 1fr) 40px; gap: 8px; align-items: center; }
+  .parcial-fila { display: grid; grid-template-columns: 96px 56px minmax(0, 1fr) 40px; gap: 6px; align-items: center; }
   .parcial-fila .quitar { height: 46px; border-radius: 12px; border: 1px solid var(--borde); background: none; color: var(--suave); font-size: 16px; }
   .parcial-fila input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
-  .parcial-fila .p-reps { text-align: center; font-weight: 700; }
+  .parcial-fila .p-reps { text-align: center; font-weight: 700; padding: 12px 4px; }
+  html body .parcial-fila .p-ronda { padding: 0 22px 0 10px !important; font-size: 14px; background-position: right 7px center !important; }
   .emom-lista { display: grid; gap: 8px; }
   .emom-fila { display: grid; grid-template-columns: minmax(0, 1fr) 64px 66px 40px; gap: 8px; align-items: center; }
   .emom-fila input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; font-size: 16px; color: var(--texto); outline: none; }
@@ -173,7 +174,7 @@
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261029c">
+<link rel="stylesheet" href="olympo-ds.css?v=20261030a">
 </head>
 <body>
 <main>
@@ -273,7 +274,7 @@
         <div class="emom-titulo">¿Cuántas rondas has completado enteras?</div>
         <input class="campo" id="emomRondas" inputmode="numeric" maxlength="3" placeholder="Ej. 2">
         <select class="emom-rondas-sel" id="emomRondasSel" aria-label="Rondas completadas" hidden></select>
-        <div class="emom-titulo" id="emomParcialTit">¿Qué hiciste en la ronda que no acabaste?</div>
+        <div class="emom-titulo" id="emomParcialTit">¿Qué hiciste en las rondas que no acabaste?</div>
         <div class="emom-parcial" id="emomParcial"></div>
         <button type="button" class="emom-anadir" id="emomParcialAnadir">+ Añadir ejercicio</button>
       </div>
@@ -334,11 +335,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261029c";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261029c";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261029c";
-import { montarMenu } from "./menu.js?v=20261029c";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261029c";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio } from "./comun.js?v=20261030a";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261030a";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261030a";
+import { montarMenu } from "./menu.js?v=20261030a";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261030a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -392,7 +393,8 @@ function filaEmom(nombre = "", kg = "", unidad = "kg") {
   k.setAttribute("aria-label", "Cantidad");
   // Unidad de cada ejercicio: kilos, libras o calorías
   const c = document.createElement("select"); c.className = "e-unidad"; c.setAttribute("aria-label", "Unidad");
-  for (const u of UNIDADES_EMOM) c.append(new Option(u, u, false, u === (unidad || "kg")));
+  // kg, lb, cal y reps (cuando lo que se apunta son repeticiones)
+  for (const u of [...new Set([...UNIDADES_EMOM, "reps"])]) c.append(new Option(u, u, false, u === (unidad || "kg")));
   const q = Object.assign(document.createElement("button"), { type: "button", className: "quitar", textContent: "✕" });
   q.setAttribute("aria-label", "Quitar ejercicio");
   q.addEventListener("click", () => { f.remove(); if (!$("emomLista").children.length) $("emomLista").append(filaEmom()); $("emomAnadir").hidden = false; });
@@ -400,8 +402,20 @@ function filaEmom(nombre = "", kg = "", unidad = "kg") {
   return f;
 }
 // Filas "reps hechas + ejercicio" de la ronda que no acabó: empieza vacío y el socio añade los ejercicios que hizo
-function filaParcial(nombre = "", reps = "") {
+// Rondas que se pueden elegir en cada fila: desde la siguiente a las completadas hasta el total (o 10 más si no se sabe)
+const rondasHechas = () => { const v = parseInt($("emomRondas").value, 10); return v > 0 ? v : 0; };
+function opcionesRonda(sel, actual) {
+  const base = rondasHechas(), total = wod?.rondas || base + 10;
+  const elegida = actual > base && actual <= total ? actual : base + 1;
+  sel.replaceChildren();
+  for (let i = base + 1; i <= Math.max(total, base + 1); i++) sel.append(new Option(`Ronda ${i}`, String(i), false, i === elegida));
+}
+function refrescarRondasParcial() { for (const s of $("emomParcial").querySelectorAll(".p-ronda")) opcionesRonda(s, parseInt(s.value, 10)); }
+function filaParcial(nombre = "", reps = "", ronda) {
   const f = document.createElement("div"); f.className = "parcial-fila";
+  const rs = document.createElement("select"); rs.className = "p-ronda"; rs.setAttribute("aria-label", "Ronda");
+  if (ronda === undefined) { const ult = [...$("emomParcial").querySelectorAll(".p-ronda")].pop(); ronda = ult ? parseInt(ult.value, 10) : undefined; }
+  opcionesRonda(rs, ronda);
   const r = Object.assign(document.createElement("input"), { className: "p-reps", inputMode: "numeric", maxLength: 3, placeholder: "0", value: reps === "" || reps == null ? "" : String(reps) });
   r.setAttribute("aria-label", "Repeticiones hechas");
   // Desplegable con la misma lista de ejercicios que el favorito / odiado del perfil
@@ -410,18 +424,19 @@ function filaParcial(nombre = "", reps = "") {
   const q = Object.assign(document.createElement("button"), { type: "button", className: "quitar", textContent: "✕" });
   q.setAttribute("aria-label", "Quitar ejercicio");
   q.addEventListener("click", () => { f.remove(); $("emomParcialAnadir").hidden = false; });
-  f.append(r, n, q); return f;
+  f.append(rs, r, n, q); return f;
 }
 function ponerParcial(parcial) {
   const l = $("emomParcial");
   if (parcial === undefined && l.children.length) return;
   l.replaceChildren();
-  (parcial || []).forEach((p) => l.append(filaParcial(p.nombre || "", p.reps ?? "")));
+  (parcial || []).forEach((p) => l.append(filaParcial(p.nombre || "", p.reps ?? "", p.ronda)));
   $("emomParcialAnadir").hidden = l.children.length >= 10;
 }
 $("emomParcialAnadir").addEventListener("click", () => { const f = filaParcial(); $("emomParcial").append(f); f.querySelector(".p-reps").focus(); $("emomParcialAnadir").hidden = $("emomParcial").children.length >= 10; });
 // Si el coach ha puesto cuántas rondas tiene el EMOM, se eligen en un desplegable (0, 1, 2… hasta una menos del total)
 function pintarRondasSel() {
+  refrescarRondasParcial();
   const total = tipo === "emom" ? wod?.rondas || 0 : 0;
   const caja = $("emomRondasSel");
   caja.hidden = !total; $("emomRondas").hidden = !!total;
@@ -431,7 +446,8 @@ function pintarRondasSel() {
   caja.replaceChildren(new Option("Elige las rondas…", ""), ...Array.from({ length: total }, (_, i) =>
     new Option(`${i} ${i === 1 ? "ronda" : "rondas"} de ${total}`, String(i), false, actual === String(i))));
 }
-$("emomRondasSel").addEventListener("change", () => { $("emomRondas").value = $("emomRondasSel").value; });
+$("emomRondasSel").addEventListener("change", () => { $("emomRondas").value = $("emomRondasSel").value; refrescarRondasParcial(); });
+$("emomRondas").addEventListener("input", refrescarRondasParcial);
 function ponerEmom(valor = 2, ejercicios = [], rondas, parcial) {
   emomValor = valor >= 2 ? 2 : 1;
   $("emomRondasCaja").hidden = emomValor !== 1;
@@ -745,9 +761,11 @@ $("formulario").addEventListener("submit", async (e) => {
         const reps = /^\d+$/.test(rt) ? parseInt(rt, 10) : NaN;
         if (isNaN(reps) || reps > 999) return ($("error").textContent = `Revisa las repeticiones de ${n || "cada ejercicio"}.`);
         if (!n) return ($("error").textContent = "Elige el ejercicio de cada fila.");
-        parcial.push({ nombre: n, reps });
+        const ronda = parseInt(f.querySelector(".p-ronda").value, 10) || (rondasEmom || 0) + 1;
+        if (ronda <= (rondasEmom || 0) || (wod?.rondas && ronda > wod.rondas)) return ($("error").textContent = "Revisa la ronda de cada ejercicio.");
+        parcial.push({ ronda, nombre: n, reps });
       }
-      parcial = parcial.slice(0, 10);
+      parcial = parcial.sort((a, b) => a.ronda - b.ronda).slice(0, 10);
       if (!rondasEmom && !parcial.length) return ($("error").textContent = "Escribe las rondas completadas o lo que hiciste en la ronda que no acabaste.");
     }
     ejercicios = [];
