@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118c";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118e";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -169,7 +169,8 @@ export function textoEjercicios(lista) {
   // Cada ejercicio: { nombre, cantidad, unidad: "kg" | "lb" | "cal" } (los antiguos guardaban solo "kg")
   return (lista || []).filter((e) => e?.nombre).map((e) => {
     const n = e.cantidad ?? e.kg;
-    return n ? `${e.nombre} ${String(n).replace(".", ",")} ${e.unidad || "kg"}` : e.nombre;
+    const peso = e.peso ? ` @ ${String(e.peso).replace(".", ",")} kg` : "";   // Open en EMOM: sus reps y su peso
+    return n ? `${e.nombre} ${String(n).replace(".", ",")} ${e.unidad || "kg"}${peso}` : e.nombre + peso;
   }).join(" · ");
 }
 // Lo que se ve bajo la categoría: los pesos del EMOM o el material del Open
@@ -224,7 +225,7 @@ const ordenGrupo = (r) => { const i = GRUPOS.indexOf(grupoDe(r)); return i < 0 ?
 export function pesoTotal(r) {
   let t = 0;
   for (const v of Object.values(r?.pesos || {})) t += Number(v) || 0;
-  for (const e of r?.ejercicios || []) { const n = Number(e?.cantidad ?? e?.kg) || 0; const u = e?.unidad || "kg"; if (u === "kg") t += n; else if (u === "lb") t += n * 0.4536; }
+  for (const e of r?.ejercicios || []) { const n = Number(e?.cantidad ?? e?.kg) || 0; const u = e?.unidad || "kg"; if (u === "kg") t += n; else if (u === "lb") t += n * 0.4536; t += Number(e?.peso) || 0; }
   return Math.round(t * 10) / 10;
 }
 // En Open va delante quien ha usado más peso (en cualquier tipo de WOD); con el mismo peso empatan
@@ -524,7 +525,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261118c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261118e").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
@@ -757,6 +758,12 @@ export function buscarEjercicio(texto) {
   const t = String(texto).trim().toLowerCase();
   return t ? t[0].toUpperCase() + t.slice(1) : "";
 }
+// Lo que toca por ronda según el sexo: "16 cal" (chica) o "20 cal" (chico); con el peso si lo hay: "10 reps @ 40 kg"
+export function porRondaEmom(e, sexo) {
+  const c = sexo === "F" ? e.cantidadF ?? e.cantidad : e.cantidad;
+  const k = sexo === "F" ? e.kgF ?? e.kg : e.kg;
+  return `${c} ${e.unidad || "reps"}${k ? ` @ ${String(k).replace(".", ",")} kg` : ""}`;
+}
 export function detectarEjerciciosEmom(texto) {
   const lineas = String(texto || "").replace(/\r/g, "").split("\n").map((l) => l.trim()).filter(Boolean);
   const ejercicios = []; let estaciones = 0, minutos = 0;
@@ -767,17 +774,26 @@ export function detectarEjerciciosEmom(texto) {
     l = l.replace(/^(?:min(?:uto)?\s*\d+\s*[:.)-]|m\d+\s*[:.)-]|\d+\s*[).:-](?=\s*\d)|[-•*·]+)\s*/i, "");
     if (DESCANSO.test(l)) { estaciones++; continue; }
     if (CABECERA_EMOM.test(l)) continue;
-    const m = l.match(/^(\d+)\s*(?:\/\s*\d+)?\s*(cals?|calor[ií]as|kcal|m|mts|metros|reps?|repeticiones)?\.?\s+(.+)$/i);
+    // Peso por sexo: "@60/40" (chicos/chicas) o "@24" (igual para todos)
+    let kg = 0, kgF = 0;
+    const p = l.match(/@\s*(\d+(?:[.,]\d+)?)\s*(?:\/\s*(\d+(?:[.,]\d+)?))?/);
+    if (p) { kg = parseFloat(p[1].replace(",", ".")); kgF = p[2] ? parseFloat(p[2].replace(",", ".")) : kg; l = l.replace(/@.*$/, "").trim(); }
+    // "10x thrusters" -> "10 thrusters"; "thrusters x10" -> "10 thrusters"
+    l = l.replace(/^(\d+(?:\s*\/\s*\d+)?)\s*x\s+/i, "$1 ");
+    const alFinal = l.match(/^(.+?)\s*x\s*(\d+(?:\s*\/\s*\d+)?)$/i);
+    if (alFinal && !/^\d/.test(l)) l = `${alFinal[2]} ${alFinal[1]}`;
+    // Cantidad por sexo: "20/16 cal row" -> chicos 20, chicas 16
+    const m = l.match(/^(\d+)\s*(?:\/\s*(\d+))?\s*(cals?|calor[ií]as|kcal|m|mts|metros|reps?|repeticiones)?\.?\s+(.+)$/i);
     if (!m) continue;
-    const cantidad = parseInt(m[1], 10);
-    const u = (m[2] || "").toLowerCase();
-    const unidad = /^(cal|kcal|calor)/.test(u) ? "cal" : /^(m|mts|metros)$/.test(u) ? "m" : "reps";
-    let resto = m[3].replace(/@.*$/, "").replace(/\(.*?\)/g, "").trim();
+    const cantidad = parseInt(m[1], 10), cantidadF = m[2] ? parseInt(m[2], 10) : cantidad;
+    const u = (m[3] || "").toLowerCase();
+    let unidad = /^(cal|kcal|calor)/.test(u) ? "cal" : /^(m|mts|metros)$/.test(u) ? "m" : "reps";
+    let resto = m[4].replace(/\(.*?\)/g, "").trim();
     // "20 cal row" -> la unidad puede venir pegada al nombre: "cal row"
-    if (unidad === "reps" && /^(cals?|calor[ií]as)\s+/i.test(resto)) { resto = resto.replace(/^(cals?|calor[ií]as)\s+/i, ""); ejercicios.push({ nombre: buscarEjercicio(resto), cantidad, unidad: "cal" }); estaciones++; continue; }
+    if (unidad === "reps" && /^(cals?|calor[ií]as)\s+/i.test(resto)) { resto = resto.replace(/^(cals?|calor[ií]as)\s+/i, ""); unidad = "cal"; }
     const nombre = buscarEjercicio(resto);
     if (!nombre || !(cantidad > 0)) continue;
-    ejercicios.push({ nombre, cantidad, unidad });
+    ejercicios.push({ nombre, unidad, cantidad, cantidadF, ...(kg ? { kg, kgF } : {}) });
     estaciones++;
   }
   // Rondas: minutos del EMOM / estaciones (ejercicios + descansos), si da exacto
