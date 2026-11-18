@@ -69,12 +69,14 @@ export const claseCuenta = (nombre) => CUENTAN.has(normalClase(nombre));
 export function contarReservas(reservas, estado, hoy) {
   let { desde = 0, asistidas = 0 } = estado || {};
   let extra = 0, pendientes = 0, proximoDia = null, todoDecidido = true;
+  const dias = new Set(), cancelados = new Set();   // días con reserva (para el aviso de "última oportunidad")
   const lista = [...reservas].filter((b) => b.id >= desde).sort((a, b) => a.id - b.id);
   for (const b of lista) {
     const cancelada = !!b.cancellation_date;
     const decidida = cancelada || (b.day && b.day < hoy);
     // Cuenta cada reserva no cancelada ni en lista de espera, haya check-in o no, y solo de las clases de la lista
     const cuenta = !cancelada && b.state !== "waiting_list" && claseCuenta(b.class?.name);
+    if (b.day && claseCuenta(b.class?.name)) (cuenta ? dias : cancelados).add(b.day);
     if (decidida && todoDecidido) {
       if (cuenta) asistidas++;
       desde = b.id + 1;
@@ -88,7 +90,7 @@ export function contarReservas(reservas, estado, hoy) {
       if (!proximoDia || b.day < proximoDia) proximoDia = b.day;
     }
   }
-  return { estado: { desde, asistidas }, total: asistidas + extra, pendientes, proximoDia };
+  return { estado: { desde, asistidas }, total: asistidas + extra, pendientes, proximoDia, dias: [...dias], cancelados: [...cancelados] };
 }
 
 // ¿Hace falta volver a mirar a este cliente?
@@ -234,8 +236,13 @@ export async function sincronizar({ aim, almacen, semilla, semillaHash, prueba =
     // Primer recuento con la lista de clases: se fija la base sin quitarle puntos por las clases que ya no cuentan
     const pr = usuario.conteoV3 ? puntosReservas(usuario, r.total) : { nuevas: 0, puntos: 0, clasesPuntuadas: r.total };
     // clasesAim: las reservas en AimHarder (sin ajustes), para que el coach vea de dónde sale el total
-    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || !usuario.conteoV3 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas) {
-      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, conteoV3: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
+    // Días con reserva de los últimos 3 días (hoy, ayer y anteayer): la app avisa de registrar el resultado de ayer solo a quien reservó
+    const limite = new Date(Date.parse(hoy + "T12:00:00Z") - 2 * 864e5).toISOString().slice(0, 10);
+    const previos = (usuario.diasReservados || []).filter((d) => d >= limite && !(r.cancelados.includes(d) && !r.dias.includes(d)));
+    const diasReservados = [...new Set([...previos, ...r.dias.filter((d) => d >= limite && d <= hoy)])].sort();
+    const diasCambian = JSON.stringify(diasReservados) !== JSON.stringify(usuario.diasReservados || []);
+    if (usuario.clases !== totalApp || usuario.clasesAim !== r.total || nuevos.length || !usuario.aimharder || !usuario.conteoV2 || !usuario.conteoV3 || fijado || usuario.clasesPuntuadas !== pr.clasesPuntuadas || diasCambian) {
+      await almacen.actualizarUsuario(uid, { clases: totalApp, clasesAim: r.total, clasesAjuste: ajuste, conteoV2: true, conteoV3: true, aimharder: true, clasesPuntuadas: pr.clasesPuntuadas, diasReservados, ...(fijado ? { clasesFijadas: null } : {}) }, nuevos, hoy, pr);
       res.actualizados++; res.logros += nuevos.length;
     }
   }

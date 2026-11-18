@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
-import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso, logroParaFicha } from "./comun.js?v=20261118e";
-import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118e";
-import { COACH_EMAIL } from "./config.js?v=20261118e";
+import { doc, updateDoc, getDoc, getDocs, setDoc, writeBatch, increment, collection, onSnapshot, query, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, PUNTOS, catDe, ayer, CLASES, claseAbierta, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso, logroParaFicha } from "./comun.js?v=20261118f";
+import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118f";
+import { COACH_EMAIL } from "./config.js?v=20261118f";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -224,6 +224,8 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     else if (dlgPerfil?.open) dlgPerfil.close();
     // Socios que ya tienen perfil pero no han dicho si son chico o chica (para sus logros y rankings): se pregunta una vez
     if (u && !tv && !/\/(tv|pantalla)\.html$/.test(location.pathname) && !esCuentaTV(u) && !esCuentaCoach(u) && ficha?.atleta && ficha.favorito && ficha.odiado && !ficha.sexo) pedirSexo(u);
+    // Última oportunidad: reservó ayer en AimHarder y no registró su resultado
+    if (u && !tv && !/\/(tv|pantalla)\.html$/.test(location.pathname) && !esCuentaTV(u) && !esCuentaCoach(u) && ficha?.atleta) avisoUltimaOportunidad(u, ficha);
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
       location.replace("index.html?volver=" + encodeURIComponent(volver));
@@ -245,7 +247,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261118e").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261118f").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -449,6 +451,52 @@ function pedirPerfil(user, ficha) {
   });
   dlgPerfil.showModal();
   setTimeout(() => f.nombre.focus(), 50);
+}
+
+// ---------- Última oportunidad: registrar el resultado de ayer ----------
+// Solo a quien reservó ayer en AimHarder (lo guarda la sincronización en "diasReservados"), no lo registró
+// y había WOD publicado. "Ahora no" lo calla hasta que vuelva a abrir la app; "No lo hice" ya no vuelve a salir.
+let ultimaMirada = "";
+async function avisoUltimaOportunidad(user, ficha) {
+  const dia = ayer();
+  if (ultimaMirada === dia || new URLSearchParams(location.search).get("dia") === "ayer") return;
+  if (!(ficha.diasReservados || []).includes(dia)) return;
+  try { if (localStorage.getItem(`ultima-${user.uid}-${dia}`) || sessionStorage.getItem(`ultima-${user.uid}-${dia}`)) return; } catch {}
+  ultimaMirada = dia;
+  try {
+    const hecho = await getDocs(query(collection(db, "resultados"), where("uid", "==", user.uid), where("fecha", "==", dia), limit(1)));
+    if (!hecho.empty) return;
+    const clases = [];
+    for (const c of Object.keys(CLASES).filter(claseAbierta)) if ((await getDoc(doc(db, "wods", `${dia}_${c}`))).exists()) clases.push(c);
+    if (!clases.length) return;
+    if (document.querySelector("dialog[open]")) { ultimaMirada = ""; setTimeout(() => avisoUltimaOportunidad(user, ficha), 4000); return; }
+    const dlg = document.createElement("dialog");
+    dlg.className = "dialogo-perfil dialogo-ultima";
+    const pts = `${PUNTOS.registrarRX} puntos en RX o ${PUNTOS.registrar} en Open`;
+    dlg.innerHTML = `
+      <div class="perfil-marca">Última oportunidad</div>
+      <h3>Te falta el resultado de ayer</h3>
+      <p>Puedes registrarlo hasta las 23:59. Suma ${pts}, sin podio.</p>
+      <div class="ultima-botones"></div>
+      <div class="ultima-otros"><button type="button" data-a="luego" style="width:auto!important;margin:0!important;padding:6px 4px!important;background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;color:var(--suave)!important;font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important">Ahora no</button><span>·</span><button type="button" data-a="no" style="width:auto!important;margin:0!important;padding:6px 4px!important;background:none!important;background-image:none!important;border:0!important;box-shadow:none!important;color:var(--suave)!important;font-size:14px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important">No lo hice</button></div>`;
+    const caja = dlg.querySelector(".ultima-botones");
+    for (const c of clases) {
+      const bt = Object.assign(document.createElement("button"), { type: "button", textContent: clases.length > 1 ? `Registrar ${CLASES[c].nombre}` : "Registrar" });
+      bt.addEventListener("click", () => { location.href = `index.html?dia=ayer&clase=${c}`; });
+      caja.append(bt);
+    }
+    dlg.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-a]"); if (!b) return;
+      try {
+        if (b.dataset.a === "no") localStorage.setItem(`ultima-${user.uid}-${dia}`, "1");
+        else sessionStorage.setItem(`ultima-${user.uid}-${dia}`, "1");
+      } catch {}
+      dlg.close();
+    });
+    dlg.addEventListener("close", () => dlg.remove());
+    document.body.append(dlg);
+    dlg.showModal();
+  } catch (err) { console.warn("Aviso de última oportunidad", err); }
 }
 
 // ---------- ¿Chico o chica? (una vez, a quien ya tenía perfil de antes) ----------

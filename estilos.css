@@ -455,3 +455,10 @@ html body dialog.dialogo-perfil .perfil-sexo .segmentado button[aria-pressed="tr
 .dialogo-sexo .sexo-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
 .dialogo-sexo .sexo-botones button { font-size: 18px; padding: 18px; }
 html body dialog.dialogo-sexo button.sexo-luego { background: none !important; background-image: none !important; color: var(--suave) !important; border: 0 !important; box-shadow: none !important; font-weight: 600; font-size: 14px; margin-top: 10px; padding: 8px; text-transform: none !important; letter-spacing: 0 !important; }
+
+/* Última oportunidad: registrar el resultado de ayer (mismo estilo que el resto de ventanas) */
+.dialogo-ultima p { margin: 6px 0 0; color: var(--suave); font-size: 15px; line-height: 1.45; }
+.dialogo-ultima .ultima-botones { display: grid; gap: 8px; margin-top: 18px; }
+.dialogo-ultima .ultima-botones button { margin: 0; }
+.dialogo-ultima .ultima-otros { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 12px; color: var(--suave); font-size: 14px; }
+html body dialog.dialogo-ultima .ultima-otros button { width: auto; margin: 0; padding: 6px 4px; background: none !important; background-image: none !important; border: 0 !important; box-shadow: none !important; color: var(--suave) !important; font-size: 14px !important; font-weight: 500; text-transform: none !important; letter-spacing: 0 !important; }

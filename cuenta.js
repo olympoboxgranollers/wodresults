@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signI
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, reload, signOut, updateProfile }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, onSnapshot, setDoc, updateDoc, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes, puntosRegistro, catDe, claseDe } from "./comun.js?v=20261118e";
+import { app, db, hoy, idRegistro, PUNTOS, persona, nombreBonito, campoMes, puntosRegistro, catDe, claseDe, fechaRegistro } from "./comun.js?v=20261118f";
 
 export const auth = getAuth(app);
 auth.languageCode = "es";
@@ -232,7 +232,7 @@ export async function sumarRegistro(user, clase, ficha, categoria = "Open") {
   // puntosRanking: solo registrar y podio (para el ranking general) y el campo del mes (ranking general mensual)
   const guardar = async (conMes) => {
     const lote = writeBatch(db);
-    lote.set(ref, { fecha: hoy(), clase, tipo: "registro", puntos: pts });
+    lote.set(ref, { fecha: fechaRegistro(), clase, tipo: "registro", puntos: pts });
     lote.update(doc(db, "usuarios", user.uid), { puntos: increment(pts), puntosRanking: increment(pts), ...(conMes ? { [campoMes(mid)]: increment(pts) } : {}), ultimoRegistro: mid });
     await lote.commit();
   };

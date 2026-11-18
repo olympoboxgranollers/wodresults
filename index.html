@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261118e">
+<link rel="stylesheet" href="estilos.css?v=20261118f">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -197,8 +197,11 @@
   .reac-lista { display: flex; flex-wrap: wrap; gap: 6px; }
   .reac-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); font-size: 13px; color: var(--texto); }
   .reac-chip b { font-size: 15px; }
+  .aviso-ayer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 14px; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--borde); color: var(--suave); font-size: 14px; }
+  .aviso-ayer[hidden] { display: none; }
+  .aviso-ayer a { color: var(--malva); font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261118e">
+<link rel="stylesheet" href="olympo-ds.css?v=20261118f">
 </head>
 <body>
 <main>
@@ -215,6 +218,11 @@
     <div class="wod" id="wodNombre">WOD de hoy</div>
     <div class="wod-desc" id="wodDesc" hidden></div>
   </header>
+  <!-- Última oportunidad: registrar el resultado de ayer -->
+  <div class="aviso-ayer" id="avisoAyer" hidden>
+    <span id="avisoAyerTxt"></span>
+    <a href="index.html" id="volverHoy">Volver a hoy</a>
+  </div>
 
   <div class="cuenta-barra" id="barraCuenta" hidden>
     <span class="quien">Hola, <b id="quienNombre"></b></span>
@@ -371,13 +379,24 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio, porRondaEmom } from "./comun.js?v=20261118e";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261118e";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261118e";
-import { montarMenu } from "./menu.js?v=20261118e";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261118e";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio, porRondaEmom } from "./comun.js?v=20261118f";
+import { db, hoy, ayer, fijarFechaRegistro, fechaRegistro, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261118f";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261118f";
+import { montarMenu } from "./menu.js?v=20261118f";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261118f";
 
 const $ = (id) => document.getElementById(id);
+
+// ---------- Última oportunidad: registrar el resultado de AYER (index.html?dia=ayer) ----------
+// Cuenta para los puntos de registrar (20 RX / 10 Open), pero no entra en el podio, que ya se repartió.
+const modoAyer = new URLSearchParams(location.search).get("dia") === "ayer";
+if (modoAyer) {
+  fijarFechaRegistro(ayer());
+  const [, m, d] = ayer().split("-");
+  $("avisoAyerTxt").textContent = `Resultado de ayer · ${+d}/${+m}`;
+  $("avisoAyer").hidden = false;
+  document.body.classList.add("modo-ayer");
+}
 $("box").textContent = NOMBRE_BOX;
 $("fechaHoy").textContent = new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
@@ -756,7 +775,7 @@ function escucharWod() {
   wod = snap.exists() ? snap.data() : null;
   pintarRondasSel();
   const nombreWod = wod && wod.nombre && !wod.nombre.endsWith(" del día") ? ` · ${wod.nombre}` : "";
-  $("wodNombre").textContent = wod ? `${CLASES[clase].nombre}${nombreWod} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : `${CLASES[clase].nombre} de hoy`;
+  $("wodNombre").textContent = wod ? `${CLASES[clase].nombre}${nombreWod} · ${TIPOS[wod.tipo]?.etiqueta || ""}` : `${CLASES[clase].nombre} de ${modoAyer ? "ayer" : "hoy"}`;
   // El resultado solo se puede poner en la medida del WOD (tiempo, rondas o kg)
   const valido = wod && TIPOS[wod.tipo];
   if (valido) ponerTipo(wod.tipo);
@@ -766,7 +785,7 @@ function escucharWod() {
   $("error").textContent = "";
   $("wodDesc").textContent = wod?.descripcion || "";
   $("wodDesc").hidden = !wod?.descripcion;
-  }, () => { $("wodNombre").textContent = `${CLASES[clase].nombre} de hoy`; $("sinWod").hidden = false; $("enviar").disabled = true; });
+  }, () => { $("wodNombre").textContent = `${CLASES[clase].nombre} de ${modoAyer ? "ayer" : "hoy"}`; $("sinWod").hidden = false; $("enviar").disabled = true; });
 }
 
 // Elegir clase (WOD, Hyrox o Funcional); el QR de la pantalla ya trae la clase en el enlace
@@ -922,7 +941,7 @@ $("formulario").addEventListener("submit", async (e) => {
     if (ficha?.sexo !== sexo) updateDoc(doc(db, "usuarios", user.uid), { sexo }).catch(() => {});
     const id = idResultado(clase, user.uid);
     await setDoc(doc(db, "resultados", id), {
-      uid: user.uid, nombre, clase, categoria, sexo, tipo, valor, fecha: hoy(),
+      uid: user.uid, nombre, clase, categoria, sexo, tipo, valor, fecha: fechaRegistro(), ...(modoAyer ? { tarde: true } : {}),
       creado: miDoc?.creado || serverTimestamp(),
       ...(miDoc ? { editado: serverTimestamp() } : {}),
       ...(sensacion ? { sensacion } : {}),
@@ -975,7 +994,7 @@ function seguirMiPosicion(r) {
   estadoAntes = null;
   delete $("estado").dataset.destronado;
   if (dejarDeSeguir) dejarDeSeguir();
-  dejarDeSeguir = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", hoy())), (snap) => {
+  dejarDeSeguir = onSnapshot(query(collection(db, "resultados"), where("fecha", "==", fechaRegistro())), (snap) => {
     const todos = snap.docs.map((d) => ({ id: d.id, ...persona(d.data()) }));
     if (!todos.some((x) => x.id === r.id)) todos.push(r);  // por si aún no ha llegado el mío
     pintarEstado(todos);

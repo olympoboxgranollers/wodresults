@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118e";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118f";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -79,6 +79,15 @@ export const ahoraReal = () => new Date(Date.now() + desfaseReloj);
 export function hoy() {
   return ahoraReal().toLocaleDateString("sv-SE", { timeZone: ZONA_HORARIA });
 }
+// Ayer (en España): para la "última oportunidad" de registrar el resultado del día anterior
+export function ayer() {
+  const [a, m, d] = hoy().split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1, d - 1, 12)).toISOString().slice(0, 10);
+}
+// Día al que va el resultado: hoy, salvo en la página de "registrar el de ayer"
+let fechaFija = null;
+export const fijarFechaRegistro = (f) => { fechaFija = f || null; };
+export const fechaRegistro = () => fechaFija || hoy();
 // Pone en hora la app con la hora del servidor web (cabecera Date). Devuelve true si el día del aparato estaba mal.
 export async function sincronizarReloj() {
   const antes = hoy();
@@ -107,7 +116,7 @@ export const sinPodio = (c) => !!CLASES[c]?.sinPodio;
 export const categoriasDe = (c) => (soloOpen(c) ? ["Open"] : ["RX", "Open"]);
 
 // Id del WOD de hoy para una clase, p. ej. "2026-10-23_hyrox"
-export const idWod = (clase) => `${hoy()}_${clase}`;
+export const idWod = (clase) => `${fechaRegistro()}_${clase}`;
 
 // Clase de un resultado (los antiguos sin clase cuentan como WOD)
 export const claseDe = (r) => r.clase || "wod";
@@ -272,6 +281,7 @@ export function ordenar(lista, tipo) {
   const mismos = lista.filter((r) => (r.tipo || tipo) === tipo);
   const otros = lista.filter((r) => (r.tipo || tipo) !== tipo);
   mismos.sort((a, b) => ordenGrupo(a) - ordenGrupo(b)
+    || (a.tarde ? 1 : 0) - (b.tarde ? 1 : 0)   // los registrados tarde van detrás (no entran en el podio)
     || (porPeso(a) ? pesoTotal(b) - pesoTotal(a) : 0)
     || (menos ? a.valor - b.valor : b.valor - a.valor)
     // EMOM no completado: primero quien hizo más rondas enteras y, a igualdad, a quien le faltó menos
@@ -414,9 +424,9 @@ export const PUNTOS = {
 export const fmtPuntos = (n) => (Math.round(n * 10) / 10).toLocaleString("es-ES");
 
 // Id del resultado de un socio: uno por socio, clase y día
-export const idResultado = (clase, uid) => `${hoy()}_${clase}_${uid}`;
+export const idResultado = (clase, uid) => `${fechaRegistro()}_${clase}_${uid}`;
 export const idCierre = (clase, fecha = hoy()) => `${fecha}_${clase}`;
-export const idRegistro = (clase, fecha = hoy()) => `${fecha}_${clase}_reg`;
+export const idRegistro = (clase, fecha = fechaRegistro()) => `${fecha}_${clase}_reg`;
 
 // ---------- Fotos de perfil en las listas (ranking, socios) ----------
 // Se lee cada foto una sola vez por página (se guarda en memoria); quien no tiene foto sale con sus iniciales
@@ -449,12 +459,17 @@ export function calcularPuntos(resultados, tipo, clase = null) {
   const filas = [];
   for (const g of GRUPOS) {
     const cat = g.split("·")[0];
-    const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid), tipo, g);
+    // Los que registraron tarde (al día siguiente) solo se llevan los puntos de registrar: no entran en el podio
+    const { lista, pos } = clasificacionDe(resultados.filter((r) => r.uid && !r.tarde), tipo, g);
     lista.forEach((r, i) => {
       const podio = sinPodio(clase) || tipoSinPodio(tipo) ? 0 : (PUNTOS.podio[cat]?.[pos[i]] || 0);
       const registro = puntosRegistro(cat);
       filas.push({ r, categoria: cat, grupo: g, posicion: pos[i], registro, podio, puntos: registro + podio });
     });
+    for (const r of resultados.filter((x) => x.uid && x.tarde && grupoDe(x) === g && (x.tipo || tipo) === tipo)) {
+      const registro = puntosRegistro(cat);
+      filas.push({ r, categoria: cat, grupo: g, posicion: null, registro, podio: 0, puntos: registro });
+    }
   }
   return filas;
 }
@@ -525,7 +540,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261118e").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261118f").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
