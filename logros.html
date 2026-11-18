@@ -12,7 +12,7 @@
 <title>Logros Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261118b">
+<link rel="stylesheet" href="estilos.css?v=20261118c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px; }
   main { width: 100%; max-width: 560px; }
@@ -94,7 +94,7 @@
   .msg { font-size: 14px; } .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
   .sync-detalle { margin-top: 6px; font-size: 12.5px; color: var(--suave); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261118b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261118c">
 </head>
 <body>
 <main>
@@ -163,6 +163,7 @@
         <label>Puntos que da<input id="nPuntos" inputmode="numeric" placeholder="100"></label>
         <label>Dificultad (metal de la medalla)<select id="nNivel"><option value="bronce">Bronce · fácil</option><option value="plata">Plata · media</option><option value="oro">Oro · difícil</option><option value="diamante">Diamante · muy difícil</option><option value="olimpo">Olimpo · élite</option><option value="">Lila (sin nivel)</option></select></label>
         <label>Automático al llegar a… clases<input id="nClases" inputmode="numeric" placeholder="Vacío = lo das tú"></label>
+        <label>Para quién<select id="nSexo"><option value="">Todos</option><option value="M">Solo chicos</option><option value="F">Solo chicas</option></select></label>
         <div class="ancho"><span class="etq">Medalla</span><div class="selector-medallas" id="nMedallas"></div></div>
         <label>Orden (más alto = más importante)<input id="nOrden" inputmode="numeric" placeholder="100"></label>
       </div>
@@ -180,9 +181,9 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, writeBatch, increment, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona } from "./comun.js?v=20261118b";
-import { escucharCuenta } from "./cuenta.js?v=20261118b";
-import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261118b";
+import { db, hoy, fmtPuntos, crearInsignia, LOGROS_INICIALES, NIVELES, nivelDe, esLogroDeClases, umbralClases, copiaInsignia, umbralLogro, MEDALLAS, imagenMedalla, EJERCICIOS_MEDALLA, METALES, NIVELES as NIV, idMedalla, persona, logroParaFicha, PARA_QUIEN } from "./comun.js?v=20261118c";
+import { escucharCuenta } from "./cuenta.js?v=20261118c";
+import { montarMenu, esCuentaCoach, plegable } from "./menu.js?v=20261118c";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: "logros", cuenta: false });
@@ -248,7 +249,7 @@ escucharCuenta(({ user, ficha: f }) => {
       const auto = logros.filter((l) => l.clases > 0);
       if (!dando && socios.some((x) => auto.some((l) => (x.clases || 0) >= l.clases && !x.insignias?.[l.id]))) {
         dando = true;
-        import("./cierre.js?v=20261118b").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
+        import("./cierre.js?v=20261118c").then((m) => m.darLogrosDeClases()).finally(() => { dando = false; });
       }
     }, () => {});
   }
@@ -260,7 +261,7 @@ onSnapshot(collection(db, "logros"), (s) => {
   logros = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.orden || 0) - (b.orden || 0));
   rellenarClases();
   const sel = $("dLogro"), antes = sel.value;
-  sel.replaceChildren(...logros.map((l) => new Option(l.nombre, l.id)));
+  sel.replaceChildren(...logros.map((l) => new Option(l.nombre + (l.sexo ? ` (${PARA_QUIEN[l.sexo].toLowerCase()})` : ""), l.id)));
   if (antes) sel.value = antes;
   sugerirPuntos();
   pintar();
@@ -281,8 +282,10 @@ function pintar() {
     $("clasesBarra").style.width = (sig ? Math.min(100, ((n - desde) / (sig.clases - desde)) * 100) : 100) + "%";
   }
   const mias = ficha?.insignias || {};
-  $("nTotal").textContent = logros.length;
-  $("nConseguidos").textContent = logros.filter((l) => mias[l.id]).length;
+  // Cada socio ve los logros para todos y los de su sexo (el coach los ve todos)
+  const visibles = coach ? logros : logros.filter((l) => logroParaFicha(l, ficha));
+  $("nTotal").textContent = visibles.length;
+  $("nConseguidos").textContent = visibles.filter((l) => mias[l.id]).length;
   const faltan = LOGROS_INICIALES.filter((i) => { const l = logros.find((x) => x.id === i.id); return !l || l.nivel !== i.nivel || !(l.clases > 0) || !l.imagen; });
   $("nIniciales").hidden = !coach || !faltan.length;
   $("nIniciales").textContent = logros.some((l) => LOGROS_INICIALES.find((i) => i.id === l.id)) ? "Poner las medallas nuevas a los de clases (100 bronce · 250 plata · 500 oro · 750 diamante · 1000 olimpo)" : "Crear los de 100 a 1000 clases";
@@ -291,7 +294,7 @@ function pintar() {
     return;
   }
   // Primero los conseguidos (para el socio), luego el resto por orden
-  const lista = coach ? logros : [...logros].sort((a, b) => (!!mias[b.id]) - (!!mias[a.id]) || a.orden - b.orden);
+  const lista = coach ? logros : [...visibles].sort((a, b) => (!!mias[b.id]) - (!!mias[a.id]) || a.orden - b.orden);
   for (const l of lista) {
     const mio = mias[l.id];
     const nv = nivelDe(l.nivel);
@@ -307,6 +310,7 @@ function pintar() {
       const caja = document.createElement("span"); caja.className = "med"; caja.append(med); c.append(caja);
     }
     if (nv) c.append(Object.assign(document.createElement("span"), { className: "chip", textContent: NIVELES[nv].nombre + (l.clases ? " · auto" : "") }));
+    if (coach && l.sexo) c.append(Object.assign(document.createElement("span"), { className: "chip chip-sexo", textContent: "Solo " + PARA_QUIEN[l.sexo].toLowerCase() }));
     c.append(Object.assign(document.createElement("div"), { className: "logro-nombre", textContent: l.nombre }));
     // Progreso hacia los logros de clases que aún no tiene
     if (!coach && !mio && esLogroDeClases(l) && umbralClases(l) > 0) {
@@ -569,7 +573,7 @@ function editar(l) {
   plegNuevo.abrir();
   $("nNombre").value = l.nombre; $("nCorto").value = l.corto || ""; $("nUnidad").value = l.unidad || "";
   $("nDesc").value = l.descripcion || ""; $("nPuntos").value = l.puntos; $("nOrden").value = l.orden || 0;
-  $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || "";
+  $("nNivel").value = nivelDe(l.nivel); $("nClases").value = l.clases || ""; $("nSexo").value = l.sexo || "";
   medallaElegida = l.imagen ? idMedalla(l.imagen) : ""; pintarSelector();
   $("nTitulo").textContent = "Editar logro"; $("nGuardar").textContent = "Guardar"; $("nCancelar").hidden = false;
   window.scrollTo({ top: $("nuevo").offsetTop - 20, behavior: "smooth" });
@@ -585,7 +589,7 @@ $("nuevo").addEventListener("submit", async (e) => {
   if (!nombre) return msgN("Escribe el nombre.", true);
   if (!(puntos >= 0)) return msgN("Revisa los puntos.", true);
   const clases = parseInt($("nClases").value || "0", 10);
-  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden, nivel: $("nNivel").value, clases: clases > 0 ? clases : (umbralLogro({ nombre }) || 0), imagen: medallaElegida };
+  const datos = { nombre, corto, unidad: $("nUnidad").value.trim(), descripcion: $("nDesc").value.trim(), puntos, orden: isNaN(orden) ? 0 : orden, nivel: $("nNivel").value, clases: clases > 0 ? clases : (umbralLogro({ nombre }) || 0), imagen: medallaElegida, sexo: $("nSexo").value };
   const id = editando || nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "").slice(0, 30) || ("logro" + Date.now());
   try {
     if (editando) await updateDoc(doc(db, "logros", id), datos);

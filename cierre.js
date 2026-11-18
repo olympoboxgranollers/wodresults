@@ -4,7 +4,7 @@
 // cerrado, calcula el podio de cada clase y categoría y suma los puntos. Cada día y clase se cierra
 // una sola vez (si otro aparato ya lo ha hecho, las reglas de Firebase rechazan el segundo intento).
 import { collection, query, where, getDocs, getDoc, doc, writeBatch, increment, serverTimestamp, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261118b";
+import { db, hoy, claseDe, calcularPuntos, idCierre, idRegistro, formatearValor, CLASES, PUNTOS, umbralLogro, copiaInsignia, campoMes, textoGrupo } from "./comun.js?v=20261118c";
 
 let enMarcha = false;
 export async function cerrarDiasPendientes() {
@@ -91,7 +91,8 @@ export async function darLogrosDeClases() {
     const socios = (await getDocs(collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, ...d.data() }));
     let lote = writeBatch(db), ops = 0, dados = 0;
     for (const s of socios) {
-      const nuevos = logros.filter((l) => (s.clases || 0) >= umbralLogro(l) && !s.insignias?.[l.id]);
+      // Solo los logros de su sexo (o para todos); los de un sexo no se dan a quien aún no lo ha dicho
+      const nuevos = logros.filter((l) => (s.clases || 0) >= umbralLogro(l) && !s.insignias?.[l.id] && (!l.sexo || l.sexo === s.sexo));
       if (!nuevos.length) continue;
       const cambios = {}; let suma = 0;
       for (const l of nuevos) {

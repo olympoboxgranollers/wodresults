@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118b";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118c";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -524,7 +524,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261118b").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261118c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
@@ -791,7 +791,11 @@ export const copiaInsignia = (l, puntos = l.puntos || 0, fecha = hoy()) => ({ no
 export const umbralLogro = (l) => (l?.clases > 0 ? l.clases : (esLogroDeClases(l) ? parseInt(String(l.nombre).match(/\d+/)?.[0] || "0", 10) : 0));
 export const umbralClases = (l) => (l?.clases > 0 ? l.clases : parseInt(String(l?.nombre || "").match(/\d+/)?.[0] || "0", 10));
 // El siguiente logro de clases que aún no tiene (el de menos clases)
+// Logros por sexo: "" = para todos, "M" = solo chicos, "F" = solo chicas.
+// Quien aún no ha dicho su sexo ve todos; quien ya tiene un logro lo conserva aunque luego se marque para el otro sexo.
+export const PARA_QUIEN = { "": "Todos", M: "Chicos", F: "Chicas" };
+export const logroParaFicha = (l, ficha) => !l?.sexo || !ficha?.sexo || l.sexo === ficha.sexo || !!ficha?.insignias?.[l.id];
 export function siguienteLogroClases(logros, ficha) {
-  return logros.filter((l) => esLogroDeClases(l) && umbralClases(l) > 0 && !ficha?.insignias?.[l.id])
+  return logros.filter((l) => logroParaFicha(l, ficha) && esLogroDeClases(l) && umbralClases(l) > 0 && !ficha?.insignias?.[l.id])
     .sort((a, b) => umbralClases(a) - umbralClases(b))[0] || null;
 }

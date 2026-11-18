@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, setDoc, writeBatch, increment, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso } from "./comun.js?v=20261118b";
-import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118b";
-import { COACH_EMAIL } from "./config.js?v=20261118b";
+import { db, PUNTOS, catDe, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso, logroParaFicha } from "./comun.js?v=20261118c";
+import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118c";
+import { COACH_EMAIL } from "./config.js?v=20261118c";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -222,6 +222,8 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     // En la TV y en la Pantalla nunca se pide el perfil (se ven en grande en el box)
     if (u && !tv && !/\/(tv|pantalla)\.html$/.test(location.pathname) && !esCuentaTV(u) && ficha !== undefined && (esCuentaCoach(u) ? (!ficha || !ficha.nombre) : (!ficha || !ficha.atleta || !ficha.favorito || !ficha.odiado))) pedirPerfil(u, ficha);
     else if (dlgPerfil?.open) dlgPerfil.close();
+    // Socios que ya tienen perfil pero no han dicho si son chico o chica (para sus logros y rankings): se pregunta una vez
+    if (u && !tv && !/\/(tv|pantalla)\.html$/.test(location.pathname) && !esCuentaTV(u) && !esCuentaCoach(u) && ficha?.atleta && ficha.favorito && ficha.odiado && !ficha.sexo) pedirSexo(u);
     if (!u && protegida) {
       const volver = location.pathname.split("/").pop() + location.search;
       location.replace("index.html?volver=" + encodeURIComponent(volver));
@@ -243,7 +245,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261118b").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261118c").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);
@@ -259,7 +261,7 @@ function revisarLogros(user, ficha) {
     onSnapshot(collection(db, "logros"), (s) => { catalogoLogros = s.docs.map((d) => ({ id: d.id, ...cosa(d.data()) })); if (ultimaFicha) revisarLogros(ultimoUser, ultimaFicha); }, () => {});
   }
   if (!catalogoLogros || otorgando) return;
-  const toca = catalogoLogros.filter((l) => l.clases > 0 && (ficha.clases || 0) >= l.clases && !ficha.insignias?.[l.id]).sort((a, b) => a.clases - b.clases);
+  const toca = catalogoLogros.filter((l) => l.clases > 0 && (ficha.clases || 0) >= l.clases && !ficha.insignias?.[l.id] && logroParaFicha(l, ficha) && !(l.sexo && !ficha.sexo)).sort((a, b) => a.clases - b.clases);
   if (!toca.length) return;
   otorgando = true;
   (async () => {
@@ -414,6 +416,7 @@ function pedirPerfil(user, ficha) {
       <label>Nombre y apellido<input name="nombre" maxlength="40" required autocomplete="name"></label>
       <label><span>Ejercicio favorito</span><select name="favorito" required></select></label>
       <label><span>Ejercicio más odiado</span><select name="odiado" required></select></label>
+      <div class="perfil-sexo"><span>Soy</span><div class="segmentado"><button type="button" data-v="M" aria-pressed="false">Chico</button><button type="button" data-v="F" aria-pressed="false">Chica</button></div></div>
       <div class="perfil-msg" role="status"></div>
       <button type="submit">Crear mi perfil</button>
     </form>`;
@@ -421,6 +424,11 @@ function pedirPerfil(user, ficha) {
   f.nombre.value = (ficha?.nombre || user.displayName || "").slice(0, 40);
   opcionesEjercicios(f.favorito, ficha?.favorito || "");
   opcionesEjercicios(f.odiado, ficha?.odiado || "");
+  let sexo = ficha?.sexo || "";
+  const segS = f.querySelector(".perfil-sexo .segmentado");
+  const marcarS = () => segS.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === sexo)));
+  segS.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { sexo = b.dataset.v; marcarS(); } });
+  marcarS();
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const limpio = (t) => t.trim().replace(/\s+/g, " ").slice(0, 40);
@@ -428,17 +436,52 @@ function pedirPerfil(user, ficha) {
     const msg = f.querySelector(".perfil-msg");
     if (nombre.length < 2) { msg.textContent = "Escribe tu nombre y apellido."; return; }
     if (!favorito || !odiado) { msg.textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }
-    f.querySelector("button").disabled = true;
+    if (!sexo) { msg.textContent = "Dinos si eres chico o chica."; return; }
+    f.querySelector("button[type=submit]").disabled = true;
     try {
       const ref = doc(db, "usuarios", user.uid);
       const actual = await getDoc(ref);
-      if (actual.exists()) await updateDoc(ref, { nombre, favorito, odiado, atleta: true });
-      else await setDoc(ref, { nombre, puntos: 0, favorito, odiado, atleta: true, alta: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }) });
+      if (actual.exists()) await updateDoc(ref, { nombre, favorito, odiado, atleta: true, sexo });
+      else await setDoc(ref, { nombre, puntos: 0, favorito, odiado, atleta: true, sexo, alta: new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" }) });
+      try { localStorage.setItem("wod-sexo", sexo); } catch {}
       dlgPerfil.close();
-    } catch (err) { console.error(err); msg.textContent = "No se ha podido guardar. Inténtalo de nuevo."; f.querySelector("button").disabled = false; }
+    } catch (err) { console.error(err); msg.textContent = "No se ha podido guardar. Inténtalo de nuevo."; f.querySelector("button[type=submit]").disabled = false; }
   });
   dlgPerfil.showModal();
   setTimeout(() => f.nombre.focus(), 50);
+}
+
+// ---------- ¿Chico o chica? (una vez, a quien ya tenía perfil de antes) ----------
+let dlgSexo = null, sexoPreguntado = false;
+function pedirSexo(user) {
+  if (sexoPreguntado || dlgSexo?.open || dlgPerfil?.open) return;
+  try { if (sessionStorage.getItem("sexo-luego-" + user.uid)) return; } catch {}
+  sexoPreguntado = true;
+  dlgSexo = document.createElement("dialog");
+  dlgSexo.className = "dialogo-perfil dialogo-sexo";
+  dlgSexo.innerHTML = `
+    <div class="perfil-marca">Olympo Box</div>
+    <h3>¿Eres chico o chica?</h3>
+    <p>Lo usamos para tus logros y para separar los rankings. Solo te lo preguntamos una vez y lo puedes cambiar en tu perfil.</p>
+    <div class="sexo-botones"><button type="button" data-v="M">Chico</button><button type="button" data-v="F">Chica</button></div>
+    <div class="perfil-msg" role="status"></div>
+    <button type="button" class="sexo-luego" style="background: none !important; background-image: none !important; border: 0 !important; box-shadow: none !important; color: var(--suave) !important; text-transform: none !important; letter-spacing: 0 !important; font-size: 14px !important;">Ahora no</button>`;
+  document.body.append(dlgSexo);
+  dlgSexo.addEventListener("click", async (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.classList.contains("sexo-luego")) { try { sessionStorage.setItem("sexo-luego-" + user.uid, "1"); } catch {} dlgSexo.close(); return; }
+    dlgSexo.querySelectorAll("button").forEach((x) => (x.disabled = true));
+    try {
+      await updateDoc(doc(db, "usuarios", user.uid), { sexo: b.dataset.v });
+      try { localStorage.setItem("wod-sexo", b.dataset.v); } catch {}
+      dlgSexo.close();
+    } catch (err) {
+      console.error(err); sexoPreguntado = false;
+      dlgSexo.querySelector(".perfil-msg").textContent = "No se ha podido guardar. Inténtalo de nuevo.";
+      dlgSexo.querySelectorAll("button").forEach((x) => (x.disabled = false));
+    }
+  });
+  dlgSexo.showModal();
 }
 
 // ---------- Protección: no se puede copiar texto, guardar imágenes ni abrir el menú del botón derecho ----------

@@ -12,7 +12,7 @@
 <title>Perfil Olympo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261118b">
+<link rel="stylesheet" href="estilos.css?v=20261118c">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 28px 16px 48px;
     /* Chapa perforada de rombos */
@@ -278,7 +278,7 @@
   .cart-mas { width: 100%; margin-top: 6px; background: none; border: 0; border-top: 1px solid #3a3d44; color: var(--lila); border-radius: 0; padding: 10px 0 2px; font-size: 13px; font-weight: 600; }
   .resto-faltan .medalla { background: #2a2c31; border: 1px solid rgba(255,255,255,.06); }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261118b">
+<link rel="stylesheet" href="olympo-ds.css?v=20261118c">
 </head>
 <body>
 <main>
@@ -316,6 +316,7 @@
     <label>Sobre mí <small style="opacity:.7">(opcional, una frase)</small><textarea id="pBio" maxlength="160" rows="2" placeholder="Ej. Madrugador, fan de la halterofilia y de los WOD largos."></textarea></label>
     <label>Ejercicio favorito<select id="pFav" required></select></label>
     <label>Ejercicio más odiado<select id="pOdio" required></select></label>
+    <label>Soy<select id="pSexo"><option value="">Elige…</option><option value="M">Chico</option><option value="F">Chica</option></select></label>
     <label class="interruptor"><span>Ocultar mis puntos<small>Los demás no verán tus puntos ni saldrás en el ranking de puntos</small></span><input type="checkbox" id="pOcultar"></label>
     <div class="rm-acc"><button type="submit" class="rm-guardar" id="pGuardar">Guardar</button><button type="button" class="rm-cancelar" id="pCancelar">Cancelar</button><span class="rm-msg" id="pMsg"></span></div>
   </form>
@@ -414,10 +415,10 @@
 
 <script type="module">
 import { collection, doc, onSnapshot, query, orderBy, updateDoc, setDoc, deleteDoc, where, limit, getDocs, getCountFromServer, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus } from "./comun.js?v=20261118b";
-import { escucharCuenta, salir } from "./cuenta.js?v=20261118b";
-import { montarMenu, esCuentaCoach } from "./menu.js?v=20261118b";
-import { escucharAmistades, escucharAmigosDe, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261118b";
+import { db, CLASES, fmtPuntos, crearInsignia, insigniasDe, hoy, esLogroDeClases, umbralClases, NIVELES, nivelDe, opcionesEjercicios, formatoEjercicio, persona, cosa, nombreBonito, mayus, logroParaFicha } from "./comun.js?v=20261118c";
+import { escucharCuenta, salir } from "./cuenta.js?v=20261118c";
+import { montarMenu, esCuentaCoach } from "./menu.js?v=20261118c";
+import { escucharAmistades, escucharAmigosDe, pedirAmistad, aceptarAmistad, quitarAmistad, botonAmistad } from "./amigos.js?v=20261118c";
 
 const $ = (id) => document.getElementById(id);
 montarMenu({ actual: new URLSearchParams(location.search).get("uid") ? "" : "perfil", cuenta: false });
@@ -704,7 +705,7 @@ function pintarVitrina(mias) {
 // ---------- Siguiente medalla (la de clases más cercana) y el resto de logros que le faltan ----------
 function pintarFaltan(esYo) {
   const tiene = ficha.insignias || {};
-  const faltan = catalogo.filter((l) => !tiene[l.id]);
+  const faltan = catalogo.filter((l) => !tiene[l.id] && logroParaFicha(l, ficha));
   const n = ficha.clases || 0;
   const deClases = faltan.filter((l) => esLogroDeClases(l) && umbralClases(l) > 0).sort((a, b) => umbralClases(a) - umbralClases(b));
   const sig = deClases[0] || null;
@@ -811,6 +812,7 @@ $("zoomFoto").addEventListener("click", () => $("zoomFoto").close());
 $("editarPerfil").addEventListener("click", () => {
   $("pNombre").value = ficha.nombre || ""; opcionesEjercicios($("pFav"), ficha.favorito || ""); opcionesEjercicios($("pOdio"), ficha.odiado || ""); $("pBio").value = ficha.bio || "";
   $("pOcultar").checked = !!ficha.ocultarPuntos;
+  $("pSexo").value = ficha.sexo || "";
   fotoNueva = undefined; vistaFoto();
   $("pMsg").textContent = ""; $("perfilForm").hidden = false; $("editarPerfil").hidden = true;
   setTimeout(() => $("perfilForm").scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -848,7 +850,7 @@ $("perfilForm").addEventListener("submit", async (e) => {
   if (!limpio($("pFav").value) || !limpio($("pOdio").value)) { $("pMsg").textContent = "Rellena tu ejercicio favorito y el más odiado."; return; }
   $("pGuardar").disabled = true;
   try {
-    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), bio: mayus($("pBio").value.trim().replace(/\s+/g, " ")).slice(0, 160), ocultarPuntos: $("pOcultar").checked, atleta: true };
+    const datos = { nombre, favorito: limpio($("pFav").value), odiado: limpio($("pOdio").value), bio: mayus($("pBio").value.trim().replace(/\s+/g, " ")).slice(0, 160), ocultarPuntos: $("pOcultar").checked, atleta: true, ...($("pSexo").value ? { sexo: $("pSexo").value } : {}) };
     if (ficha?.nueva) await setDoc(doc(db, "usuarios", yo.uid), { nombre, puntos: 0 });
     await updateDoc(doc(db, "usuarios", yo.uid), datos);
     if (fotoNueva === null) await deleteDoc(doc(db, "fotos", yo.uid));
