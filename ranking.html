@@ -12,7 +12,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261030c">
+<link rel="stylesheet" href="estilos.css?v=20261118b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 56px; }
   main { width: 100%; max-width: 560px; }
@@ -56,6 +56,8 @@
   li .nom .nom-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   li .emoji { margin-left: 6px; width: 24px; height: 24px; font-size: 20px; line-height: 24px; vertical-align: middle; display: inline-block; }
   li .res { font-family: "Oswald", sans-serif; font-size: 22px; font-variant-numeric: tabular-nums; text-align: right; line-height: 1.05; }
+  li .res.emom-si, li .res.emom-no { font-size: 17px; }
+  li .detalle-fila { grid-column: 2 / -1; text-align: left; font-family: inherit; font-size: 13px; line-height: 1.35; margin-top: -4px; }
   li .pesos { display: block; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 600; margin-top: 1px; }
   li .cat { display: block; font-family: "Inter", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: var(--malva); margin-top: 3px; }
   /* El recuadro de cada atleta lleva el color de la clase: WOD lila, Hyrox amarillo, Funcional cian */
@@ -184,7 +186,7 @@
   .tv-url { display: block; font-size: 12px; color: var(--lila); word-break: break-all; }
   .tv-copiar { margin-top: 8px; border: 1px solid var(--borde); background: none; color: var(--texto); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261030c">
+<link rel="stylesheet" href="olympo-ds.css?v=20261118b">
 </head>
 <body>
 <dialog class="dlg-tv" id="dlgTv" aria-label="Conectar la Smart TV">
@@ -266,10 +268,10 @@
 <script type="module">
 // Página solo de lectura: muestra el WOD y la clasificación del día. No escribe ni borra nada.
 import { doc, onSnapshot, collection, query, where, orderBy, limit, updateDoc, deleteField, addDoc, deleteDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes, avatarMini } from "./comun.js?v=20261030c";
-import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261030c";
-import { escucharCuenta } from "./cuenta.js?v=20261030c";
-import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261030c";
+import { db, hoy, TIPOS, catDe, grupoDe, textoGrupo, pesoTotal, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, tipoSinPodio, CLASES, soloOpen, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, nombreBonito, mayus, campoMes, nombreMes, avatarMini } from "./comun.js?v=20261118b";
+import { montarMenu, abrirEditor, escucharRol } from "./menu.js?v=20261118b";
+import { escucharCuenta } from "./cuenta.js?v=20261118b";
+import { insigniasDe, crearInsignia, fmtPuntos, quienReacciona, huellaRed, umbralLogro } from "./comun.js?v=20261118b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Resultados atletas";
@@ -430,9 +432,10 @@ function pintar() {
     if (claseEmom) res.classList.add(claseEmom);
     const cat = document.createElement("span"); cat.className = "cat"; cat.textContent = textoGrupo(grupoDe(r), false);
     const tp = detallePesos(r);
-    if (tp) { const pe = document.createElement("span"); pe.className = "pesos"; pe.textContent = tp; cat.append(pe); }
     res.append(cat);
     li.append(num, nom, res);
+    // Detalle (pesos, rondas…) en su propia línea a lo ancho, para no apretar el nombre
+    if (tp) li.append(Object.assign(document.createElement("span"), { className: "pesos detalle-fila", textContent: tp }));
     if (r.id && !r.id.startsWith("_")) li.append(filaReacciones(r));
     // Con la cuenta del coach, tocar un resultado abre el editor (corregir, validar o borrar)
     if (esCoach && r.id && !r.id.startsWith("_")) { li.classList.add("editable"); li.addEventListener("click", () => abrirEditor(r, r.tipo || tipo)); }

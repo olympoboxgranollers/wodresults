@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261030c">
+<link rel="stylesheet" href="estilos.css?v=20261118b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -33,6 +33,14 @@
   .guardar { flex: 1; min-width: 180px; background: var(--malva); color: #1f2125; border: 0; border-radius: 12px; padding: 15px; font-family: "Oswald", sans-serif; font-size: 19px; text-transform: uppercase; letter-spacing: .02em; }
   .guardar:disabled { opacity: .5; }
   .msg { font-size: 14px; min-height: 1.2em; }
+  .pej-lista { display: grid; gap: 8px; margin-top: 6px; }
+  .pej { display: grid; grid-template-columns: minmax(0, 1fr) 54px 88px 36px; gap: 6px; align-items: center; }
+  html body #pejLista .pej-unidad { padding: 0 24px 0 10px !important; background-position: right 7px center !important; font-size: 15px !important; }
+  html body #pejLista .pej-cant { padding: 0 4px !important; }
+  .pej select, .pej input { margin: 0 !important; height: 46px; box-sizing: border-box; width: 100%; min-width: 0; }
+  .pej input { text-align: center; font-weight: 700; }
+  html body .pej .quitar { height: 46px; padding: 0 !important; border-radius: 12px; background: none !important; border: 1px solid var(--borde) !important; color: var(--suave); }
+  html body .pej-mas { margin-top: 10px; background: none !important; border: 1px dashed var(--borde) !important; color: var(--texto); border-radius: 12px; padding: 10px; width: 100%; font: inherit; text-transform: none !important; letter-spacing: 0 !important; }
   .msg.ok { color: #3ddc84; } .msg.error { color: var(--error); }
   .enlaces { margin-top: 26px; display: grid; gap: 8px; }
   .enlaces a { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; color: var(--texto); text-decoration: none; font-weight: 600; font-size: 15px; }
@@ -79,7 +87,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261030c">
+<link rel="stylesheet" href="olympo-ds.css?v=20261118b">
 </head>
 <body>
 <main>
@@ -115,6 +123,10 @@
     <div id="cajaRondasEmom" hidden>
       <label for="wRondas">Número de rondas del EMOM <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
       <input id="wRondas" inputmode="numeric" maxlength="2" placeholder="Ej. 3">
+      <!-- Ejercicios de cada ronda: se rellenan solos al escribir el WOD; aquí solo se revisan -->
+      <label>Ejercicios de cada ronda <span style="text-transform:none;letter-spacing:0;font-weight:400">(se rellenan solos al escribir el WOD)</span></label>
+      <div class="pej-lista" id="pejLista"></div>
+      <button type="button" class="pej-mas" id="pejMas">+ Añadir ejercicio</button>
     </div>
     <label for="wDesc">El entrenamiento (lo que se ve en pantalla)</label>
     <textarea id="wDesc" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
@@ -154,12 +166,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso } from "./comun.js?v=20261030c";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261030c";
+import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso, opcionesEjercicios, formatoEjercicio, detectarEjerciciosEmom } from "./comun.js?v=20261118b";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261118b";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261030c";
-import { NOMBRE_BOX } from "./config.js?v=20261030c";
+import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118b";
+import { NOMBRE_BOX } from "./config.js?v=20261118b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = NOMBRE_BOX;
@@ -249,6 +261,9 @@ function rellenar() {
   $("wTipo").value = w?.tipo || "tiempo";
   $("wDesc").value = w?.descripcion || "";
   $("wRondas").value = w?.rondas || "";
+  rondasTocadas = !!w?.rondas;
+  pintarEjerciciosEmom(w?.ejerciciosEmom || []);
+  ejerciciosTocados = !!w?.ejerciciosEmom?.length;
   verRondasEmom();
   $("estadoWod").textContent = w ? `${CLASES[clase].nombre}: publicado` : `${CLASES[clase].nombre}: sin publicar`;
   $("estadoWod").classList.toggle("publicado", !!w);
@@ -256,8 +271,50 @@ function rellenar() {
   editado = false;
 }
 
-function verRondasEmom() { $("cajaRondasEmom").hidden = $("wTipo").value !== "emom"; }
+function verRondasEmom() { $("cajaRondasEmom").hidden = $("wTipo").value !== "emom"; detectarAhora(); }
 $("wTipo").addEventListener("change", verRondasEmom);
+
+// ---------- Ejercicios de cada ronda del EMOM ----------
+// Se detectan solos de lo que escribe el coach (mientras no los toque a mano); si alguno no se reconoce, se cambia en el desplegable
+let ejerciciosTocados = false, rondasTocadas = false;
+function filaEjercicioEmom(e = {}) {
+  const f = document.createElement("div"); f.className = "pej";
+  const sel = document.createElement("select"); sel.className = "pej-nombre"; sel.setAttribute("aria-label", "Ejercicio");
+  opcionesEjercicios(sel, e.nombre || "");
+  const n = Object.assign(document.createElement("input"), { className: "pej-cant", inputMode: "numeric", maxLength: 4, placeholder: "0", value: e.cantidad || "" });
+  n.setAttribute("aria-label", "Cantidad por ronda");
+  const u = document.createElement("select"); u.className = "pej-unidad"; u.setAttribute("aria-label", "Unidad");
+  for (const x of ["reps", "cal", "m"]) u.append(new Option(x, x, false, (e.unidad || "reps") === x));
+  const q = Object.assign(document.createElement("button"), { type: "button", className: "quitar", textContent: "✕" });
+  q.setAttribute("aria-label", "Quitar ejercicio");
+  q.addEventListener("click", () => { f.remove(); ejerciciosTocados = true; editado = true; });
+  for (const el of [sel, n, u]) el.addEventListener("input", () => { ejerciciosTocados = true; editado = true; });
+  f.append(sel, n, u, q); return f;
+}
+function pintarEjerciciosEmom(lista) { $("pejLista").replaceChildren(...lista.map(filaEjercicioEmom)); }
+function detectarAhora() {
+  if ($("wTipo").value !== "emom") return;
+  const d = detectarEjerciciosEmom($("wDesc").value);
+  if (!ejerciciosTocados) pintarEjerciciosEmom(d.ejercicios);
+  if (!rondasTocadas && d.rondas) $("wRondas").value = d.rondas;
+}
+let tDetectar;
+$("wDesc").addEventListener("input", () => { clearTimeout(tDetectar); tDetectar = setTimeout(detectarAhora, 300); });
+$("wRondas").addEventListener("input", () => { rondasTocadas = true; });
+$("pejMas").addEventListener("click", () => { $("pejLista").append(filaEjercicioEmom()); ejerciciosTocados = true; editado = true; });
+function leerEjerciciosEmom() {
+  const lista = [];
+  for (const f of $("pejLista").querySelectorAll(".pej")) {
+    const nombre = formatoEjercicio(f.querySelector(".pej-nombre").value).slice(0, 40);
+    const c = f.querySelector(".pej-cant").value.trim();
+    if (!nombre && !c) continue;
+    const cantidad = /^\d+$/.test(c) ? parseInt(c, 10) : NaN;
+    if (!nombre) throw "Elige el ejercicio de cada fila.";
+    if (!(cantidad > 0 && cantidad <= 9999)) throw `Revisa la cantidad de ${nombre}.`;
+    lista.push({ nombre, cantidad, unidad: f.querySelector(".pej-unidad").value });
+  }
+  return lista.slice(0, 10);
+}
 for (const id of ["wNombre", "wTipo", "wDesc", "wRondas"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
 
 function cambiarClase(nueva) {
@@ -423,9 +480,11 @@ $("formWod").addEventListener("submit", async (e) => {
   const tipoW = $("wTipo").value, rt = $("wRondas").value.trim();
   const rondas = tipoW === "emom" && rt ? parseInt(rt, 10) : 0;
   if (tipoW === "emom" && rt && !(/^\d+$/.test(rt) && rondas >= 1 && rondas <= 99)) { $("msg").className = "msg error"; $("msg").textContent = "Revisa el número de rondas (de 1 a 99)."; return; }
+  let ejerciciosEmom = [];
+  if (tipoW === "emom") { try { ejerciciosEmom = leerEjerciciosEmom(); } catch (t) { $("msg").className = "msg error"; $("msg").textContent = t; return; } }
   $("guardar").disabled = true;
   try {
-    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: tipoW, descripcion, ...(rondas ? { rondas } : {}) });
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: tipoW, descripcion, ...(rondas ? { rondas } : {}), ...(ejerciciosEmom.length ? { ejerciciosEmom } : {}) });
     editado = false;
     $("msg").className = "msg ok";
     $("msg").textContent = `✓ ${CLASES[clase].nombre} publicado. Ya sale en la pantalla.`;

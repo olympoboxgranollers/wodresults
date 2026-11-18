@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc as docRef, getDoc as leerDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261030c";
+import { firebaseConfig, ZONA_HORARIA } from "./config.js?v=20261118b";
 
 export const app = initializeApp(firebaseConfig);
 
@@ -183,7 +183,9 @@ export function textoRondasEmom(r) {
   const porRonda = new Map();
   for (const e of r.parcial || []) if (e?.reps > 0) { const k = e.ronda || n + 1; porRonda.set(k, [...(porRonda.get(k) || []), `${e.reps} ${e.nombre}`]); }
   const partes = [...porRonda].sort((a, b) => a[0] - b[0]).map(([k, l]) => `Ronda ${k}: ${l.join(", ")}`);
-  return [hechas, ...partes].filter(Boolean).join(" · ");
+  // Lo que le faltó de cada ejercicio: "faltaron 10 cal Rowing, 12 reps Burpees"
+  const faltan = Array.isArray(r.faltan) && r.faltan.length ? "faltaron " + r.faltan.map((f) => `${f.cantidad} ${f.unidad || "reps"} ${formatoEjercicio(f.nombre)}`).join(", ") : "";
+  return [hechas, faltan, ...partes].filter(Boolean).join(" · ");
 }
 export const detallePesos = (r) => [sinAcabar(r?.valor, r?.tipo) ? "No completado" : "", textoRondasEmom(r), r?.ejercicios?.length ? textoEjercicios(r.ejercicios) : (r?.categoria === "Open" ? textoPesos(r.pesos) : "")].filter(Boolean).join(" · ");
 
@@ -270,8 +272,13 @@ export function ordenar(lista, tipo) {
   const otros = lista.filter((r) => (r.tipo || tipo) !== tipo);
   mismos.sort((a, b) => ordenGrupo(a) - ordenGrupo(b)
     || (porPeso(a) ? pesoTotal(b) - pesoTotal(a) : 0)
-    || (menos ? a.valor - b.valor : b.valor - a.valor));
+    || (menos ? a.valor - b.valor : b.valor - a.valor)
+    // EMOM no completado: primero quien hizo más rondas enteras y, a igualdad, a quien le faltó menos
+    || (tipo === "emom" ? (b.rondas || 0) - (a.rondas || 0) || totalFaltan(a) - totalFaltan(b) : 0));
   return [...mismos, ...otros];
+}
+function totalFaltan(r) {
+  return Array.isArray(r.faltan) ? r.faltan.reduce((s, f) => s + (Number(f.cantidad) || 0), 0) : 0;
 }
 
 // Posición de cada atleta en una lista ya ordenada.
@@ -517,7 +524,7 @@ export function imagenMedalla(id) {
   img.addEventListener("error", () => {
     intento++;
     if (intento === 1) img.src = `medallas/${id}.webp?v=${VERSION_MEDALLAS}`;
-    else if (intento === 2) import("./medallas-datos.js?v=20261030c").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
+    else if (intento === 2) import("./medallas-datos.js?v=20261118b").then((m) => { if (m.MEDALLAS_DATOS[id]) img.src = m.MEDALLAS_DATOS[id]; }).catch(() => {});
   });
   // El brillo que recorre la medalla usa su misma silueta
   img.addEventListener("load", () => img.parentElement?.style.setProperty("--silueta", `url("${img.currentSrc || img.src}")`));
@@ -701,7 +708,7 @@ export function crearInsignia(ins, tam = 56) {
 // Solo los que llevan la palabra "clases" en el nombre muestran el contador
 export const esLogroDeClases = (l) => /clases/i.test(l?.nombre || "");
 // Ejercicios para elegir el favorito y el más odiado
-export const EJERCICIOS = ["Assault Bike / Echo Bike", "Back Squat", "Box Jump Over", "Box Jumps", "Burpee Box Jump Over", "Burpee Over Bar", "Burpees", "Butterfly Pull-ups", "Chest to Bar", "Clean", "Clean and Jerk", "Cluster", "Crossover Double Unders", "Db Clean and Jerk", "Db Overhead Walking Lunge", "Db Snatch", "Db Thruster", "Deadlift", "Deficit Handstand Push-up", "Devil Press", "Double Unders", "Farmers Carry", "Front Squat", "GHD Sit-ups", "Handstand Push-up", "Handstand Walk", "Hang Clean", "Hang Snatch", "Hollow Hold / Hollow Rock", "Jerk", "Jumping Lunges", "Kettlebell Snatch", "Kettlebell Swing", "Knees to Chest", "Muscle-up", "Overhead Squat", "Pike Push-ups", "Pistol Squat", "Power Clean", "Power Snatch", "Pull-ups", "Push Jerk", "Push Press", "Ring Row", "Rope Climb", "Rope Pull", "Rowing", "Run", "Sandbag Bear Hug Carry", "Sandbag Clean", "Shuttle Run", "Single Unders", "SkiErg", "Sled Pull", "Sled Push", "Snatch", "Split Jerk", "Squat Clean", "Squat Snatch", "Strict Handstand Push-up", "Strict Press", "Strict Pull-ups", "Sumo Deadlift High Pull", "Thruster", "Toes to Bar", "Turkish Get-Up", "V-Ups", "Walking Lunges", "Wall Walk", "Wallballs"];
+export const EJERCICIOS = ["Assault Bike / Echo Bike", "Back Squat", "Box Jump Over", "Box Jumps", "Burpee Box Jump Over", "Burpee Over Bar", "Burpees", "Butterfly Pull-ups", "Chest to Bar", "Clean", "Clean and Jerk", "Cluster", "Crossover Double Unders", "Db Clean and Jerk", "Db Overhead Walking Lunge", "Db Snatch", "Db Thruster", "Deadlift", "Deficit Handstand Push-up", "Devil Press", "Double Unders", "Farmers Carry", "Front Squat", "GHD Sit-ups", "Handstand Push-up", "Handstand Walk", "Hang Clean", "Hang Snatch", "Hollow Hold / Hollow Rock", "Jerk", "Jumping Lunges", "Kettlebell Snatch", "Kettlebell Swing", "Knees to Chest", "Muscle-up", "Overhead Squat", "Pike Push-ups", "Pistol Squat", "Power Clean", "Power Snatch", "Pull-ups", "Pull-ups con cajón", "Push Jerk", "Push Press", "Push-ups", "Ring Row", "Rope Climb", "Rope Pull", "Rowing", "Run", "Sandbag Bear Hug Carry", "Sandbag Clean", "Shuttle Run", "Single Unders", "Sit-ups", "SkiErg", "Sled Pull", "Sled Push", "Snatch", "Split Jerk", "Squat Clean", "Squat Snatch", "Strict Handstand Push-up", "Strict Press", "Strict Pull-ups", "Sumo Deadlift High Pull", "Thruster", "Toes to Bar", "Turkish Get-Up", "V-Ups", "Walking Lunges", "Wall Walk", "Wallballs"];
 // Se ven en minúscula con la primera letra en mayúscula: "Back squat"
 export const formatoEjercicio = (t) => { const x = String(t || "").trim().replace(/\s+/g, " ").toLowerCase(); return x ? x[0].toUpperCase() + x.slice(1) : ""; };
 // Rellena un <select> con los ejercicios (y deja elegido el que ya tenía, aunque no esté en la lista)
@@ -711,6 +718,73 @@ export function opcionesEjercicios(sel, actual = "") {
   if (actual && !lista.some((e) => e.toLowerCase() === actual.toLowerCase())) lista.unshift(actual);
   for (const e of lista) sel.append(new Option(formatoEjercicio(e), e, false, !!actual && e.toLowerCase() === actual.toLowerCase()));
 }
+// ---------- EMOM: detectar los ejercicios de cada ronda a partir de lo que escribe el coach ----------
+// "EMOM 12'\n10 clean @60/40\n20/16 cal row\n10 thrusters\nrest" ->
+//   { ejercicios: [{ nombre: "Clean", cantidad: 10, unidad: "reps" }, { nombre: "Rowing", cantidad: 20, unidad: "cal" }, …], rondas: 3 }
+const normEj = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const SINONIMOS = {
+  row: "Rowing", rows: "Rowing", remo: "Rowing", rower: "Rowing", rowing: "Rowing",
+  bike: "Assault Bike / Echo Bike", assault: "Assault Bike / Echo Bike", assaultbike: "Assault Bike / Echo Bike", echo: "Assault Bike / Echo Bike", echobike: "Assault Bike / Echo Bike", airbike: "Assault Bike / Echo Bike", bici: "Assault Bike / Echo Bike",
+  ski: "SkiErg", skierg: "SkiErg", skerg: "SkiErg",
+  wb: "Wallballs", wbs: "Wallballs", wallball: "Wallballs", wallballs: "Wallballs", wallballshot: "Wallballs", wallballshots: "Wallballs",
+  t2b: "Toes to Bar", ttb: "Toes to Bar", k2c: "Knees to Chest", ktc: "Knees to Chest", c2b: "Chest to Bar", ctb: "Chest to Bar",
+  du: "Double Unders", dus: "Double Unders", doubleunder: "Double Unders", dobles: "Double Unders", su: "Single Unders", sus: "Single Unders", singleunder: "Single Unders", comba: "Single Unders", saltos: "Single Unders",
+  pullup: "Pull-ups", dominadas: "Pull-ups", dominada: "Pull-ups", hspu: "Handstand Push-up", strictpullup: "Strict Pull-ups",
+  kbs: "Kettlebell Swing", kbswing: "Kettlebell Swing", kbswings: "Kettlebell Swing", swing: "Kettlebell Swing", swings: "Kettlebell Swing", russianswing: "Kettlebell Swing", americanswing: "Kettlebell Swing",
+  bj: "Box Jumps", boxjump: "Box Jumps", bjo: "Box Jump Over", bbjo: "Burpee Box Jump Over", bob: "Burpee Over Bar", burpee: "Burpees",
+  lunge: "Walking Lunges", lunges: "Walking Lunges", zancada: "Walking Lunges", zancadas: "Walking Lunges",
+  mu: "Muscle-up", mus: "Muscle-up", muscleups: "Muscle-up", barmuscleup: "Muscle-up", barmu: "Muscle-up", ringmuscleup: "Muscle-up",
+  run: "Run", correr: "Run", carrera: "Run", dl: "Deadlift", deadlifts: "Deadlift", pesomuerto: "Deadlift", sdhp: "Sumo Deadlift High Pull",
+  ohs: "Overhead Squat", pc: "Power Clean", sqc: "Squat Clean", vup: "V-Ups", vups: "V-Ups", ghd: "GHD Sit-ups", ghdsitup: "GHD Sit-ups",
+  dbsnatch: "Db Snatch", dbsnatches: "Db Snatch", dbthrusters: "Db Thruster", thrusters: "Thruster", cleans: "Clean", snatches: "Snatch",
+  pushup: "Push-ups", pushups: "Push-ups", flexiones: "Push-ups", flexion: "Push-ups", situp: "Sit-ups", situps: "Sit-ups", abdominales: "Sit-ups", abs: "Sit-ups",
+  pullupconcajon: "Pull-ups con cajón", pullupsconcajon: "Pull-ups con cajón", boxpullup: "Pull-ups con cajón", boxpullups: "Pull-ups con cajón", jumpingpullup: "Pull-ups con cajón", jumpingpullups: "Pull-ups con cajón",
+  devilpress: "Devil Press", ringrow: "Ring Row", ringrows: "Ring Row", ropepull: "Rope Pull", ropeclimb: "Rope Climb", rc: "Rope Climb",
+};
+const CABECERA_EMOM = /^(e\d*mom|emom|every|cada|for\s*time|amrap|tabata|\d+\s*(rondas|rounds|min(utos)?|'|’))/i;
+const DESCANSO = /^(\d+\s*['’"s]*\s*)?(rest|descanso|off)\b/i;
+export function buscarEjercicio(texto) {
+  const k = normEj(texto), ks = k.replace(/e?s$/, "");
+  if (!k) return "";
+  if (SINONIMOS[k]) return SINONIMOS[k];
+  if (SINONIMOS[ks]) return SINONIMOS[ks];
+  const exacto = EJERCICIOS.find((e) => { const n = normEj(e); return n === k || n === ks || n.replace(/e?s$/, "") === ks; });
+  if (exacto) return exacto;
+  // El que más se parece: el nombre de la lista empieza igual o lo contiene
+  const parecidos = EJERCICIOS.filter((e) => { const n = normEj(e); return n.length > 3 && (n.startsWith(ks) || ks.startsWith(n.replace(/e?s$/, ""))); });
+  if (parecidos.length) return parecidos.sort((a, b) => normEj(b).length - normEj(a).length)[0];
+  // Si no está en la lista, se deja tal cual lo ha escrito (bonito)
+  const t = String(texto).trim().toLowerCase();
+  return t ? t[0].toUpperCase() + t.slice(1) : "";
+}
+export function detectarEjerciciosEmom(texto) {
+  const lineas = String(texto || "").replace(/\r/g, "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const ejercicios = []; let estaciones = 0, minutos = 0;
+  for (let l of lineas) {
+    const m0 = l.match(/^(?:e\d*mom|emom)\s*(?:x\s*)?(\d+)/i) || l.match(/^(?:every|cada).*?(\d+)\s*(?:min|'|’)/i);
+    if (m0 && !minutos) minutos = parseInt(m0[1], 10);
+    // Quita "min 1:", "1)", "-", "•" del principio
+    l = l.replace(/^(?:min(?:uto)?\s*\d+\s*[:.)-]|m\d+\s*[:.)-]|\d+\s*[).:-](?=\s*\d)|[-•*·]+)\s*/i, "");
+    if (DESCANSO.test(l)) { estaciones++; continue; }
+    if (CABECERA_EMOM.test(l)) continue;
+    const m = l.match(/^(\d+)\s*(?:\/\s*\d+)?\s*(cals?|calor[ií]as|kcal|m|mts|metros|reps?|repeticiones)?\.?\s+(.+)$/i);
+    if (!m) continue;
+    const cantidad = parseInt(m[1], 10);
+    const u = (m[2] || "").toLowerCase();
+    const unidad = /^(cal|kcal|calor)/.test(u) ? "cal" : /^(m|mts|metros)$/.test(u) ? "m" : "reps";
+    let resto = m[3].replace(/@.*$/, "").replace(/\(.*?\)/g, "").trim();
+    // "20 cal row" -> la unidad puede venir pegada al nombre: "cal row"
+    if (unidad === "reps" && /^(cals?|calor[ií]as)\s+/i.test(resto)) { resto = resto.replace(/^(cals?|calor[ií]as)\s+/i, ""); ejercicios.push({ nombre: buscarEjercicio(resto), cantidad, unidad: "cal" }); estaciones++; continue; }
+    const nombre = buscarEjercicio(resto);
+    if (!nombre || !(cantidad > 0)) continue;
+    ejercicios.push({ nombre, cantidad, unidad });
+    estaciones++;
+  }
+  // Rondas: minutos del EMOM / estaciones (ejercicios + descansos), si da exacto
+  const rondas = minutos && estaciones && minutos % estaciones === 0 ? minutos / estaciones : 0;
+  return { ejercicios: ejercicios.slice(0, 10), rondas };
+}
+
 // Lo que se guarda en la ficha del socio cuando consigue un logro
 export const copiaInsignia = (l, puntos = l.puntos || 0, fecha = hoy()) => ({ nombre: l.nombre, corto: l.corto || "★", unidad: l.unidad || "", orden: l.orden || 0, nivel: l.nivel || "", imagen: l.imagen || "", puntos, fecha });
 // Clases necesarias para un logro de clases (las del modo automático o el número del nombre)
