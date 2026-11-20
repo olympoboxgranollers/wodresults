@@ -191,6 +191,11 @@
   html body .pizarra :is(.pz-texto, .pz-sec-tit) { font-family: "Teko", "Oswald", sans-serif !important; }
   .pz-texto { white-space: pre; font-family: "Teko", "Oswald", "Hanken Grotesk", system-ui, sans-serif; font-weight: 600; font-style: normal !important; letter-spacing: .03em; line-height: 1.02; color: color-mix(in srgb, var(--texto) 92%, transparent); font-size: 3vw; }
   .pz-texto.vacio { color: var(--suave); font-weight: 500; opacity: .6; }
+  /* Reloj: abajo a la izquierda, en la franja libre de abajo */
+  .reloj-tv { position: fixed; left: 2.5vw; bottom: .8vw; z-index: 5; line-height: 1; padding: .45vw 1vw .25vw; border: 1px solid color-mix(in srgb, var(--malva) 55%, transparent); border-radius: .8vw; background: rgba(20,20,24,.6); color: var(--texto); font-variant-numeric: tabular-nums; letter-spacing: .04em; pointer-events: none; }
+  html body .reloj-tv, html body .reloj-tv small { font-family: "Teko", "Oswald", sans-serif !important; font-weight: 600 !important; }
+  .reloj-tv { font-size: 2vw; }
+  .reloj-tv small { font-size: .6em; color: var(--suave); margin-left: .1em; }
   .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
   .estado-tv.ok { color: #3ddc84; }
   .estado-tv.mal { color: #ff8a80; opacity: .9; }
@@ -271,6 +276,9 @@
     <div><div class="cta">Escanea y<br><span>sube tu resultado</span></div><div class="total" id="total"></div></div>
   </div>
 </aside>
+
+<!-- Reloj abajo a la izquierda (hora con segundos, para controlar el tiempo) -->
+<div class="reloj-tv" id="relojTV" aria-label="Hora actual">--:--<small>:--</small></div>
 
 <div class="pie-derecha">
   <button type="button" class="discreto" id="volver" title="Volver">←</button>
@@ -760,6 +768,14 @@ function programarMedianoche() {
   clearTimeout(window.__medianoche); window.__medianoche = setTimeout(() => location.reload(), manana - ahora);
 }
 programarMedianoche();
+
+// ---------- Reloj ----------
+function pintarReloj() {
+  const d = new Date(), dos = (n) => String(n).padStart(2, "0");
+  $("relojTV").innerHTML = `${dos(d.getHours())}:${dos(d.getMinutes())}<small>:${dos(d.getSeconds())}</small>`;
+}
+pintarReloj();
+setTimeout(() => { pintarReloj(); setInterval(pintarReloj, 1000); }, 1000 - (Date.now() % 1000));
 </script>
 </body>
 </html>
