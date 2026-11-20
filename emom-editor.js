@@ -1,7 +1,7 @@
 // Editor de EMOM para quien publica el WOD (Publicar y Pantalla).
 // Al escribir el WOD se detectan solos las rondas y los ejercicios de cada ronda, con la cantidad
 // y el peso de chicos y de chicas ("20/16 cal row", "10 clean @60/40"). El coach solo lo revisa.
-import { opcionesEjercicios, formatoEjercicio, detectarEjerciciosEmom } from "./comun.js?v=20261118f";
+import { opcionesEjercicios, formatoEjercicio, detectarEjerciciosEmom } from "./comun.js?v=20261120a";
 
 const CSS = `
   .ee { display: grid; gap: 8px; margin-top: 4px; }

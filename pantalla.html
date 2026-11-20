@@ -11,7 +11,7 @@
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261118f">
+<link rel="stylesheet" href="estilos.css?v=20261120a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -151,11 +151,38 @@
   @media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
   /* Las tarjetas un poco translúcidas para que se intuya el fondo */
   ol li, li { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  /* ---------- Pizarra: WOD a pantalla completa ---------- */
+  .fila-pestanas { display: flex; align-items: center; gap: 1.4vw; flex-wrap: wrap; justify-content: flex-end; }
+  .pestanas-pizarra { padding-left: 1.4vw; border-left: 1px solid var(--borde); }
+  .pestanas-pizarra button::before { content: "▦"; width: auto !important; height: auto !important; background: none !important; border-radius: 0; margin-right: .5vw; font-size: .9em; color: var(--c); }
+  .pestanas-pizarra button[aria-pressed="true"]::before { color: #1f2125; }
+  body.modo-pizarra .columna, body.modo-pizarra aside, body.modo-pizarra #tipo, body.modo-pizarra #rotarBarra { display: none !important; }
+  body.modo-pizarra #pestanas button[aria-pressed="true"] { background: transparent; color: var(--texto); border-color: var(--borde); }
+  body.modo-pizarra #pestanas button[aria-pressed="true"]::before { background: var(--c); }
+  .pizarra { grid-column: 1 / -1; min-height: 0; display: flex; flex-direction: column; gap: 1vw; --pz: var(--malva); }
+  .pizarra[hidden] { display: none; }
+  .pz-cab { display: flex; align-items: center; gap: 1vw; }
+  .pz-clase { font-family: "Saira", sans-serif; font-weight: 800; font-size: 1.4vw; letter-spacing: .14em; text-transform: uppercase; color: var(--pz); }
+  .pz-tipo { font-size: 1.2vw; color: var(--suave); padding: .2vw .8vw; border: 1px solid var(--borde); border-radius: 999px; }
+  .pz-tipo:empty { display: none; }
+  /* Warm up · Fuerza · WOD, en columnas; el WOD un poco más ancho. Las vacías no salen */
+  .pz-secciones { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.6vw; }
+  .pz-sec { min-height: 0; display: flex; flex-direction: column; gap: .8vw; background: color-mix(in srgb, var(--pz) 5%, rgba(20,20,24,.55)); border: 1px solid var(--borde); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
+  .pz-sec[hidden] { display: none; }
+  .pz-sec-wod { border-color: color-mix(in srgb, var(--pz) 55%, transparent); }
+  .pz-secciones.con-wod-ancho { grid-template-columns: var(--pz-cols); grid-auto-flow: row; }
+  /* Título de cada columna: centrado y grande, con una línea debajo; el texto va debajo */
+  .pz-sec-tit { box-sizing: border-box; font-family: "Saira", sans-serif; font-weight: 800; font-size: 2.6vw; line-height: 1.05; letter-spacing: .08em; text-transform: uppercase; color: var(--pz); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3vw; padding-bottom: 1vw; border-bottom: 2px solid color-mix(in srgb, var(--pz) 45%, transparent); }
+  .pz-nombre { color: var(--texto); font-size: .55em; letter-spacing: .06em; }
+  .pz-nombre:empty { display: none; }
+  .pz-caja { flex: 1; min-height: 0; overflow: hidden; }
+  .pz-texto { white-space: pre-line; font-weight: 700; line-height: 1.22; color: var(--texto); font-size: 3vw; }
+  .pz-texto.vacio { color: var(--suave); font-weight: 500; opacity: .6; }
   .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
   .estado-tv.ok { color: #3ddc84; }
   .estado-tv.mal { color: #ff8a80; opacity: .9; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261118f">
+<link rel="stylesheet" href="olympo-ds.css?v=20261120a">
 </head>
 <body>
 <dialog id="dialogo">
@@ -170,7 +197,11 @@
       <option value="kg">Carga en kg (más es mejor)</option>
       <option value="emom">EMOM: completado o no + pesos (solo puntos por registrar, sin podio)</option>
     </select>
-    <label for="wDesc">El WOD (lo que se ve en pantalla)</label>
+    <label for="wCalent">Warm up <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <textarea id="wCalent" rows="3" maxlength="600" placeholder="3 rondas&#10;10 air squats&#10;10 push ups"></textarea>
+    <label for="wFuerza"><span class="etiqueta-fuerza">Fuerza / Halterofilia</span> <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <textarea id="wFuerza" rows="3" maxlength="600" placeholder="Back squat&#10;5x5 @75%"></textarea>
+    <label for="wDesc">WOD (el que puntúa en el ranking)</label>
     <textarea id="wDesc" rows="7" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
     <!-- Solo en EMOM: rondas y ejercicios de cada ronda (se detectan solos del texto del WOD) -->
     <div id="emomEditor" hidden></div>
@@ -187,7 +218,14 @@
   </div>
   <div class="meta">
     <button type="button" class="ajustes" id="abrirAjustes" hidden>⚙ WOD de hoy</button>
-    <nav class="pestanas" id="pestanas" aria-label="Clase"></nav>
+    <div class="fila-pestanas">
+      <nav class="pestanas" id="pestanas" aria-label="Ranking de cada clase"></nav>
+      <!-- WOD a pantalla completa (pizarra), aparte del ranking -->
+      <nav class="pestanas pestanas-pizarra" id="vistas" aria-label="WOD a pantalla completa">
+        <button type="button" data-p="wod">Pizarra WOD</button>
+        <button type="button" data-p="funcional">Pizarra Funcional</button>
+      </nav>
+    </div>
     <div class="rotar-barra" id="rotarBarra" hidden><i></i></div>
     <strong id="tipo"></strong>
   </div>
@@ -196,6 +234,16 @@
 <section class="columna">
   <h2>Clasificación <small id="nAtletas"></small></h2>
   <ol id="lista"></ol>
+</section>
+
+<!-- Pizarra: el WOD a pantalla completa -->
+<section class="pizarra" id="pizarra" hidden>
+  <div class="pz-cab"><span class="pz-clase" id="pzClase"></span><span class="pz-tipo" id="pzTipo"></span></div>
+  <div class="pz-secciones" id="pzSecciones">
+    <div class="pz-sec" data-s="calentamiento"><div class="pz-sec-tit">WARM UP</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
+    <div class="pz-sec" data-s="fuerza"><div class="pz-sec-tit etiqueta-fuerza-pz">FUERZA / HALTEROFILIA</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
+    <div class="pz-sec pz-sec-wod" data-s="descripcion"><div class="pz-sec-tit">WOD<span class="pz-nombre" id="pzNombre"></span></div><div class="pz-caja"><div class="pz-texto"></div></div></div>
+  </div>
 </section>
 
 <aside>
@@ -217,12 +265,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal } from "./comun.js?v=20261118f";
-import { editorEmom } from "./emom-editor.js?v=20261118f";
-import { NOMBRE_BOX } from "./config.js?v=20261118f";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261118f";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal, etiquetaFuerza } from "./comun.js?v=20261120a";
+import { editorEmom } from "./emom-editor.js?v=20261120a";
+import { NOMBRE_BOX } from "./config.js?v=20261120a";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261120a";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261118f";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261120a";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
@@ -408,10 +456,73 @@ function escucharWodDe(c) {
   dejarWods[c] = onSnapshot(doc(db, "wods", idWod(c)), (snap) => {
     wodsCache[c] = snap.exists() ? snap.data() : null; wodsCargados.add(c);
     if (c === clase) aplicarWod();
+    if (c === pizarra) pintarPizarra();
     if ($("rotarBarra")) $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
   }, () => { dejarWods[c] = null; setTimeout(() => escucharWodDe(c), 5000); });
 }
 function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
+
+// ---------- Pizarra: el WOD de una clase a pantalla completa ----------
+// "Pizarra WOD" / "Pizarra Funcional" enseñan el WOD en grande; al tocar una clase del ranking se vuelve al ranking.
+let pizarra = null;
+try { pizarra = localStorage.getItem("tv-pizarra") || null; } catch {}
+const enMinusculas = (t) => (t || "").split("\n").map((l) => { const x = l.toLocaleLowerCase("es"); return x.replace(/(^|\s)(\p{L})/u, (_, a, b) => a + b.toLocaleUpperCase("es")); }).join("\n");
+// Cada sección encoge su letra hasta que cabe; Warm up y Fuerza nunca más grandes que el WOD
+function ajustarPizarra() {
+  // Los títulos de las tres columnas a la misma altura (aunque uno ocupe dos líneas)
+  const tits = [...$("pzSecciones").querySelectorAll(".pz-sec:not([hidden]) .pz-sec-tit")];
+  tits.forEach((t) => (t.style.minHeight = ""));
+  const alto = Math.max(...tits.map((t) => t.offsetHeight));
+  tits.forEach((t) => (t.style.minHeight = alto + "px"));
+  const tam = {};
+  for (const s of $("pzSecciones").querySelectorAll(".pz-sec:not([hidden])")) {
+    const caja = s.querySelector(".pz-caja"), t = s.querySelector(".pz-texto");
+    let vw = s.dataset.s === "descripcion" ? 6 : 4;
+    t.style.fontSize = vw + "vw";
+    while ((t.scrollHeight > caja.clientHeight + 1 || t.scrollWidth > caja.clientWidth + 1) && vw > 1) { vw -= 0.1; t.style.fontSize = vw.toFixed(2) + "vw"; }
+    tam[s.dataset.s] = vw;
+  }
+  if (tam.descripcion) for (const s of $("pzSecciones").querySelectorAll('.pz-sec:not([hidden]):not([data-s="descripcion"])')) {
+    const t = s.querySelector(".pz-texto"); if (parseFloat(t.style.fontSize) > tam.descripcion) t.style.fontSize = tam.descripcion.toFixed(2) + "vw";
+  }
+}
+function pintarPizarra() {
+  if (!pizarra) return;
+  const w = wodsCache[pizarra] || null, c = CLASES[pizarra];
+  $("pizarra").style.setProperty("--pz", c.color);
+  $("pzClase").textContent = `${c.nombre} de hoy`;
+  $("pzTipo").textContent = w ? TIPOS[w.tipo]?.etiqueta || "" : "";
+  // En la pizarra todo va en mayúsculas: títulos y lo que escribe el coach
+  $("pzNombre").textContent = w?.nombre ? w.nombre.toLocaleUpperCase("es") : "";
+  $("pizarra").querySelector(".etiqueta-fuerza-pz").textContent = etiquetaFuerza(pizarra).toLocaleUpperCase("es");
+  const visibles = [];
+  for (const s of $("pzSecciones").querySelectorAll(".pz-sec")) {
+    const campo = s.dataset.s, txt = w?.[campo] || "";
+    const t = s.querySelector(".pz-texto");
+    // Las tres columnas salen siempre (WOD y Funcional): la que no tiene nada lo indica en gris
+    if (campo === "descripcion") t.textContent = txt ? txt.toLocaleUpperCase("es") : "AÚN NO HAY WOD PUBLICADO";
+    else t.textContent = txt ? txt.toLocaleUpperCase("es") : "—";
+    t.classList.toggle("vacio", !txt); s.hidden = false;
+    if (!s.hidden) visibles.push(campo);
+  }
+  // El WOD ocupa más que el resto cuando hay varias secciones
+  const sec = $("pzSecciones");
+  sec.classList.toggle("con-wod-ancho", visibles.length > 1);
+  sec.style.setProperty("--pz-cols", visibles.map((c) => (c === "descripcion" ? "1.5fr" : "1fr")).join(" "));
+  requestAnimationFrame(ajustarPizarra);
+}
+function ponerPizarra(p) {
+  pizarra = p && CLASES[p] ? p : null;
+  try { pizarra ? localStorage.setItem("tv-pizarra", pizarra) : localStorage.removeItem("tv-pizarra"); } catch {}
+  document.body.classList.toggle("modo-pizarra", !!pizarra);
+  $("pizarra").hidden = !pizarra;
+  $("vistas").querySelectorAll("button").forEach((b) => { b.style.setProperty("--c", CLASES[b.dataset.p].color); b.setAttribute("aria-pressed", String(b.dataset.p === pizarra)); });
+  $("rotarBarra").hidden = !!pizarra || $("rotarBarra").hidden;
+  if (pizarra) { clearInterval(rotacion); pintarPizarra(); }
+  else elegirClase(clase);
+}
+$("vistas").addEventListener("click", (e) => { const b = e.target.closest("button[data-p]"); if (b) ponerPizarra(b.dataset.p); });
+addEventListener("resize", () => { if (pizarra) ajustarPizarra(); });
 
 // Resultados de hoy en directo. Si la escucha se corta (sin permiso aún, sin internet, sesión caducada…)
 // se vuelve a conectar sola: así la TV nunca se queda con resultados viejos.
@@ -480,6 +591,7 @@ function reiniciarBarra() {
   b.classList.remove("anda"); void b.offsetWidth; b.classList.add("anda");
 }
 function siguienteClase() {
+  if (pizarra) return;   // en la pizarra no se rota
   const activas = Object.keys(CLASES).filter((c) => wodsCache[c] || todos.some((r) => claseDe(r) === c));
   $("rotarBarra").hidden = activas.length < 2;
   if (activas.length < 2) { if (activas.length === 1 && activas[0] !== clase) elegirClase(activas[0]); return; }
@@ -487,12 +599,15 @@ function siguienteClase() {
   elegirClase(activas[(i + 1) % activas.length], true);
 }
 function elegirClase(c, auto = false) {
+  if (!auto && pizarra) { pizarra = null; try { localStorage.removeItem("tv-pizarra"); } catch {} document.body.classList.remove("modo-pizarra"); $("pizarra").hidden = true; $("vistas").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", "false")); }
   if (c !== clase) { cambiarClase(c); crearPestanas($("pestanas"), clase, elegirClase); }
   clearInterval(rotacion); rotacion = setInterval(siguienteClase, ROTAR_MS);
   $("rotarBarra").hidden = Object.keys(CLASES).filter((x) => wodsCache[x] || todos.some((r) => claseDe(r) === x)).length < 2;
   reiniciarBarra();
 }
 elegirClase(clase);
+// Si la TV se quedó en la pizarra, vuelve a ella al recargar
+ponerPizarra(pizarra);
 
 // ---------- Modo TV: sin cuenta, la TV se conecta desde el móvil del coach o de un entrenador ----------
 // La TV entra como anónima, enseña un código y espera. Desde el móvil: Ranking → icono de TV → Conectar.
@@ -566,6 +681,9 @@ $("abrirAjustes").addEventListener("click", () => {
   $("wNombre").value = wod?.nombre || "";
   $("wTipo").value = wod?.tipo || "tiempo";
   $("wDesc").value = wod?.descripcion || "";
+  $("wCalent").value = wod?.calentamiento || "";
+  $("wFuerza").value = wod?.fuerza || "";
+  document.querySelectorAll(".etiqueta-fuerza").forEach((e) => (e.textContent = etiquetaFuerza(clase)));
   emomEd.cargar(wod);
   clearInterval(rotacion);
   $("dialogo").showModal();
@@ -578,7 +696,9 @@ $("dialogo").addEventListener("close", async () => {
   let extraEmom = {};
   try { extraEmom = emomEd.leer(); } catch (t) { alert(t); return; }
   try {
-    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion, ...extraEmom });
+    const calentamiento = $("wCalent").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
+    const fuerza = $("wFuerza").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion, ...(calentamiento ? { calentamiento } : {}), ...(fuerza ? { fuerza } : {}), ...extraEmom });
   } catch (err) {
     console.error(err);
     alert(err?.code === "permission-denied"

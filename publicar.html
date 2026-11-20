@@ -11,7 +11,7 @@
 <title>Publicar WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261118f">
+<link rel="stylesheet" href="estilos.css?v=20261120a">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 48px; }
   main { width: 100%; max-width: 640px; }
@@ -79,7 +79,7 @@
   .form-ent input { flex: 1; min-width: 0; background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 11px; font-size: 15px; color: var(--texto); }
   .form-ent button { background: var(--lila); color: #1f2125; border: 0; border-radius: 10px; padding: 0 16px; font-weight: 700; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261118f">
+<link rel="stylesheet" href="olympo-ds.css?v=20261120a">
 </head>
 <body>
 <main>
@@ -111,7 +111,11 @@
       <option value="kg">Carga en kg (más es mejor)</option>
       <option value="emom">EMOM: completado o no + pesos (solo puntos por registrar, sin podio)</option>
     </select>
-    <label for="wDesc">El entrenamiento (lo que se ve en pantalla)</label>
+    <label for="wCalent">Warm up <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <textarea id="wCalent" rows="3" maxlength="600" placeholder="3 rondas&#10;10 air squats&#10;10 push ups"></textarea>
+    <label for="wFuerza"><span class="etiqueta-fuerza">Fuerza / Halterofilia</span> <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <textarea id="wFuerza" rows="3" maxlength="600" placeholder="Back squat&#10;5x5 @75%"></textarea>
+    <label for="wDesc">WOD (el que puntúa en el ranking)</label>
     <textarea id="wDesc" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
     <!-- Solo en EMOM: rondas y ejercicios de cada ronda (se detectan solos del texto del WOD) -->
     <div id="emomEditor" hidden></div>
@@ -151,13 +155,13 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, deleteDoc, collection, query, where, getDoc, writeBatch, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso, opcionesEjercicios, formatoEjercicio, detectarEjerciciosEmom } from "./comun.js?v=20261118f";
-import { editorEmom } from "./emom-editor.js?v=20261118f";
-import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261118f";
+import { db, hoy, TIPOS, CLASES, GRUPOS, textoGrupo, catDe, categoriasDe, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, calcularPuntos, idCierre, formatearValor, PUNTOS, fmtPuntos, leerValor, escribirValor, idRegistro, persona, campoMes, camposPeso, opcionesEjercicios, formatoEjercicio, detectarEjerciciosEmom, etiquetaFuerza } from "./comun.js?v=20261120a";
+import { editorEmom } from "./emom-editor.js?v=20261120a";
+import { montarMenu, plegable, escucharRol } from "./menu.js?v=20261120a";
 const menu = montarMenu({ actual: "publicar", cuenta: false });
 plegable(document.getElementById("cierre"), document.getElementById("cierreTitulo"), "publicar-resultados", { abierto: true });
-import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261118f";
-import { NOMBRE_BOX } from "./config.js?v=20261118f";
+import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261120a";
+import { NOMBRE_BOX } from "./config.js?v=20261120a";
 
 const $ = (id) => document.getElementById(id);
 // EMOM: rondas y ejercicios de cada ronda (chicos / chicas), detectados al escribir el WOD
@@ -248,6 +252,9 @@ function rellenar() {
   $("wNombre").value = w?.nombre && !w.nombre.endsWith(" del día") ? w.nombre : "";
   $("wTipo").value = w?.tipo || "tiempo";
   $("wDesc").value = w?.descripcion || "";
+  $("wCalent").value = w?.calentamiento || "";
+  $("wFuerza").value = w?.fuerza || "";
+  ponerEtiquetaFuerza();
   emomEd.cargar(w);
   $("estadoWod").textContent = w ? `${CLASES[clase].nombre}: publicado` : `${CLASES[clase].nombre}: sin publicar`;
   $("estadoWod").classList.toggle("publicado", !!w);
@@ -255,7 +262,9 @@ function rellenar() {
   editado = false;
 }
 
-for (const id of ["wNombre", "wTipo", "wDesc"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
+// En el WOD es "Fuerza / Halterofilia"; en Funcional, solo "Fuerza"
+function ponerEtiquetaFuerza() { document.querySelectorAll(".etiqueta-fuerza").forEach((e) => (e.textContent = etiquetaFuerza(clase))); }
+for (const id of ["wNombre", "wTipo", "wDesc", "wCalent", "wFuerza"]) $(id).addEventListener("input", () => { editado = true; $("msg").textContent = ""; });
 
 function cambiarClase(nueva) {
   if (editado && !confirmarCambio()) {
@@ -422,7 +431,9 @@ $("formWod").addEventListener("submit", async (e) => {
   try { extraEmom = emomEd.leer(); } catch (t) { $("msg").className = "msg error"; $("msg").textContent = t; return; }
   $("guardar").disabled = true;
   try {
-    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: tipoW, descripcion, ...extraEmom });
+    const calentamiento = $("wCalent").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
+    const fuerza = $("wFuerza").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: tipoW, descripcion, ...(calentamiento ? { calentamiento } : {}), ...(fuerza ? { fuerza } : {}), ...extraEmom });
     editado = false;
     $("msg").className = "msg ok";
     $("msg").textContent = `✓ ${CLASES[clase].nombre} publicado. Ya sale en la pantalla.`;
