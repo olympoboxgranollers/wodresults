@@ -166,9 +166,15 @@
   .pz-tipo { font-size: 1.2vw; color: var(--suave); padding: .2vw .8vw; border: 1px solid var(--borde); border-radius: 999px; }
   .pz-tipo:empty { display: none; }
   /* Warm up · Fuerza · WOD, en columnas; el WOD un poco más ancho. Las vacías no salen */
-  .pz-secciones { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.6vw; }
-  .pz-sec { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: .8vw; background: color-mix(in srgb, var(--pz) 5%, rgba(20,20,24,.55)); border: 1px solid var(--borde); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
+  .pz-secciones { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.2vw; }
+  .pz-sec { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: .6vw; background: color-mix(in srgb, var(--pz) 5%, rgba(20,20,24,.55)); border: 1px solid var(--borde); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
   .pz-sec[hidden] { display: none; }
+  .pz-sec { cursor: pointer; transition: background .2s; }
+  /* Pestaña minimizada: franja estrecha con el título en vertical */
+  .pz-sec.minimizada { padding: 1.2vw .4vw; align-items: center; justify-content: flex-start; }
+  .pz-sec.minimizada .pz-caja { display: none; }
+  .pz-sec.minimizada .pz-sec-tit { writing-mode: vertical-rl; transform: rotate(180deg); border-bottom: 0; padding: 0; min-height: 0 !important; font-size: 1.6vw !important; letter-spacing: .2em; opacity: .85; }
+  .pz-sec.minimizada:hover { background: color-mix(in srgb, var(--pz) 14%, rgba(20,20,24,.55)); }
   .pz-sec-wod { border-color: color-mix(in srgb, var(--pz) 55%, transparent); }
   .pz-secciones.con-wod-ancho { grid-template-columns: var(--pz-cols); grid-auto-flow: row; }
   /* Título de cada columna: centrado y grande, con una línea debajo; el texto va debajo */
@@ -176,11 +182,12 @@
   .pz-nombre { color: var(--suave); font-size: .55em; font-weight: 500; letter-spacing: .18em; }
   /* El warm up, más discreto: título y caja más pequeños */
   .pz-sec[data-s="calentamiento"] { padding: 1.1vw 1.2vw; background: rgba(20,20,24,.45); }
-  .pz-sec[data-s="calentamiento"] .pz-texto { font-weight: 400; color: color-mix(in srgb, var(--texto) 85%, transparent); }
+  .pz-sec[data-s="calentamiento"] .pz-texto { -webkit-text-stroke-width: .025em; font-weight: 400; color: color-mix(in srgb, var(--texto) 85%, transparent); }
   .pz-nombre:empty { display: none; }
   .pz-caja { flex: 1; min-height: 0; overflow: hidden; }
   /* Cada línea del WOD en una sola línea (no se parte): la letra se encoge hasta que cabe */
-  .pz-texto { white-space: pre; font-family: "Bebas Neue", "Oswald", "Hanken Grotesk", system-ui, sans-serif; font-weight: 400; font-style: normal !important; letter-spacing: .05em; line-height: 1.12; color: color-mix(in srgb, var(--texto) 92%, transparent); font-size: 3vw; }
+  /* Bebas Neue solo tiene un grosor: se engorda con un trazo del mismo color (negrita) */
+  .pz-texto { -webkit-text-stroke: .035em currentColor; paint-order: stroke fill; white-space: pre; font-family: "Bebas Neue", "Oswald", "Hanken Grotesk", system-ui, sans-serif; font-weight: 400; font-style: normal !important; letter-spacing: .05em; line-height: 1.12; color: color-mix(in srgb, var(--texto) 92%, transparent); font-size: 3vw; }
   .pz-texto.vacio { color: var(--suave); font-weight: 500; opacity: .6; }
   .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
   .estado-tv.ok { color: #3ddc84; }
@@ -473,30 +480,39 @@ function escucharWod() { if (wodsCargados.has(clase)) aplicarWod(); }
 
 // ---------- Pizarra: el WOD de una clase a pantalla completa ----------
 // "Pizarra WOD" / "Pizarra Funcional" enseñan el WOD en grande; al tocar una clase del ranking se vuelve al ranking.
-let pizarra = null;
+let pizarra = null, abiertaPz = null;
+try { abiertaPz = localStorage.getItem("tv-pz-abierta") || null; } catch {}
+// Tocar una columna: se abre sola en grande; tocarla otra vez (o una minimizada) cambia la vista
+document.addEventListener("click", (e) => {
+  const s = e.target.closest("#pzSecciones .pz-sec"); if (!s) return;
+  abiertaPz = abiertaPz === s.dataset.s ? null : s.dataset.s;
+  try { abiertaPz ? localStorage.setItem("tv-pz-abierta", abiertaPz) : localStorage.removeItem("tv-pz-abierta"); } catch {}
+  pintarPizarra();
+});
 try { pizarra = localStorage.getItem("tv-pizarra") || null; } catch {}
 const enMinusculas = (t) => (t || "").split("\n").map((l) => { const x = l.toLocaleLowerCase("es"); return x.replace(/(^|\s)(\p{L})/u, (_, a, b) => a + b.toLocaleUpperCase("es")); }).join("\n");
 // Cada sección encoge su letra hasta que cabe; Warm up y Fuerza nunca más grandes que el WOD
 function ajustarPizarra() {
   // Títulos en una sola línea: cada uno encoge hasta caber en su columna (el del warm up, más pequeño)
-  const tits = [...$("pzSecciones").querySelectorAll(".pz-sec:not([hidden]) .pz-sec-tit")];
+  const tits = [...$("pzSecciones").querySelectorAll(".pz-sec:not([hidden]):not(.minimizada) .pz-sec-tit")];
   for (const t of tits) {
-    let vw = t.closest(".pz-sec").dataset.s === "calentamiento" ? 2 : 2.8;
+    let vw = abiertaPz ? 4 : t.closest(".pz-sec").dataset.s === "calentamiento" ? 2 : 2.8;
     t.style.fontSize = vw + "vw"; t.style.minHeight = "";
     while (t.scrollWidth > t.clientWidth + 1 && vw > 1) { vw -= 0.05; t.style.fontSize = vw.toFixed(2) + "vw"; }
   }
   const alto = Math.max(...tits.map((t) => t.offsetHeight));
   tits.forEach((t) => (t.style.minHeight = alto + "px"));
   const tam = {};
-  for (const s of $("pzSecciones").querySelectorAll(".pz-sec:not([hidden])")) {
+  for (const s of $("pzSecciones").querySelectorAll(".pz-sec:not([hidden]):not(.minimizada)")) {
     const caja = s.querySelector(".pz-caja"), t = s.querySelector(".pz-texto");
     // Letra máxima: el warm up pequeño; fuerza y WOD grandes
-    let vw = { calentamiento: 2.4, fuerza: 5, descripcion: 6 }[s.dataset.s] || 4;
+    let vw = abiertaPz ? 14 : { calentamiento: 2.4, fuerza: 8, descripcion: 9 }[s.dataset.s] || 4;   // abierta sola: puede ir enorme
     t.style.fontSize = vw + "vw";
     while ((t.scrollHeight > caja.clientHeight + 1 || t.scrollWidth > caja.clientWidth + 1) && vw > 1) { vw -= 0.1; t.style.fontSize = vw.toFixed(2) + "vw"; }
     tam[s.dataset.s] = vw;
   }
-  if (tam.descripcion) for (const s of $("pzSecciones").querySelectorAll('.pz-sec:not([hidden]):not([data-s="descripcion"])')) {
+  // Solo el warm up se limita al tamaño del WOD; la fuerza puede ir tan grande como quepa
+  if (tam.descripcion && !abiertaPz) for (const s of $("pzSecciones").querySelectorAll('.pz-sec:not([hidden])[data-s="calentamiento"]')) {
     const t = s.querySelector(".pz-texto"); if (parseFloat(t.style.fontSize) > tam.descripcion) t.style.fontSize = tam.descripcion.toFixed(2) + "vw";
   }
 }
@@ -520,7 +536,16 @@ function pintarPizarra() {
   const sec = $("pzSecciones");
   sec.classList.toggle("con-wod-ancho", visibles.length > 1);
   // Warm up estrecho a un lado; fuerza y WOD ocupan casi toda la pantalla
-  sec.style.setProperty("--pz-cols", visibles.map((c) => `minmax(0, ${({ calentamiento: "0.7fr", fuerza: "1.25fr", descripcion: "1.6fr" })[c] || "1fr"})`).join(" "));
+  // Pestañas: si hay una abierta, ocupa toda la pizarra y las demás quedan minimizadas en una franja
+  if (!visibles.includes(abiertaPz)) abiertaPz = null;
+  for (const s of sec.querySelectorAll(".pz-sec")) {
+    const min = !!abiertaPz && s.dataset.s !== abiertaPz;
+    s.classList.toggle("minimizada", min);
+    s.setAttribute("aria-expanded", String(!min));
+    s.title = min ? "Toca para ver en grande" : abiertaPz ? "Toca para ver todo" : "Toca para verla sola en grande";
+  }
+  sec.classList.toggle("con-wod-ancho", visibles.length > 1);
+  sec.style.setProperty("--pz-cols", visibles.map((c) => abiertaPz ? (c === abiertaPz ? "minmax(0, 1fr)" : "5.5vw") : `minmax(0, ${({ calentamiento: "0.55fr", fuerza: "1.3fr", descripcion: "1.7fr" })[c] || "1fr"})`).join(" "));
   requestAnimationFrame(ajustarPizarra);
 }
 function ponerPizarra(p) {
