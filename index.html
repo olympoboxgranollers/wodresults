@@ -530,7 +530,7 @@ function pintarEmomOpen(prev) {
     const ya = antes.get(e.nombre);
     const c = Object.assign(document.createElement("input"), { className: "eo-cant", inputMode: "numeric", maxLength: 4, value: ya?.cantidad ?? cTocaba ?? "" });
     const k = Object.assign(document.createElement("input"), { className: "eo-peso", inputMode: "decimal", maxLength: 5, value: ya?.peso ?? kTocaba ?? "", placeholder: "–" });
-    if (!kTocaba && !ya?.peso) k.disabled = true;   // ejercicio sin peso (row, burpees…)
+    // Siempre se puede poner peso, aunque el coach no lo asignara (p. ej. lo hizo con lastre o mancuerna)
     for (const [i, v] of [[c, ya?.cantidad], [k, ya?.peso]]) { if (v !== undefined && v !== null) i.dataset.tocado = "1"; i.addEventListener("input", () => (i.dataset.tocado = "1")); }
     const lc = document.createElement("label"); lc.append(e.unidad || "reps", c);
     const lk = document.createElement("label"); lk.append("kg", k);
