@@ -1,8 +1,8 @@
 // Menú común a todas las páginas + acceso con cuenta + editor de resultados para el coach.
 import { doc, updateDoc, getDoc, getDocs, setDoc, writeBatch, increment, collection, onSnapshot, query, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, PUNTOS, catDe, ayer, CLASES, claseAbierta, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso, logroParaFicha } from "./comun.js?v=20261120a";
-import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261120a";
-import { COACH_EMAIL } from "./config.js?v=20261120a";
+import { db, PUNTOS, catDe, ayer, CLASES, claseAbierta, idRegistro, leerValor, escribirValor, claseDe, categoriasDe, hoy, copiaInsignia, crearInsignia, fmtPuntos, opcionesEjercicios, cosa, nombreBonito, campoMes, camposPeso, logroParaFicha } from "./comun.js?v=20261120b";
+import { escucharCuenta, montarAcceso, salir, guardarCorreccion } from "./cuenta.js?v=20261120b";
+import { COACH_EMAIL } from "./config.js?v=20261120b";
 
 // Cuenta para la TV del box (correo que empieza por "tv", p. ej. tv@olympobox.es): no pide perfil ni enseña avisos
 export const esCuentaTV = (user) => !!user?.email && /^tv[@.+_-]/i.test(user.email);
@@ -247,7 +247,7 @@ export function montarMenu({ actual, cuenta = true, tv = false, alCambiar, prote
     if (u && dialogo?.open) dialogo.close();
     if (cambio) { pintar(); alCambiar?.({ user, coach: esCuentaCoach(user) }); }
     // Con la sesión del coach abierta, cualquier página reparte los puntos de los días terminados
-    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261120a").then((m) => m.cerrarYLimpiar()).catch(() => {});
+    if (cambio && esCuentaCoach(u)) import("./cierre.js?v=20261120b").then((m) => m.cerrarYLimpiar()).catch(() => {});
   });
   // Al cambiar de clase en la página, los enlaces llevan a esa misma clase
   addEventListener("storage", pintar);

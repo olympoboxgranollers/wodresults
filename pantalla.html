@@ -10,8 +10,8 @@
 <meta name="theme-color" content="#0C0D10">
 <title>Ranking WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261120a">
+<link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilos.css?v=20261120b">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   body { height: 100vh; overflow: hidden; padding: 2.5vw 2.5vw 4.2vw; display: grid; grid-template-columns: 1fr 35vw; grid-template-rows: auto 1fr; gap: 2vw; }
@@ -167,22 +167,27 @@
   .pz-tipo:empty { display: none; }
   /* Warm up · Fuerza · WOD, en columnas; el WOD un poco más ancho. Las vacías no salen */
   .pz-secciones { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.6vw; }
-  .pz-sec { min-height: 0; display: flex; flex-direction: column; gap: .8vw; background: color-mix(in srgb, var(--pz) 5%, rgba(20,20,24,.55)); border: 1px solid var(--borde); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
+  .pz-sec { min-height: 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: .8vw; background: color-mix(in srgb, var(--pz) 5%, rgba(20,20,24,.55)); border: 1px solid var(--borde); border-radius: 1.2vw; padding: 1.4vw 1.6vw; }
   .pz-sec[hidden] { display: none; }
   .pz-sec-wod { border-color: color-mix(in srgb, var(--pz) 55%, transparent); }
   .pz-secciones.con-wod-ancho { grid-template-columns: var(--pz-cols); grid-auto-flow: row; }
   /* Título de cada columna: centrado y grande, con una línea debajo; el texto va debajo */
-  .pz-sec-tit { box-sizing: border-box; font-family: "Saira", sans-serif; font-weight: 800; font-size: 2.6vw; line-height: 1.05; letter-spacing: .08em; text-transform: uppercase; color: var(--pz); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3vw; padding-bottom: 1vw; border-bottom: 2px solid color-mix(in srgb, var(--pz) 45%, transparent); }
-  .pz-nombre { color: var(--texto); font-size: .55em; letter-spacing: .06em; }
+  .pz-sec-tit { box-sizing: border-box; white-space: nowrap; font-family: "Hanken Grotesk", system-ui, sans-serif; font-weight: 800; font-style: normal !important; font-size: 2.8vw; line-height: 1.1; letter-spacing: .1em; text-transform: uppercase; color: var(--pz); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3vw; padding-bottom: 1vw; border-bottom: 2px solid color-mix(in srgb, var(--pz) 45%, transparent); }
+  .pz-nombre { color: var(--suave); font-size: .55em; font-weight: 500; letter-spacing: .18em; }
+  /* El warm up, más discreto: título y caja más pequeños */
+  .pz-sec[data-s="calentamiento"] { padding: 1.1vw 1.2vw; background: rgba(20,20,24,.45); }
+  .pz-sec[data-s="calentamiento"] .pz-texto { font-weight: 400; color: color-mix(in srgb, var(--texto) 85%, transparent); }
   .pz-nombre:empty { display: none; }
   .pz-caja { flex: 1; min-height: 0; overflow: hidden; }
-  .pz-texto { white-space: pre-line; font-weight: 700; line-height: 1.22; color: var(--texto); font-size: 3vw; }
+  /* Cada línea del WOD en una sola línea (no se parte): la letra se encoge hasta que cabe */
+  .pz-texto { white-space: pre; font-family: "Bebas Neue", "Oswald", "Hanken Grotesk", system-ui, sans-serif; font-weight: 400; font-style: normal !important; letter-spacing: .05em; line-height: 1.12; color: color-mix(in srgb, var(--texto) 92%, transparent); font-size: 3vw; }
   .pz-texto.vacio { color: var(--suave); font-weight: 500; opacity: .6; }
   .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
   .estado-tv.ok { color: #3ddc84; }
   .estado-tv.mal { color: #ff8a80; opacity: .9; }
+  .elige-fuerza[hidden] { display: none; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261120a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261120b">
 </head>
 <body>
 <dialog id="dialogo">
@@ -199,7 +204,12 @@
     </select>
     <label for="wCalent">Warm up <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
     <textarea id="wCalent" rows="3" maxlength="600" placeholder="3 rondas&#10;10 air squats&#10;10 push ups"></textarea>
-    <label for="wFuerza"><span class="etiqueta-fuerza">Fuerza / Halterofilia</span> <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
+    <!-- Fuerza o Halterofilia: en la pizarra solo sale el título elegido (en Funcional siempre "Fuerza") -->
+    <div class="elige-fuerza" id="cajaTituloFuerza">
+      <label for="wTituloFuerza">¿Fuerza o halterofilia?</label>
+      <select id="wTituloFuerza"><option value="Fuerza">Fuerza</option><option value="Halterofilia">Halterofilia</option></select>
+    </div>
+    <label for="wFuerza"><span class="etiqueta-fuerza">Fuerza</span> <span style="text-transform:none;letter-spacing:0;font-weight:400">(opcional)</span></label>
     <textarea id="wFuerza" rows="3" maxlength="600" placeholder="Back squat&#10;5x5 @75%"></textarea>
     <label for="wDesc">WOD (el que puntúa en el ranking)</label>
     <textarea id="wDesc" rows="7" maxlength="1000" placeholder="For time&#10;50 wall ball&#10;15/12 rmu/ring pull up&#10;res 2 min&#10;35 wall ball&#10;10/8 rmu"></textarea>
@@ -238,11 +248,10 @@
 
 <!-- Pizarra: el WOD a pantalla completa -->
 <section class="pizarra" id="pizarra" hidden>
-  <div class="pz-cab"><span class="pz-clase" id="pzClase"></span><span class="pz-tipo" id="pzTipo"></span></div>
   <div class="pz-secciones" id="pzSecciones">
     <div class="pz-sec" data-s="calentamiento"><div class="pz-sec-tit">WARM UP</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
-    <div class="pz-sec" data-s="fuerza"><div class="pz-sec-tit etiqueta-fuerza-pz">FUERZA / HALTEROFILIA</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
-    <div class="pz-sec pz-sec-wod" data-s="descripcion"><div class="pz-sec-tit">WOD<span class="pz-nombre" id="pzNombre"></span></div><div class="pz-caja"><div class="pz-texto"></div></div></div>
+    <div class="pz-sec" data-s="fuerza"><div class="pz-sec-tit etiqueta-fuerza-pz">FUERZA</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
+    <div class="pz-sec pz-sec-wod" data-s="descripcion"><div class="pz-sec-tit">WOD</div><div class="pz-caja"><div class="pz-texto"></div></div></div>
   </div>
 </section>
 
@@ -265,12 +274,12 @@
 
 <script type="module">
 import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, deleteDoc, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal, etiquetaFuerza } from "./comun.js?v=20261120a";
-import { editorEmom } from "./emom-editor.js?v=20261120a";
-import { NOMBRE_BOX } from "./config.js?v=20261120a";
-import { escucharCuenta, auth } from "./cuenta.js?v=20261120a";
+import { db, hoy, TIPOS, formatearValor, ordenar, posiciones, crearEmoji, lideres, mensajesDeLider, aviso, textoPesos, detallePesos, grupoDe, textoGrupo, tipoSinPodio, CLASES, idWod, claseDe, claseInicial, recordarClase, ponerColorClase, crearPestanas, titulo, persona, huellaRed, sincronizarReloj, ahoraReal, etiquetaFuerza } from "./comun.js?v=20261120b";
+import { editorEmom } from "./emom-editor.js?v=20261120b";
+import { NOMBRE_BOX } from "./config.js?v=20261120b";
+import { escucharCuenta, auth } from "./cuenta.js?v=20261120b";
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261120a";
+import { montarMenu, abrirEditor , escucharRol } from "./menu.js?v=20261120b";
 
 const $ = (id) => document.getElementById(id);
 $("box").textContent = "Olympo Results Ranking";  // cabecera de la TV
@@ -469,15 +478,20 @@ try { pizarra = localStorage.getItem("tv-pizarra") || null; } catch {}
 const enMinusculas = (t) => (t || "").split("\n").map((l) => { const x = l.toLocaleLowerCase("es"); return x.replace(/(^|\s)(\p{L})/u, (_, a, b) => a + b.toLocaleUpperCase("es")); }).join("\n");
 // Cada sección encoge su letra hasta que cabe; Warm up y Fuerza nunca más grandes que el WOD
 function ajustarPizarra() {
-  // Los títulos de las tres columnas a la misma altura (aunque uno ocupe dos líneas)
+  // Títulos en una sola línea: cada uno encoge hasta caber en su columna (el del warm up, más pequeño)
   const tits = [...$("pzSecciones").querySelectorAll(".pz-sec:not([hidden]) .pz-sec-tit")];
-  tits.forEach((t) => (t.style.minHeight = ""));
+  for (const t of tits) {
+    let vw = t.closest(".pz-sec").dataset.s === "calentamiento" ? 2 : 2.8;
+    t.style.fontSize = vw + "vw"; t.style.minHeight = "";
+    while (t.scrollWidth > t.clientWidth + 1 && vw > 1) { vw -= 0.05; t.style.fontSize = vw.toFixed(2) + "vw"; }
+  }
   const alto = Math.max(...tits.map((t) => t.offsetHeight));
   tits.forEach((t) => (t.style.minHeight = alto + "px"));
   const tam = {};
   for (const s of $("pzSecciones").querySelectorAll(".pz-sec:not([hidden])")) {
     const caja = s.querySelector(".pz-caja"), t = s.querySelector(".pz-texto");
-    let vw = s.dataset.s === "descripcion" ? 6 : 4;
+    // Letra máxima: el warm up pequeño; fuerza y WOD grandes
+    let vw = { calentamiento: 2.4, fuerza: 5, descripcion: 6 }[s.dataset.s] || 4;
     t.style.fontSize = vw + "vw";
     while ((t.scrollHeight > caja.clientHeight + 1 || t.scrollWidth > caja.clientWidth + 1) && vw > 1) { vw -= 0.1; t.style.fontSize = vw.toFixed(2) + "vw"; }
     tam[s.dataset.s] = vw;
@@ -490,11 +504,8 @@ function pintarPizarra() {
   if (!pizarra) return;
   const w = wodsCache[pizarra] || null, c = CLASES[pizarra];
   $("pizarra").style.setProperty("--pz", c.color);
-  $("pzClase").textContent = `${c.nombre} de hoy`;
-  $("pzTipo").textContent = w ? TIPOS[w.tipo]?.etiqueta || "" : "";
   // En la pizarra todo va en mayúsculas: títulos y lo que escribe el coach
-  $("pzNombre").textContent = w?.nombre ? w.nombre.toLocaleUpperCase("es") : "";
-  $("pizarra").querySelector(".etiqueta-fuerza-pz").textContent = etiquetaFuerza(pizarra).toLocaleUpperCase("es");
+  $("pizarra").querySelector(".etiqueta-fuerza-pz").textContent = etiquetaFuerza(pizarra, w?.tituloFuerza).toLocaleUpperCase("es");
   const visibles = [];
   for (const s of $("pzSecciones").querySelectorAll(".pz-sec")) {
     const campo = s.dataset.s, txt = w?.[campo] || "";
@@ -508,7 +519,8 @@ function pintarPizarra() {
   // El WOD ocupa más que el resto cuando hay varias secciones
   const sec = $("pzSecciones");
   sec.classList.toggle("con-wod-ancho", visibles.length > 1);
-  sec.style.setProperty("--pz-cols", visibles.map((c) => (c === "descripcion" ? "1.5fr" : "1fr")).join(" "));
+  // Warm up estrecho a un lado; fuerza y WOD ocupan casi toda la pantalla
+  sec.style.setProperty("--pz-cols", visibles.map((c) => `minmax(0, ${({ calentamiento: "0.7fr", fuerza: "1.25fr", descripcion: "1.6fr" })[c] || "1fr"})`).join(" "));
   requestAnimationFrame(ajustarPizarra);
 }
 function ponerPizarra(p) {
@@ -675,6 +687,7 @@ onAuthStateChanged(auth, (u) => {
 });
 cambiarClase(clase);
 
+$("wTituloFuerza").addEventListener("change", () => document.querySelectorAll(".etiqueta-fuerza").forEach((e) => (e.textContent = etiquetaFuerza(clase, $("wTituloFuerza").value))));
 // Configurar el WOD del día (en EMOM: rondas y ejercicios de cada ronda, detectados del texto)
 const emomEd = editorEmom($("emomEditor"), { desc: $("wDesc"), tipo: $("wTipo") });
 $("abrirAjustes").addEventListener("click", () => {
@@ -683,7 +696,9 @@ $("abrirAjustes").addEventListener("click", () => {
   $("wDesc").value = wod?.descripcion || "";
   $("wCalent").value = wod?.calentamiento || "";
   $("wFuerza").value = wod?.fuerza || "";
-  document.querySelectorAll(".etiqueta-fuerza").forEach((e) => (e.textContent = etiquetaFuerza(clase)));
+  $("wTituloFuerza").value = wod?.tituloFuerza === "Halterofilia" ? "Halterofilia" : "Fuerza";
+  $("cajaTituloFuerza").hidden = clase === "funcional";
+  document.querySelectorAll(".etiqueta-fuerza").forEach((e) => (e.textContent = etiquetaFuerza(clase, $("wTituloFuerza").value)));
   emomEd.cargar(wod);
   clearInterval(rotacion);
   $("dialogo").showModal();
@@ -698,7 +713,7 @@ $("dialogo").addEventListener("close", async () => {
   try {
     const calentamiento = $("wCalent").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
     const fuerza = $("wFuerza").value.replace(/\r/g, "").trim().toUpperCase().slice(0, 600);
-    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion, ...(calentamiento ? { calentamiento } : {}), ...(fuerza ? { fuerza } : {}), ...extraEmom });
+    await setDoc(doc(db, "wods", idWod(clase)), { nombre, tipo: $("wTipo").value, descripcion, ...(calentamiento ? { calentamiento } : {}), ...(fuerza ? { fuerza } : {}), ...(clase !== "funcional" && $("wTituloFuerza").value === "Halterofilia" ? { tituloFuerza: "Halterofilia" } : {}), ...extraEmom });
   } catch (err) {
     console.error(err);
     alert(err?.code === "permission-denied"

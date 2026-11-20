@@ -11,7 +11,7 @@
 <title>Resultado del WOD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,700;1,800;1,900&family=Saira+Condensed:wght@500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=20261120a">
+<link rel="stylesheet" href="estilos.css?v=20261120b">
 <style>
   body { min-height: 100dvh; display: flex; justify-content: center; padding: 24px 16px 40px; }
   main { width: 100%; max-width: 440px; }
@@ -201,7 +201,7 @@
   .aviso-ayer[hidden] { display: none; }
   .aviso-ayer a { color: var(--malva); font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
 </style>
-<link rel="stylesheet" href="olympo-ds.css?v=20261120a">
+<link rel="stylesheet" href="olympo-ds.css?v=20261120b">
 </head>
 <body>
 <main>
@@ -379,11 +379,11 @@
 
 <script type="module">
 import { doc, onSnapshot, collection, setDoc, updateDoc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio, porRondaEmom } from "./comun.js?v=20261120a";
-import { db, hoy, ayer, fijarFechaRegistro, fechaRegistro, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261120a";
-import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261120a";
-import { montarMenu } from "./menu.js?v=20261120a";
-import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261120a";
+import { crearInsignia, siguienteLogroClases, umbralClases, NIVELES, nivelDe, persona, cosa, nombreBonito, quienReacciona, textoRondasEmom, opcionesEjercicios, formatoEjercicio, porRondaEmom } from "./comun.js?v=20261120b";
+import { db, hoy, ayer, fijarFechaRegistro, fechaRegistro, TIPOS, catDe, grupoDe, textoGrupo, sinAcabar, valorSinAcabar, repsSinAcabar, tipoSinPodio, textoEjercicios, UNIDADES_EMOM, formatearValor, SENSACIONES, crearEmoji, clasificacionDe, MATERIAL, textoPesos, CLASES, categoriasDe, soloOpen, sinPodio, idWod, claseInicial, recordarClase, ponerColorClase, crearPestanas, claseDe, idResultado, idCierre, PUNTOS, fmtPuntos } from "./comun.js?v=20261120b";
+import { escucharCuenta, montarAcceso, guardarNombre, salir, sumarRegistro } from "./cuenta.js?v=20261120b";
+import { montarMenu } from "./menu.js?v=20261120b";
+import { NOMBRE_BOX, COACH_EMAIL } from "./config.js?v=20261120b";
 
 const $ = (id) => document.getElementById(id);
 
