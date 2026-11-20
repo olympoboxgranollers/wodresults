@@ -186,7 +186,9 @@
   .pz-nombre:empty { display: none; }
   .pz-caja { flex: 1; min-height: 0; overflow: hidden; }
   /* Cada línea del WOD en una sola línea (no se parte): la letra se encoge hasta que cabe */
-  /* Teko en negrita: deportiva, tipo marcador */
+  /* Teko en negrita: deportiva, tipo marcador. Con !important y más peso que olympo-ds.css,
+     que impone su letra a todo (html body * { font-family: ... !important }) */
+  html body .pizarra .pz-texto { font-family: "Teko", "Oswald", sans-serif !important; }
   .pz-texto { white-space: pre; font-family: "Teko", "Oswald", "Hanken Grotesk", system-ui, sans-serif; font-weight: 600; font-style: normal !important; letter-spacing: .03em; line-height: 1.02; color: color-mix(in srgb, var(--texto) 92%, transparent); font-size: 3vw; }
   .pz-texto.vacio { color: var(--suave); font-weight: 500; opacity: .6; }
   .estado-tv { font-size: 1vw; opacity: .55; margin-right: .6vw; white-space: nowrap; }
